@@ -1,6 +1,20 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { TopNav } from "@/components/nav/top-nav";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (session?.user) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardedAt: true },
+    });
+    if (!user?.onboardedAt) {
+      redirect("/onboarding");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
