@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet } from "lucide-react";
 import { SignOutButton } from "@/components/nav/sign-out-button";
+import { APP_NAME } from "@/lib/config";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -17,7 +18,7 @@ export function TopNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 font-semibold">
           <Wallet className="h-5 w-5" />
-          Budget
+          {APP_NAME}
         </div>
         <nav className="flex items-center gap-4 text-sm">
           {links.map((link) => (
