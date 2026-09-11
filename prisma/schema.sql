@@ -22,5 +22,6 @@ CREATE TABLE IF NOT EXISTS "User" (
   "currency"      TEXT     NOT NULL DEFAULT 'PHP',
   "accentColor"   TEXT     NOT NULL DEFAULT 'coral',
   "themeMode"     TEXT     NOT NULL DEFAULT 'system',
-  "createdAt"     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  "createdAt"     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "onboardedAt"   DATETIME
 );

@@ -15,4 +15,5 @@ model User {
   accentColor   String   @default("coral")
   themeMode     String   @default("system")
   createdAt     DateTime @default(now())
+  onboardedAt   DateTime?
 }
