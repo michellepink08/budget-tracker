@@ -14,7 +14,7 @@ export async function completeOnboardingAction(formData: FormData): Promise<Onbo
   }
 
   const parsed = onboardingSchema.safeParse({
-    cycleStartDay: formData.get("cycleStartDay"),
+    cycleStartDay: Number(formData.get("cycleStartDay")),
     currency: formData.get("currency"),
     accentColor: formData.get("accentColor"),
   });

@@ -116,11 +116,17 @@ Expected: FAIL — `Cannot find module '@/lib/validations/onboarding'`.
 import { z } from "zod";
 
 export const onboardingSchema = z.object({
-  cycleStartDay: z.coerce.number().int().min(1).max(31),
+  cycleStartDay: z.number().int().min(1).max(31),
   currency: z.string().min(1),
   accentColor: z.string().min(1),
 });
 ```
+
+Plain `z.number()`, not `z.coerce.number()` — coercion makes the field's
+*input* type `unknown`, which breaks `zodResolver`'s generic match against
+`useForm<OnboardingInput>` in Task 5. The form already converts the input
+to a real number via `valueAsNumber: true`; the server action (Task 4)
+converts the raw `FormData` string with `Number(...)` before validating.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -260,7 +266,7 @@ export async function completeOnboardingAction(formData: FormData): Promise<Onbo
   }
 
   const parsed = onboardingSchema.safeParse({
-    cycleStartDay: formData.get("cycleStartDay"),
+    cycleStartDay: Number(formData.get("cycleStartDay")),
     currency: formData.get("currency"),
     accentColor: formData.get("accentColor"),
   });
