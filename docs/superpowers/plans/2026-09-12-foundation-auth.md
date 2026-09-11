@@ -602,11 +602,16 @@ git commit -m "feat: add signup logic with unit tests against a mocked Prisma cl
 
 - [ ] **Step 1: Generate an auth secret**
 
+`npx auth secret` currently resolves to the unrelated Better Auth CLI
+package (writes `BETTER_AUTH_SECRET`, not `AUTH_SECRET`) — generate one
+directly instead:
+
 ```bash
-npx auth secret
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
-Expected: adds an `AUTH_SECRET` value to `.env`.
+Add the output to `.env` as `AUTH_SECRET="<value>"` (and note the variable
+name, with a placeholder, in `.env.example`).
 
 - [ ] **Step 2: Write `src/auth.ts`**
 
