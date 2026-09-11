@@ -139,8 +139,8 @@ git commit -m "chore: initialize shadcn/ui with button, input, label"
 ### Task 4: Prisma schema, client, and database
 
 **Files:**
-- Create: `prisma/schema.prisma`, `src/lib/prisma.ts`
-- Modify: `.env` (create if `create-next-app` didn't), `.gitignore` (already covers `.env*` and `prisma/dev.db`)
+- Create: `prisma/schema.prisma`, `prisma.config.ts`, `prisma/schema.sql`, `scripts/db-push.mjs`, `src/lib/prisma.ts`, `.env.example`
+- Modify: `.env` (create if `create-next-app` didn't), `.gitignore` (already covers `.env*`, `!.env.example`, and `/prisma/dev.db`), `package.json` (`db:generate`/`db:push` scripts)
 
 - [ ] **Step 1: Write `prisma/schema.prisma`**
 
@@ -151,7 +151,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -166,36 +165,157 @@ model User {
 }
 ```
 
-- [ ] **Step 2: Add `DATABASE_URL` to `.env`**
+- [ ] **Step 2: Add `DATABASE_URL` to `.env`** (and `.env.example` for onboarding)
 
 ```
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="file:./prisma/dev.db"
 ```
 
-- [ ] **Step 3: Generate the client and create the database**
+Prisma 7 no longer accepts a `url` inside the `datasource` block in
+`schema.prisma` — the CLI errors with `P1012` and points you at
+`prisma.config.ts` instead (see below).
+
+> **Deviation from the original plan:** `prisma generate` uses a WASM
+> config loader and works fine, but `prisma db push` / `migrate` shell out
+> to a native `schema-engine` binary — blocked outright by this machine's
+> Application Control policy (confirmed: `spawn UNKNOWN`). Prisma Client's
+> *query* engine works fine via the `@prisma/adapter-better-sqlite3` driver
+> adapter, since `better-sqlite3` is an in-process native addon (loaded via
+> Node's `require`), not a spawned `.exe` — the policy only blocks the
+> latter. So: schema pushes are done with a hand-written SQL file run
+> through `better-sqlite3` directly, instead of Prisma's CLI. See
+> `prisma/schema.sql` for the ongoing rule (keep it in sync with
+> `schema.prisma` by hand).
+
+- [ ] **Step 3: Write `prisma.config.ts`** (Prisma 7 moved the datasource URL out of `schema.prisma`)
+
+```typescript
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
+});
+```
+
+- [ ] **Step 4: Write `prisma/schema.sql`** (hand-written mirror of the tables in `schema.prisma`)
+
+```sql
+-- Hand-written mirror of prisma/schema.prisma's tables.
+--
+-- Why this file exists: `prisma db push` / `prisma migrate` shell out to a
+-- native schema-engine binary, which this machine's Application Control
+-- policy blocks from running. Prisma Client itself works fine here via the
+-- @prisma/adapter-better-sqlite3 driver adapter (an in-process native
+-- addon, not a spawned .exe), so we apply schema changes with this file
+-- + `npm run db:push` (scripts/db-push.mjs) instead of Prisma's CLI.
+--
+-- Rule going forward: whenever you add/change a model in schema.prisma,
+-- make the matching change here too, then run `npm run db:push`.
+-- Statements must be idempotent (IF NOT EXISTS) since this script re-runs
+-- against an existing database on every call. Changing an existing
+-- column's type/constraints isn't handled automatically — in dev, delete
+-- prisma/dev.db and re-run `npm run db:push` to rebuild from scratch.
+
+CREATE TABLE IF NOT EXISTS "User" (
+  "id"            TEXT     NOT NULL PRIMARY KEY,
+  "email"         TEXT     NOT NULL UNIQUE,
+  "passwordHash"  TEXT     NOT NULL,
+  "cycleStartDay" INTEGER  NOT NULL DEFAULT 1,
+  "currency"      TEXT     NOT NULL DEFAULT 'PHP',
+  "accentColor"   TEXT     NOT NULL DEFAULT 'coral',
+  "themeMode"     TEXT     NOT NULL DEFAULT 'system',
+  "createdAt"     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+- [ ] **Step 5: Write `scripts/db-push.mjs`**
+
+```javascript
+// Applies prisma/schema.sql to the SQLite database at DATABASE_URL.
+//
+// Stands in for `prisma db push`, which shells out to a native binary that
+// this machine's Application Control policy blocks. See the comment at the
+// top of prisma/schema.sql for the full explanation and the rule for
+// keeping schema.prisma and schema.sql in sync.
+
+import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+import Database from "better-sqlite3";
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error("DATABASE_URL is not set (check your .env file).");
+  process.exit(1);
+}
+
+const filePrefix = "file:";
+if (!databaseUrl.startsWith(filePrefix)) {
+  console.error(`Expected a "file:" DATABASE_URL, got: ${databaseUrl}`);
+  process.exit(1);
+}
+
+const dbPath = path.resolve(process.cwd(), databaseUrl.slice(filePrefix.length));
+const schemaSqlPath = path.resolve(process.cwd(), "prisma/schema.sql");
+
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+
+const db = new Database(dbPath);
+try {
+  db.exec(fs.readFileSync(schemaSqlPath, "utf8"));
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+    .all()
+    .map((row) => row.name);
+  console.log(`Applied prisma/schema.sql to ${dbPath}`);
+  console.log("Tables:", tables.join(", "));
+} finally {
+  db.close();
+}
+```
+
+Add to `package.json` scripts: `"db:generate": "prisma generate"` and `"db:push": "node scripts/db-push.mjs"`.
+
+- [ ] **Step 6: Generate the client and create the database**
 
 ```bash
-npx prisma generate
-npx prisma db push
+npm run db:generate
+npm run db:push
 ```
 
-Expected: `dev.db` created under `prisma/`, and output confirms the `User` table was created.
+Expected: `prisma/dev.db` created, output lists the `User` table.
 
-- [ ] **Step 4: Create the Prisma client singleton at `src/lib/prisma.ts`**
+- [ ] **Step 7: Create the Prisma client singleton at `src/lib/prisma.ts`**
 
 ```typescript
 import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+
+// Uses the better-sqlite3 driver adapter (an in-process native addon)
+// instead of Prisma's default query-engine binary, which this machine's
+// Application Control policy blocks from running as a spawned process.
+// See prisma/schema.sql for the equivalent note about schema pushes.
+function createPrismaClient() {
+  const adapter = new PrismaBetterSqlite3({
+    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+  });
+  return new PrismaClient({ adapter });
+}
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
