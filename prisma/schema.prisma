@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  cycleStartDay Int      @default(1)
+  currency      String   @default("PHP")
+  accentColor   String   @default("coral")
+  themeMode     String   @default("system")
+  createdAt     DateTime @default(now())
+}
