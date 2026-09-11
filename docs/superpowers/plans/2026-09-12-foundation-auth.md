@@ -315,6 +315,28 @@ if (process.env.NODE_ENV !== "production") {
 }
 ```
 
+> **Found during end-to-end verification:** calling this from a server
+> action inside Next.js (not a plain Node script) threw
+> `TypeError: Cannot read properties of undefined (reading 'indexOf')`
+> from inside Prisma's client. The cause: webpack was bundling
+> `better-sqlite3` (a native addon) instead of leaving it as a real
+> `require`, which breaks its loading of the compiled `.node` binary. Fix
+> — mark the native/Prisma packages external in `next.config.ts`:
+>
+> ```typescript
+> import type { NextConfig } from "next";
+>
+> const nextConfig: NextConfig = {
+>   serverExternalPackages: [
+>     "better-sqlite3",
+>     "@prisma/client",
+>     "@prisma/adapter-better-sqlite3",
+>   ],
+> };
+>
+> export default nextConfig;
+> ```
+
 - [ ] **Step 8: Commit**
 
 ```bash
@@ -598,7 +620,7 @@ git commit -m "feat: add signup logic with unit tests against a mocked Prisma cl
 ### Task 8: Auth.js configuration, route handler, and middleware
 
 **Files:**
-- Create: `src/auth.ts`, `src/app/api/auth/[...nextauth]/route.ts`, `src/middleware.ts`
+- Create: `src/auth.ts`, `src/app/api/auth/[...nextauth]/route.ts`, `src/proxy.ts`
 
 - [ ] **Step 1: Generate an auth secret**
 
@@ -676,10 +698,14 @@ import { handlers } from "@/auth";
 export const { GET, POST } = handlers;
 ```
 
-- [ ] **Step 4: Write `src/middleware.ts`**
+- [ ] **Step 4: Write `src/proxy.ts`**
+
+Next.js 16 renamed the `middleware.ts` convention to `proxy.ts` (same
+mechanism, new file name and export name — `middleware.ts` still runs but
+logs a deprecation warning telling you to migrate):
 
 ```typescript
-export { auth as middleware } from "@/auth";
+export { auth as proxy } from "@/auth";
 
 export const config = {
   matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
