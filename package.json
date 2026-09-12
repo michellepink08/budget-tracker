@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "db:generate": "prisma generate",
     "db:push": "node scripts/db-push.mjs",
-    "db:demo-user": "node scripts/create-demo-user.mjs"
+    "db:demo-user": "node scripts/create-demo-user.mjs",
+    "db:seed-demo": "node scripts/seed-demo-data.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
