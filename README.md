@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Budget Tracker
 
-## Getting Started
+A budget tracker built around how you actually get paid — not the calendar month. Set a custom pay-cycle cutoff day, track cash across multiple accounts, and get bills, installment plans, and budget rollover handled correctly instead of bolted on.
 
-First, run the development server:
+## Screenshots
+
+![Landing page](docs/screenshots/landing.png)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+![Bills](docs/screenshots/bills.png)
+
+![Reports](docs/screenshots/reports.png)
+
+![Settings](docs/screenshots/settings.png)
+
+## Core differentiators
+
+- **Budget cycles that match payday, not the calendar** — set your own cutoff day (the 25th, the 10th, whatever your pay cycle actually is) and every report follows it.
+- **Real account tracking** — cash, checking, e-wallets, credit cards, and loans, each with their own running balance.
+- **Transfers that don't lie about your spending** — moving money between your own accounts is never counted as income or an expense; only a transfer fee is.
+- **Bills and installments, planned ahead** — see what's due this week across one-off bills, recurring bills, and credit-card installment plans in one place.
+- **Budget rollover, per category** — unused or overspent amounts can carry into the next cycle, per category, per how you configure it.
+- **Reconciliation that never silently overwrites** — tell the app what an account actually holds; it shows you the gap and asks before recording an adjustment.
+
+(This list is also shown on the app's own landing page — `src/app/page.tsx` — kept in sync by hand.)
+
+## Tech stack
+
+- [Next.js](https://nextjs.org) (App Router, TypeScript)
+- [Tailwind CSS](https://tailwindcss.com)
+- [shadcn/ui](https://ui.shadcn.com) components, built on [Base UI](https://base-ui.com) primitives (not Radix)
+- [Prisma](https://www.prisma.io) ORM + SQLite for local development — the schema is written to not require a rewrite when switching to Postgres for production (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
+- [Auth.js](https://authjs.dev) (NextAuth v5), Credentials provider, passwords hashed with bcrypt
+- [Recharts](https://recharts.org) (via shadcn-style chart components) for report charts
+- [zod](https://zod.dev) + [react-hook-form](https://react-hook-form.com) for validation
+- [Vitest](https://vitest.dev) for unit tests
+
+## Getting started
 
 ```bash
+git clone <this repo>
+cd budget-tracker
+npm install
+cp .env.example .env   # then fill in AUTH_SECRET — see the comment in that file
+npm run db:push        # applies prisma/schema.sql to a local SQLite database
+npm run db:demo-user    # creates demo@example.com / demopassword123
+npm run db:seed-demo    # seeds it with fictional demo data
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:3000` — you'll land on the public landing page if signed out. Click "View Demo" to log straight into the seeded demo account, or sign up for your own.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## A note on this dev environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This particular development machine's Application Control policy blocks native `.exe` binaries downloaded by npm. That's why `npm run dev`/`npm run build` force `--webpack` instead of Next.js's default Turbopack, and why schema changes apply via a hand-written `prisma/schema.sql` mirror (`npm run db:push` → `scripts/db-push.mjs`) instead of `prisma db push` directly, which shells out to a native schema-engine binary. **Neither workaround is needed on a normal machine or deployment target** — they exist only because of this specific machine's policy, not because of anything about the app itself.
 
-## Learn More
+## Testing
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Domain logic (`src/lib/*.ts`) is unit-tested against mocked Prisma clients — no test hits a real database. Server actions and pages are thin wrappers around that domain layer and are covered by manual browser verification during development rather than duplicated automated UI tests.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Status
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A personal portfolio project. Not accepting external contributions.
