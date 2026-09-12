@@ -190,3 +190,34 @@ CREATE TABLE IF NOT EXISTS "Payable" (
 );
 CREATE INDEX IF NOT EXISTS "Payable_userId_idx" ON "Payable" ("userId");
 CREATE INDEX IF NOT EXISTS "Payable_accountId_idx" ON "Payable" ("accountId");
+
+CREATE TABLE IF NOT EXISTS "Loan" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "principal" INTEGER NOT NULL,
+  "interestRate" REAL NOT NULL,
+  "monthlyPayment" INTEGER NOT NULL,
+  "remainingBalance" INTEGER NOT NULL,
+  "startDate" DATETIME NOT NULL,
+  "archivedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id")
+);
+CREATE INDEX IF NOT EXISTS "Loan_userId_idx" ON "Loan" ("userId");
+
+CREATE TABLE IF NOT EXISTS "CreditCard" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "accountId" TEXT NOT NULL UNIQUE,
+  "creditLimit" INTEGER NOT NULL,
+  "statementDay" INTEGER NOT NULL,
+  "paymentDueDay" INTEGER NOT NULL,
+  "interestRate" REAL NOT NULL,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("accountId") REFERENCES "Account" ("id")
+);
+CREATE INDEX IF NOT EXISTS "CreditCard_userId_idx" ON "CreditCard" ("userId");
