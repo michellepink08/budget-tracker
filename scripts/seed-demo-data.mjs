@@ -21,7 +21,18 @@ if (!user) {
   process.exit(1);
 }
 
-// Clear this user's existing financial rows (children first).
+// Clear this user's existing financial rows, children first. Every table
+// added since this script was first written (Plans 3A/3B) needs a delete
+// here too, or re-running this script fails on a foreign-key constraint
+// the moment any of those rows exist.
+await prisma.installmentPayment.deleteMany({ where: { userId: user.id } });
+await prisma.installmentPurchase.deleteMany({ where: { userId: user.id } });
+await prisma.payable.deleteMany({ where: { userId: user.id } });
+await prisma.recurringPayable.deleteMany({ where: { userId: user.id } });
+await prisma.recurringRule.deleteMany({ where: { userId: user.id } });
+await prisma.creditCard.deleteMany({ where: { userId: user.id } });
+await prisma.loan.deleteMany({ where: { userId: user.id } });
+await prisma.budgetAllocation.deleteMany({ where: { userId: user.id } });
 await prisma.transaction.deleteMany({ where: { userId: user.id } });
 await prisma.budgetPeriod.deleteMany({ where: { userId: user.id } });
 await prisma.subcategory.deleteMany({ where: { userId: user.id } });
@@ -82,20 +93,58 @@ for (const [key, def] of Object.entries(categoryDefs)) {
   categories[key] = await prisma.category.create({ data: { userId: user.id, ...def } });
 }
 
-const now = new Date();
+// This CLI script runs standalone via plain `node`, with no build step,
+// so it can't import src/lib/cycle.ts directly — it keeps this small,
+// self-contained mirror of getCycleForDate's algorithm instead, scoped to
+// just the one case this script needs ("the cycle containing today").
+// Keep this in sync with src/lib/cycle.ts by hand if that logic changes —
+// the same deliberate-duplication tradeoff already accepted for
+// prisma/schema.sql mirroring prisma/schema.prisma.
+function daysInMonth(year, monthIndex0) {
+  return new Date(year, monthIndex0 + 1, 0).getDate();
+}
+
+function cycleContainingToday(cycleStartDay) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const monthIndex0 = today.getMonth();
+  const day = today.getDate();
+  const effectiveStartDay = Math.min(cycleStartDay, daysInMonth(year, monthIndex0));
+
+  let startYear = year;
+  let startMonth = monthIndex0;
+  if (day < effectiveStartDay) {
+    startMonth -= 1;
+    if (startMonth < 0) {
+      startMonth = 11;
+      startYear -= 1;
+    }
+  }
+  const clampedStartDay = Math.min(cycleStartDay, daysInMonth(startYear, startMonth));
+  const start = new Date(startYear, startMonth, clampedStartDay);
+
+  let endMonth = startMonth + 1;
+  let endYear = startYear;
+  if (endMonth > 11) {
+    endMonth = 0;
+    endYear += 1;
+  }
+  const clampedEndDay = Math.min(cycleStartDay, daysInMonth(endYear, endMonth));
+  const end = new Date(endYear, endMonth, clampedEndDay - 1);
+
+  return { start, end };
+}
+
+const { start, end } = cycleContainingToday(user.cycleStartDay);
 const budgetPeriod = await prisma.budgetPeriod.create({
   data: {
     userId: user.id,
-    name: "Current cycle",
-    startDate: new Date(now.getFullYear(), now.getMonth(), 1),
-    endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+    name: `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`,
+    startDate: start,
+    endDate: end,
     status: "ACTIVE",
   },
 });
-
-// Budget allocations (planned amounts per category) are Plan 3A —
-// BudgetAllocation doesn't exist yet, so this seed only creates the
-// period itself plus transactions against it.
 
 function daysAgo(n) {
   const dt = new Date();
