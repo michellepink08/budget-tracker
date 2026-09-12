@@ -47,3 +47,4 @@ next-env.d.ts
 
 # brainstorming companion scratch files
 .superpowers/
+.playwright-mcp/
