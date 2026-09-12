@@ -170,14 +170,26 @@ describe("parseRelativeOrExplicitDate", () => {
     expect(result.confirmed).toBe(true);
   });
 
-  it("resolves an explicit month-and-day that hasn't happened yet this year to last year", () => {
-    const result = parseRelativeOrExplicitDate("BPI credit card is 25389.83 due December 5", now);
+  it("(past direction, default) rolls a future-seeming month-day back to last year — correct for a transaction date, which is never in the future", () => {
+    const result = parseRelativeOrExplicitDate("paid 100 cash October 5", now);
+    expect(result.value).toEqual(new Date(2025, 9, 5));
+    expect(result.confirmed).toBe(true);
+  });
+
+  it("(future direction) keeps a not-yet-passed month-day in the current year — correct for a due date", () => {
+    const result = parseRelativeOrExplicitDate("BPI credit card is 25389.83 due December 5", now, "future");
     expect(result.value).toEqual(new Date(2026, 11, 5));
     expect(result.confirmed).toBe(true);
   });
 
+  it("(future direction) rolls an already-passed month-day forward to next year — correct for a due date", () => {
+    const result = parseRelativeOrExplicitDate("due January 5", now, "future");
+    expect(result.value).toEqual(new Date(2027, 0, 5));
+    expect(result.confirmed).toBe(true);
+  });
+
   it("marks an approximated date as unconfirmed", () => {
-    const result = parseRelativeOrExplicitDate("due around October 5", now);
+    const result = parseRelativeOrExplicitDate("due around October 5", now, "future");
     expect(result.value).toEqual(new Date(2026, 9, 5));
     expect(result.confirmed).toBe(false);
   });
@@ -202,6 +214,13 @@ Expected: FAIL — module not found
 
 export type DateParseResult = { value: Date; confirmed: boolean };
 
+// "past" resolves a month-day mention to the most recent occurrence that
+// isn't in the future (correct for transaction dates — a transaction is
+// never dated in the future). "future" resolves to the nearest
+// not-yet-passed occurrence (correct for due dates — a payable's due
+// date usually hasn't happened yet).
+export type DateDirection = "past" | "future";
+
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const MONTHS = [
   "january", "february", "march", "april", "may", "june",
@@ -223,15 +242,24 @@ function mostRecentPastWeekday(now: Date, targetDow: number): Date {
   return startOfDay(addDays(now, -diff));
 }
 
-function mostRecentPastMonthDay(now: Date, monthIndex: number, day: number): Date {
+function resolveMonthDay(now: Date, monthIndex: number, day: number, direction: DateDirection): Date {
+  const today = startOfDay(now);
   const candidate = new Date(now.getFullYear(), monthIndex, day);
-  if (candidate > now) {
+
+  if (direction === "past" && candidate > today) {
     candidate.setFullYear(candidate.getFullYear() - 1);
+  } else if (direction === "future" && candidate < today) {
+    candidate.setFullYear(candidate.getFullYear() + 1);
   }
+
   return startOfDay(candidate);
 }
 
-export function parseRelativeOrExplicitDate(text: string, now: Date): DateParseResult {
+export function parseRelativeOrExplicitDate(
+  text: string,
+  now: Date,
+  direction: DateDirection = "past",
+): DateParseResult {
   const lower = text.toLowerCase();
 
   if (/\btoday\b/.test(lower)) {
@@ -241,9 +269,9 @@ export function parseRelativeOrExplicitDate(text: string, now: Date): DateParseR
     return { value: startOfDay(addDays(now, -1)), confirmed: true };
   }
 
-  const weekdayMatch = lower.match(
-    new RegExp(`\\blast\\s+(${WEEKDAYS.join("|")})\\b`),
-  );
+  // "last <weekday>" is always a past reference, regardless of direction
+  // — none of this app's supported commands phrase a due date that way.
+  const weekdayMatch = lower.match(new RegExp(`\\blast\\s+(${WEEKDAYS.join("|")})\\b`));
   if (weekdayMatch) {
     const targetDow = WEEKDAYS.indexOf(weekdayMatch[1]);
     return { value: mostRecentPastWeekday(now, targetDow), confirmed: true };
@@ -257,7 +285,7 @@ export function parseRelativeOrExplicitDate(text: string, now: Date): DateParseR
     const day = Number(monthDayMatch[2]);
     const approximate = /\b(around|approximately|roughly|about)\b/.test(lower);
     return {
-      value: mostRecentPastMonthDay(now, monthIndex, day),
+      value: resolveMonthDay(now, monthIndex, day, direction),
       confirmed: !approximate,
     };
   }
@@ -271,7 +299,7 @@ export function parseRelativeOrExplicitDate(text: string, now: Date): DateParseR
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/lib/quick-capture/parse-date.test.ts`
-Expected: PASS (7 tests)
+Expected: PASS (9 tests)
 
 - [ ] **Step 5: Commit**
 
@@ -1101,7 +1129,7 @@ const clauseParsers: ClauseParser[] = [
       const amount = parseAmountMajorUnits(clause) ?? 0;
       const dueMatch = clause.match(/\bdue\s+(.+?)(?:\.|$)/i);
       const dueDate = dueMatch
-        ? toDateField(parseRelativeOrExplicitDate(dueMatch[1], ctx.now))
+        ? toDateField(parseRelativeOrExplicitDate(dueMatch[1], ctx.now, "future"))
         : { value: ctx.now, confirmed: false };
       const nameMatch = clause.match(/^(?:add\s+[\d.,]+\s+)?(.+?)(?:\s+is\s+|\s+bill\b|\s+due\b)/i);
       const name = (nameMatch?.[1] ?? clause).trim();
