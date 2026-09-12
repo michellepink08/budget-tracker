@@ -131,27 +131,27 @@
    simplifications". */
 [data-accent="coral"] {
   --primary: #ff6b5e;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #2b241c; /* white failed WCAG AA here (2.79:1) — dark text clears it (5.48:1) */
   --ring: #ff6b5e;
 }
 [data-accent="blue"] {
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --ring: #3b82f6;
+  --primary: #2563eb; /* darkened from #3b82f6 — that shade failed AA with either white or dark text */
+  --primary-foreground: #ffffff; /* 5.17:1 */
+  --ring: #2563eb;
 }
 [data-accent="green"] {
-  --primary: #16a34a;
-  --primary-foreground: #ffffff;
-  --ring: #16a34a;
+  --primary: #15803d; /* darkened from #16a34a for the same reason */
+  --primary-foreground: #ffffff; /* 5.02:1 */
+  --ring: #15803d;
 }
 [data-accent="purple"] {
-  --primary: #8b5cf6;
-  --primary-foreground: #ffffff;
-  --ring: #8b5cf6;
+  --primary: #7c3aed; /* darkened from #8b5cf6 for the same reason */
+  --primary-foreground: #ffffff; /* 5.70:1 */
+  --ring: #7c3aed;
 }
 [data-accent="neutral"] {
   --primary: #52525b;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #ffffff; /* already fine (7.73:1) — unchanged */
   --ring: #52525b;
 }
 

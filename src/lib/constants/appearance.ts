@@ -5,10 +5,10 @@
 // new one.
 export const ACCENT_COLORS = [
   { value: "coral", label: "Coral", swatch: "#ff6b5e" },
-  { value: "blue", label: "Blue", swatch: "#3b82f6" },
-  { value: "green", label: "Green", swatch: "#16a34a" },
-  { value: "purple", label: "Purple", swatch: "#8b5cf6" },
-  { value: "neutral", label: "Neutral", swatch: "#71717a" },
+  { value: "blue", label: "Blue", swatch: "#2563eb" },
+  { value: "green", label: "Green", swatch: "#15803d" },
+  { value: "purple", label: "Purple", swatch: "#7c3aed" },
+  { value: "neutral", label: "Neutral", swatch: "#52525b" },
 ] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number]["value"];
 export const ACCENT_COLOR_VALUES = ACCENT_COLORS.map((c) => c.value) as [AccentColor, ...AccentColor[]];
