@@ -296,7 +296,7 @@ export async function resetPassword(
 npx vitest run src/lib/password-reset.test.ts
 ```
 
-Expected: PASS (7 tests).
+Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -705,7 +705,7 @@ git commit -m "docs: document the APP_URL environment variable"
 npm test
 ```
 
-Expected: all tests pass (existing 208 plus this plan's new tests — 7 domain + 5 validation = 12 new tests, 220 total).
+Expected: all tests pass (existing 208 plus this plan's new tests — 6 domain + 5 validation = 11 new tests, 219 total).
 
 - [ ] **Step 2: Typecheck, lint, and a production build**
 
