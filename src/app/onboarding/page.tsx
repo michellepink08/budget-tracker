@@ -27,7 +27,7 @@ export default function OnboardingPage() {
     formState: { errors, isSubmitting },
   } = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
-    defaultValues: { cycleStartDay: 1, currency: "PHP", accentColor: "coral" },
+    defaultValues: { cycleStartDay: 1, currency: "PHP", accentColor: "emerald" },
   });
 
   const selectedAccent = watch("accentColor");
