@@ -42,6 +42,17 @@ A `RecurringRule` (regular transactions) or `RecurringPayable` (bills) is a temp
 
 When a user enters what an account actually holds, the app computes the difference against the calculated balance and shows it — nothing is written until they explicitly confirm. Only then does it create a `BALANCE_ADJUSTMENT` transaction closing the gap. That adjustment is a normal transaction row, so it's part of the same audit trail as everything else — no separate reconciliation-history table was needed.
 
+## Password-reset email (Gmail SMTP)
+
+The forgot-password flow (`src/lib/password-reset.ts`, `src/lib/mailer.ts`) sends its reset link over Gmail SMTP via Nodemailer, authenticated with a Google **App Password** rather than the account's real password. `src/lib/mailer.ts`'s `sendPasswordResetEmail` never throws — a failed send is logged server-side and swallowed, so the user-facing response stays identical whether the email was sent, failed to send, or was never registered in the first place (this is the same account-enumeration protection `src/lib/password-reset.ts` already relies on).
+
+One-time setup for whichever Gmail account will send these:
+1. Enable 2-Step Verification on that Google account.
+2. Generate an App Password: Google Account → Security → 2-Step Verification → App Passwords → generate one for "Mail".
+3. Set `GMAIL_USER` (the address) and `GMAIL_APP_PASSWORD` (the generated 16-character password) in `.env`.
+
+Without these two variables set, `createMailer()` will build a transport that fails auth on every send — which `sendPasswordResetEmail` catches and logs, so the app keeps working (the reset link just won't arrive by email; check the server logs for the failure).
+
 ## Deployment: SQLite → Postgres
 
 This schema was written from the start to not require a rewrite when moving off SQLite. To switch:
