@@ -1,8 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { signOut } from "@/auth";
 import { signupSchema } from "@/lib/validations/auth";
 import { createUser, type SignupResult } from "@/lib/signup";
+
+export async function signOutAction(): Promise<void> {
+  await signOut({ redirectTo: "/login" });
+}
 
 export async function signupAction(formData: FormData): Promise<SignupResult> {
   const parsed = signupSchema.safeParse({
