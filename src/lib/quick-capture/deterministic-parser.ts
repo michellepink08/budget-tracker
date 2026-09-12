@@ -110,6 +110,8 @@ const QUESTION_PATTERNS: { test: RegExp; questionType: QuestionType }[] = [
   { test: /\btransfer\b.*\bother accounts\b/, questionType: "transfers_required" },
   { test: /\bcredit card\b.*\bdue\b/, questionType: "credit_card_due" },
   { test: /\bcredit card\b.*\bbalance\b/, questionType: "credit_card_balance" },
+  { test: /\b(restricted|dedicated)\b.*\bfunds?\b/, questionType: "restricted_fund_balance" },
+  { test: /\benough\b.*\bcover\b|\bcover\b.*\benough\b/, questionType: "restricted_fund_coverage" },
   { test: /\bspen(d|t|ding)\b.*\b(this cutoff|current cutoff)\b/, questionType: "spending_current_cutoff" },
   { test: /\bspen(d|t|ding)\b.*\b(last cutoff|previous cutoff)\b/, questionType: "spending_previous_cutoff" },
   { test: /\bspen(d|t|ding)\b.*\bon\b/, questionType: "spending_by_category" },

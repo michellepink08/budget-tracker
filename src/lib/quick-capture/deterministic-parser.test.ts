@@ -224,6 +224,30 @@ describe("parseCommand", () => {
     }
   });
 
+  it("recognizes a restricted-fund balance question", async () => {
+    const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "How much is in my restricted funds?");
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.questionType).toBe("restricted_fund_balance");
+    }
+  });
+
+  it("recognizes a restricted-fund coverage question and resolves the named fund", async () => {
+    const ctx = makeContext({
+      accounts: [{ id: "acc-emergency", name: "Emergency Fund" }],
+    });
+    const [draft] = await parseCommand(
+      makeFakePrisma(),
+      ctx,
+      "Is my Emergency Fund enough to cover my insurance premium?",
+    );
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.questionType).toBe("restricted_fund_coverage");
+      expect(draft.account?.id).toBe("acc-emergency");
+    }
+  });
+
   it("converts and rounds minor units correctly", async () => {
     const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "Paid 19.999 for food using cash");
     if (draft.intent === "expense") {
