@@ -49,72 +49,110 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #faf3e8;
+  --foreground: #2b241c;
+  --card: #ffffff;
+  --card-foreground: #2b241c;
+  --popover: #ffffff;
+  --popover-foreground: #2b241c;
+  --primary: #ff6b5e;
+  --primary-foreground: #ffffff;
+  --secondary: #efe6d8;
+  --secondary-foreground: #3f3a32;
+  --muted: #f1e9da;
+  --muted-foreground: #7a7266;
+  --accent: #e7e1cf;
+  --accent-foreground: #2b241c;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #e4dac5;
+  --input: #e4dac5;
+  --ring: #ff6b5e;
+  --chart-1: #ff6b5e;
+  --chart-2: #6b8f71;
+  --chart-3: #e3a857;
+  --chart-4: #c97b63;
+  --chart-5: #a69b87;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f1e9da;
+  --sidebar-foreground: #2b241c;
+  --sidebar-primary: #ff6b5e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e7e1cf;
+  --sidebar-accent-foreground: #2b241c;
+  --sidebar-border: #e4dac5;
+  --sidebar-ring: #ff6b5e;
+
+  /* Brand chrome — the nav bar and major section headers. Fixed; does not
+     change with the user's accent color (design spec's "Visual identity"). */
+  --nav-background: #2f4a3e;
+  --nav-foreground: #f5f1e8;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #201c16;
+  --foreground: #f0e9da;
+  --card: #2a251d;
+  --card-foreground: #f0e9da;
+  --popover: #2a251d;
+  --popover-foreground: #f0e9da;
+  --primary: #ff6b5e;
+  --primary-foreground: #ffffff;
+  --secondary: #362f26;
+  --secondary-foreground: #f0e9da;
+  --muted: #362f26;
+  --muted-foreground: #a79c8a;
+  --accent: #3a3226;
+  --accent-foreground: #f0e9da;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: #423a2e;
+  --input: #423a2e;
+  --ring: #ff6b5e;
+  --chart-1: #ff6b5e;
+  --chart-2: #6b8f71;
+  --chart-3: #e3a857;
+  --chart-4: #c97b63;
+  --chart-5: #a69b87;
+  --sidebar: #2a251d;
+  --sidebar-foreground: #f0e9da;
+  --sidebar-primary: #ff6b5e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3a3226;
+  --sidebar-accent-foreground: #f0e9da;
+  --sidebar-border: #423a2e;
+  --sidebar-ring: #ff6b5e;
+
+  --nav-background: #1d2e25;
+  --nav-foreground: #f0e9da;
+}
+
+/* Per-user accent — overrides only --primary/--primary-foreground/--ring.
+   Never the brand chrome (--background, --nav-background, etc.) above.
+   Same hex values in light and dark mode — see this plan's "Documented
+   simplifications". */
+[data-accent="coral"] {
+  --primary: #ff6b5e;
+  --primary-foreground: #ffffff;
+  --ring: #ff6b5e;
+}
+[data-accent="blue"] {
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --ring: #3b82f6;
+}
+[data-accent="green"] {
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
+  --ring: #16a34a;
+}
+[data-accent="purple"] {
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --ring: #8b5cf6;
+}
+[data-accent="neutral"] {
+  --primary: #52525b;
+  --primary-foreground: #ffffff;
+  --ring: #52525b;
 }
 
 @layer base {
