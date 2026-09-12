@@ -32,6 +32,7 @@ model User {
   installmentPayments  InstallmentPayment[]
   passwordResetTokens  PasswordResetToken[]
   aliases              Alias[]
+  quickCaptureLogs     QuickCaptureLog[]
 }
 
 model Account {
@@ -204,8 +205,10 @@ model Payable {
   name               String
   amount             Int
   dueDate            DateTime
+  dueDateConfirmed   Boolean   @default(true)
   accountId          String
   categoryId         String?
+  notes              String?
   status             String    @default("PENDING")
   paidTransactionId  String?
   recurringPayableId String?
@@ -308,4 +311,16 @@ model Alias {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, kind, alias])
+}
+
+model QuickCaptureLog {
+  id                 String   @id @default(cuid())
+  userId             String
+  rawInput           String
+  parsedDraftJson    String
+  resultingIds       String[]
+  previousValuesJson String?
+  createdAt          DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
