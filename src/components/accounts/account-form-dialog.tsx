@@ -160,8 +160,12 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
           </div>
 
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("includeInLiquidFunds")} />
-            Count toward liquid funds
+            <input
+              type="checkbox"
+              checked={!watch("includeInLiquidFunds")}
+              onChange={(e) => setValue("includeInLiquidFunds", !e.target.checked)}
+            />
+            Restricted fund (excluded from liquid funds and safe-to-spend)
           </label>
 
           <label className="flex items-center gap-2 text-sm">
