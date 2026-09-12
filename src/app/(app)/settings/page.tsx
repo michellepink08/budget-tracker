@@ -6,6 +6,7 @@ import { DEMO_EMAIL } from "@/lib/config";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import { CategoriesSettings } from "@/components/settings/categories-settings";
 import { RecurringSettings } from "@/components/settings/recurring-settings";
+import { ExportSettings } from "@/components/settings/export-settings";
 import { DemoDataSettings } from "@/components/settings/demo-data-settings";
 
 export default async function SettingsPage() {
@@ -44,6 +45,11 @@ export default async function SettingsPage() {
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recurring</h2>
         <RecurringSettings dueRules={dueRules} allRules={allRules} accounts={accounts} categories={categories} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Export</h2>
+        <ExportSettings accounts={accounts} categories={categories} />
       </div>
 
       {user.email === DEMO_EMAIL && (
