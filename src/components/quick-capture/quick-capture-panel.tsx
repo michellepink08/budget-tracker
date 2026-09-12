@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -72,13 +72,17 @@ export function QuickCapturePanel({
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) {
+  // Reset local state on close via the dialog's own open-change callback
+  // (not an effect watching `open`) — resetting state directly inside an
+  // effect body causes an extra cascading render.
+  function handleOpenChange(next: boolean) {
+    if (!next) {
       setText("");
       setDrafts(null);
       setParseError(null);
     }
-  }, [open]);
+    onOpenChange(next);
+  }
 
   async function handleParse() {
     setParsing(true);
@@ -122,7 +126,7 @@ export function QuickCapturePanel({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Quick Capture</DialogTitle>
@@ -192,7 +196,7 @@ export function QuickCapturePanel({
                     type="button"
                     className="underline"
                     onClick={() => {
-                      onOpenChange(false);
+                      handleOpenChange(false);
                       router.push("/transactions");
                     }}
                   >
