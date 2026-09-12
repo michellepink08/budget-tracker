@@ -7,6 +7,7 @@ import { APP_NAME } from "@/lib/config";
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/budget", label: "Budget" },
   { href: "/categories", label: "Categories" },
   { href: "/accounts", label: "Accounts" },
   { href: "/recurring", label: "Recurring" },
