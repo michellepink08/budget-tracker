@@ -24,6 +24,8 @@ model User {
   budgetAllocations BudgetAllocation[]
   transactions      Transaction[]
   recurringRules    RecurringRule[]
+  payables          Payable[]
+  recurringPayables RecurringPayable[]
 }
 
 model Account {
@@ -41,10 +43,12 @@ model Account {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  user             User            @relation(fields: [userId], references: [id])
-  transactionsFrom Transaction[]   @relation("TransactionAccount")
-  transactionsTo   Transaction[]   @relation("TransactionDestinationAccount")
-  recurringRules   RecurringRule[]
+  user              User               @relation(fields: [userId], references: [id])
+  transactionsFrom  Transaction[]      @relation("TransactionAccount")
+  transactionsTo    Transaction[]      @relation("TransactionDestinationAccount")
+  recurringRules    RecurringRule[]
+  payables          Payable[]
+  recurringPayables RecurringPayable[]
 }
 
 model Category {
@@ -59,11 +63,13 @@ model Category {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  user           User               @relation(fields: [userId], references: [id])
-  subcategories  Subcategory[]
-  allocations    BudgetAllocation[]
-  transactions   Transaction[]
-  recurringRules RecurringRule[]
+  user              User               @relation(fields: [userId], references: [id])
+  subcategories     Subcategory[]
+  allocations       BudgetAllocation[]
+  transactions      Transaction[]
+  recurringRules    RecurringRule[]
+  payables          Payable[]
+  recurringPayables RecurringPayable[]
 }
 
 model Subcategory {
@@ -161,4 +167,44 @@ model RecurringRule {
   account     Account      @relation(fields: [accountId], references: [id])
   category    Category?    @relation(fields: [categoryId], references: [id])
   subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
+}
+
+model RecurringPayable {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  amount       Int
+  frequency    String
+  intervalDays Int?
+  nextDueDate  DateTime
+  accountId    String
+  categoryId   String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  account  Account   @relation(fields: [accountId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  payables Payable[]
+}
+
+model Payable {
+  id                 String    @id @default(cuid())
+  userId             String
+  name               String
+  amount             Int
+  dueDate            DateTime
+  accountId          String
+  categoryId         String?
+  status             String    @default("PENDING")
+  paidTransactionId  String?
+  recurringPayableId String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id])
+  account          Account           @relation(fields: [accountId], references: [id])
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  recurringPayable RecurringPayable? @relation(fields: [recurringPayableId], references: [id])
 }

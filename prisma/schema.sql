@@ -150,3 +150,43 @@ CREATE TABLE IF NOT EXISTS "RecurringRule" (
   FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory" ("id")
 );
 CREATE INDEX IF NOT EXISTS "RecurringRule_userId_idx" ON "RecurringRule" ("userId");
+
+CREATE TABLE IF NOT EXISTS "RecurringPayable" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "amount" INTEGER NOT NULL,
+  "frequency" TEXT NOT NULL,
+  "intervalDays" INTEGER,
+  "nextDueDate" DATETIME NOT NULL,
+  "accountId" TEXT NOT NULL,
+  "categoryId" TEXT,
+  "active" INTEGER NOT NULL DEFAULT 1,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("accountId") REFERENCES "Account" ("id"),
+  FOREIGN KEY ("categoryId") REFERENCES "Category" ("id")
+);
+CREATE INDEX IF NOT EXISTS "RecurringPayable_userId_idx" ON "RecurringPayable" ("userId");
+
+CREATE TABLE IF NOT EXISTS "Payable" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "amount" INTEGER NOT NULL,
+  "dueDate" DATETIME NOT NULL,
+  "accountId" TEXT NOT NULL,
+  "categoryId" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "paidTransactionId" TEXT,
+  "recurringPayableId" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("accountId") REFERENCES "Account" ("id"),
+  FOREIGN KEY ("categoryId") REFERENCES "Category" ("id"),
+  FOREIGN KEY ("recurringPayableId") REFERENCES "RecurringPayable" ("id")
+);
+CREATE INDEX IF NOT EXISTS "Payable_userId_idx" ON "Payable" ("userId");
+CREATE INDEX IF NOT EXISTS "Payable_accountId_idx" ON "Payable" ("accountId");
