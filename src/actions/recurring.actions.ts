@@ -44,7 +44,7 @@ export async function createRecurringRuleAction(formData: FormData): Promise<Rec
     amount: toMinorUnits(parsed.data.amount, account.currency),
   });
 
-  revalidatePath("/recurring");
+  revalidatePath("/settings");
   return { ok: true };
 }
 
@@ -66,7 +66,7 @@ export async function updateRecurringRuleAction(
     amount: toMinorUnits(parsed.data.amount, currency),
   });
 
-  if (result.ok) revalidatePath("/recurring");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
 
@@ -78,7 +78,7 @@ export async function toggleRecurringRuleActiveAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await updateRecurringRule(prisma, session.user.id, ruleId, { active });
-  if (result.ok) revalidatePath("/recurring");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
 
@@ -108,7 +108,7 @@ export async function confirmRecurringOccurrenceAction(
     date: overrideDateRaw ? new Date(String(overrideDateRaw)) : undefined,
   });
 
-  if (result.ok) revalidatePath("/recurring");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
 
@@ -117,6 +117,6 @@ export async function skipRecurringOccurrenceAction(ruleId: string): Promise<Rec
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await skipRecurringOccurrence(prisma, session.user.id, ruleId);
-  if (result.ok) revalidatePath("/recurring");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
