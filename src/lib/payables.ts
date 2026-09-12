@@ -5,8 +5,10 @@ export type PayableInput = {
   name: string;
   amount: number; // minor units, non-negative magnitude
   dueDate: Date;
+  dueDateConfirmed?: boolean; // defaults to true at the schema level if omitted
   accountId: string;
   categoryId?: string;
+  notes?: string;
 };
 
 export type PayableMutationResult = { ok: true } | { ok: false; error: string };

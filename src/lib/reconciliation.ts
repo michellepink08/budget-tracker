@@ -22,7 +22,7 @@ export async function previewReconciliation(
 }
 
 export type ReconciliationResult =
-  | { ok: true; alreadyBalanced: boolean }
+  | { ok: true; alreadyBalanced: boolean; transactionId?: string }
   | { ok: false; error: string };
 
 // Never silently overwrites a balance (design spec's "Account-balance
@@ -50,7 +50,7 @@ export async function applyReconciliation(
   const date = new Date();
   const period = await resolveBudgetPeriodForDate(prisma, userId, date, cycleStartDay);
 
-  await prisma.transaction.create({
+  const transaction = await prisma.transaction.create({
     data: {
       userId,
       date,
@@ -62,5 +62,5 @@ export async function applyReconciliation(
     },
   });
 
-  return { ok: true, alreadyBalanced: false };
+  return { ok: true, alreadyBalanced: false, transactionId: transaction.id };
 }

@@ -51,7 +51,7 @@ describe("applyReconciliation", () => {
 
     const result = await applyReconciliation(prisma, "user-1", 25, "acc-1", 480000);
 
-    expect(result).toEqual({ ok: true, alreadyBalanced: false });
+    expect(result).toEqual({ ok: true, alreadyBalanced: false, transactionId: "txn-adjust" });
     const txnArgs = prisma.transaction.create.mock.calls[0][0].data;
     expect(txnArgs.type).toBe("BALANCE_ADJUSTMENT");
     expect(txnArgs.amount).toBe(-20000);

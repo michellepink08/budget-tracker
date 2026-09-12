@@ -56,6 +56,33 @@ describe("createPayable", () => {
   });
 });
 
+describe("createPayable — dueDateConfirmed and notes", () => {
+  it("passes dueDateConfirmed and notes through to the create call", async () => {
+    const prisma = { payable: { create: vi.fn().mockResolvedValue({ id: "pay-1" }) } } as any;
+
+    await createPayable(prisma, "user-1", {
+      name: "EastWest hospital bill",
+      amount: 1551914,
+      dueDate: new Date(2026, 9, 5),
+      dueDateConfirmed: false,
+      accountId: "acc-1",
+      notes: "estimated from last month's statement",
+    });
+
+    expect(prisma.payable.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        name: "EastWest hospital bill",
+        amount: 1551914,
+        dueDate: new Date(2026, 9, 5),
+        dueDateConfirmed: false,
+        accountId: "acc-1",
+        notes: "estimated from last month's statement",
+      },
+    });
+  });
+});
+
 describe("updatePayable", () => {
   it("updates only a pending payable belonging to the user", async () => {
     const prisma = makeFakePrisma();
