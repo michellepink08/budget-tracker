@@ -27,7 +27,7 @@ export async function createCategoryAction(formData: FormData): Promise<Category
   if (!parsed.success) return { ok: false, error: "Please check the category details" };
 
   await createCategory(prisma, session.user.id, parsed.data);
-  revalidatePath("/categories");
+  revalidatePath("/settings");
   return { ok: true };
 }
 
@@ -47,7 +47,7 @@ export async function updateCategoryAction(
   if (!parsed.success) return { ok: false, error: "Please check the category details" };
 
   const result = await updateCategory(prisma, session.user.id, categoryId, parsed.data);
-  if (result.ok) revalidatePath("/categories");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
 
@@ -56,7 +56,7 @@ export async function archiveCategoryAction(categoryId: string): Promise<Categor
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await archiveCategory(prisma, session.user.id, categoryId);
-  if (result.ok) revalidatePath("/categories");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
 
@@ -71,7 +71,7 @@ export async function createSubcategoryAction(formData: FormData): Promise<Categ
   if (!parsed.success) return { ok: false, error: "Please check the subcategory details" };
 
   await createSubcategory(prisma, session.user.id, parsed.data);
-  revalidatePath("/categories");
+  revalidatePath("/settings");
   return { ok: true };
 }
 
@@ -82,6 +82,6 @@ export async function archiveSubcategoryAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await archiveSubcategory(prisma, session.user.id, subcategoryId);
-  if (result.ok) revalidatePath("/categories");
+  if (result.ok) revalidatePath("/settings");
   return result;
 }
