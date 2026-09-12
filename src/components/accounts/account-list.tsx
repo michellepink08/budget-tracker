@@ -39,6 +39,9 @@ export function AccountList({ accounts }: { accounts: AccountRow[] }) {
               {account.isPrimaryFundingAccount && (
                 <span className="ml-2 text-xs text-muted-foreground">(primary funding)</span>
               )}
+              {!account.includeInLiquidFunds && (
+                <span className="ml-2 text-xs text-muted-foreground">(restricted)</span>
+              )}
             </p>
             <p className="text-sm text-muted-foreground">
               {account.accountType} · {formatMoney(account.balance, account.currency)}
