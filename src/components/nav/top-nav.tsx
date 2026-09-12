@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
@@ -27,23 +30,32 @@ export function TopNav({
   accounts: AccountOption[];
   categories: CategoryOption[];
 }) {
+  const pathname = usePathname();
+
   return (
-    <header className="border-b">
+    <header className="border-b bg-[var(--nav-background)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2 font-semibold">
+        <div className="flex items-center gap-2 font-semibold text-[var(--nav-foreground)]">
           <Wallet className="h-5 w-5" />
           {APP_NAME}
         </div>
         <nav className="flex items-center gap-4 text-sm">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={
+                  isActive
+                    ? "border-b-2 border-[var(--primary)] pb-0.5 text-[var(--nav-foreground)]"
+                    : "border-b-2 border-transparent pb-0.5 text-[var(--nav-foreground)]/70 hover:text-[var(--nav-foreground)]"
+                }
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="flex items-center gap-2">
           <AddTransactionButton accounts={accounts} categories={categories} />
