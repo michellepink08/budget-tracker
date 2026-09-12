@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
+import { ReconcileDialog } from "@/components/accounts/reconcile-dialog";
 import { archiveAccountAction } from "@/actions/account.actions";
 import { Button } from "@/components/ui/button";
 
@@ -45,6 +46,7 @@ export function AccountList({ accounts }: { accounts: AccountRow[] }) {
           </div>
           <div className="flex gap-2">
             <AccountFormDialog existing={account} />
+            <ReconcileDialog accountId={account.id} currency={account.currency} />
             <form
               action={async () => {
                 "use server";
