@@ -153,11 +153,7 @@ export type TransactionFilters = {
   dateTo?: Date;
 };
 
-export async function listTransactions(
-  prisma: Pick<PrismaClient, "transaction">,
-  userId: string,
-  filters: TransactionFilters,
-) {
+export function buildTransactionWhereClause(userId: string, filters: TransactionFilters): Record<string, unknown> {
   const where: Record<string, unknown> = { userId };
 
   if (filters.accountId) where.accountId = filters.accountId;
@@ -171,5 +167,16 @@ export async function listTransactions(
     };
   }
 
-  return prisma.transaction.findMany({ where, orderBy: { date: "desc" } });
+  return where;
+}
+
+export async function listTransactions(
+  prisma: Pick<PrismaClient, "transaction">,
+  userId: string,
+  filters: TransactionFilters,
+) {
+  return prisma.transaction.findMany({
+    where: buildTransactionWhereClause(userId, filters),
+    orderBy: { date: "desc" },
+  });
 }
