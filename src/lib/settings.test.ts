@@ -13,11 +13,11 @@ describe("updateAccentColor", () => {
   it("updates the user's stored accentColor", async () => {
     const prisma = makeFakePrisma();
 
-    await updateAccentColor(prisma, "user-1", "blue");
+    await updateAccentColor(prisma, "user-1", "teal");
 
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: "user-1" },
-      data: { accentColor: "blue" },
+      data: { accentColor: "teal" },
     });
   });
 });

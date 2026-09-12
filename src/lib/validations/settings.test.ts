@@ -3,7 +3,7 @@ import { accentColorSchema, themeModeSchema } from "@/lib/validations/settings";
 
 describe("accentColorSchema", () => {
   it("accepts every known preset", () => {
-    for (const value of ["coral", "blue", "green", "purple", "neutral"]) {
+    for (const value of ["emerald", "teal", "amber", "indigo", "rose", "stone"]) {
       expect(accentColorSchema.safeParse({ accentColor: value }).success).toBe(true);
     }
   });

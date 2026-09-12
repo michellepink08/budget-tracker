@@ -6,7 +6,7 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 25,
       currency: "PHP",
-      accentColor: "coral",
+      accentColor: "emerald",
     });
     expect(result.success).toBe(true);
   });
@@ -15,7 +15,7 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 0,
       currency: "PHP",
-      accentColor: "coral",
+      accentColor: "emerald",
     });
     expect(result.success).toBe(false);
   });
@@ -24,7 +24,7 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 32,
       currency: "PHP",
-      accentColor: "coral",
+      accentColor: "emerald",
     });
     expect(result.success).toBe(false);
   });
@@ -33,7 +33,7 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 25,
       currency: "",
-      accentColor: "coral",
+      accentColor: "emerald",
     });
     expect(result.success).toBe(false);
   });
