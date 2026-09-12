@@ -191,7 +191,13 @@ export const questionDraftSchema = z.object({
   category: resolvedRefSchema.nullable(),
   ...base,
 });
-export type QuestionDraft = z.infer<typeof questionDraftSchema>;
+// `answer` is a plain TypeScript field, not Zod-validated — it's never
+// parsed from user input, only ever attached server-side (by
+// parseQuickCaptureAction, see src/lib/quick-capture/answer-question.ts)
+// before the draft crosses back to the client.
+export type QuestionDraft = z.infer<typeof questionDraftSchema> & {
+  answer?: import("@/lib/quick-capture/answer-question").QuestionAnswer;
+};
 
 export type CommandDraft =
   | ExpenseLikeDraft

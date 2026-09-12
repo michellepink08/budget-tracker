@@ -54,8 +54,14 @@ function summarize(draft: CommandDraft): string {
       return `update transaction${draft.amountMinorUnits ? ` to ${(draft.amountMinorUnits / 100).toFixed(2)}` : ""}`;
     case "transaction_delete":
       return "delete transaction — this can't be undone";
-    case "question":
-      return "question — answering isn't available yet";
+    case "question": {
+      const answer = draft.answer;
+      if (!answer) return "question";
+      if (answer.kind === "amount") return `${answer.label}: ${(answer.amountMinorUnits / 100).toFixed(2)}`;
+      if (answer.kind === "text") return `${answer.label}: ${answer.text}`;
+      if (answer.kind === "unavailable") return answer.message;
+      return answer.label; // "list" kind — the item breakdown renders separately
+    }
   }
 }
 
@@ -168,6 +174,18 @@ export function QuickCapturePanel({
           {drafts?.map((entry, index) => (
             <div key={index} className="rounded-lg border p-3 text-sm">
               <p className="mb-2">{summarize(entry.draft)}</p>
+
+              {entry.draft.intent === "question" && entry.draft.answer?.kind === "list" && (
+                <ul className="mb-2 flex flex-col gap-0.5 text-xs text-muted-foreground">
+                  {entry.draft.answer.items.length === 0 && <li>Nothing to show</li>}
+                  {entry.draft.answer.items.map((item, i) => (
+                    <li key={i} className="flex justify-between">
+                      <span>{item.label}</span>
+                      <span>{(item.amountMinorUnits / 100).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {entry.draft.clarification && entry.status === "pending" && (
                 <p className="mb-2 text-amber-600">{entry.draft.clarification.question}</p>

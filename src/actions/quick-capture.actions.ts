@@ -7,6 +7,7 @@ import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
 import { parseCommand } from "@/lib/quick-capture/deterministic-parser";
 import { executeDraft, undoExecution } from "@/lib/quick-capture/execute";
+import { answerQuestion } from "@/lib/quick-capture/answer-question";
 import type { CommandDraft } from "@/lib/quick-capture/types";
 
 async function currentUser() {
@@ -39,7 +40,15 @@ export async function parseQuickCaptureAction(text: string): Promise<ParseQuickC
     text,
   );
 
-  return { ok: true, drafts };
+  const withAnswers = await Promise.all(
+    drafts.map(async (draft) =>
+      draft.intent === "question"
+        ? { ...draft, answer: await answerQuestion(prisma, user.id, user.cycleStartDay, draft) }
+        : draft,
+    ),
+  );
+
+  return { ok: true, drafts: withAnswers };
 }
 
 export type ConfirmQuickCaptureResult = { ok: true; logId: string } | { ok: false; error: string };
