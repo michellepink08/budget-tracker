@@ -256,3 +256,14 @@ CREATE TABLE IF NOT EXISTS "InstallmentPayment" (
 );
 CREATE INDEX IF NOT EXISTS "InstallmentPayment_userId_idx" ON "InstallmentPayment" ("userId");
 CREATE UNIQUE INDEX IF NOT EXISTS "InstallmentPayment_installmentPurchaseId_termNumber_key" ON "InstallmentPayment" ("installmentPurchaseId", "termNumber");
+
+CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "tokenHash" TEXT NOT NULL UNIQUE,
+  "expiresAt" DATETIME NOT NULL,
+  "usedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id")
+);
+CREATE INDEX IF NOT EXISTS "PasswordResetToken_userId_idx" ON "PasswordResetToken" ("userId");
