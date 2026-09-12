@@ -43,3 +43,6 @@ export type RolloverMode = (typeof ROLLOVER_MODES)[number];
 
 export const RECURRING_FREQUENCIES = ["WEEKLY", "MONTHLY", "CUSTOM"] as const;
 export type RecurringFrequency = (typeof RECURRING_FREQUENCIES)[number];
+
+export const PAYABLE_STATUSES = ["PENDING", "PAID"] as const;
+export type PayableStatus = (typeof PAYABLE_STATUSES)[number];
