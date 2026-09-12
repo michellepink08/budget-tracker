@@ -1,14 +1,15 @@
 // Single source of truth for the accent-color preset list (first offered
-// at onboarding, reused by Settings) and the theme-mode value set. Every
-// preset here must meet contrast requirements against the cream/green
-// base chrome (design spec's "Visual identity" section) before adding a
-// new one.
+// at onboarding, reused by Settings) and the theme-mode value set. Each
+// value here must have a matching [data-accent="..."] block in
+// globals.css defining its three tonal shades (nav/primary/tint), all
+// verified against WCAG AA (4.5:1) before adding a new one.
 export const ACCENT_COLORS = [
-  { value: "coral", label: "Coral", swatch: "#ff6b5e" },
-  { value: "blue", label: "Blue", swatch: "#2563eb" },
-  { value: "green", label: "Green", swatch: "#15803d" },
-  { value: "purple", label: "Purple", swatch: "#7c3aed" },
-  { value: "neutral", label: "Neutral", swatch: "#52525b" },
+  { value: "emerald", label: "Emerald", swatch: "#059669" },
+  { value: "teal", label: "Teal", swatch: "#0d9488" },
+  { value: "amber", label: "Amber", swatch: "#b45309" },
+  { value: "indigo", label: "Indigo", swatch: "#3730a3" },
+  { value: "rose", label: "Rose", swatch: "#be123c" },
+  { value: "stone", label: "Stone", swatch: "#44403c" },
 ] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number]["value"];
 export const ACCENT_COLOR_VALUES = ACCENT_COLORS.map((c) => c.value) as [AccentColor, ...AccentColor[]];
