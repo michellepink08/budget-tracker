@@ -2,9 +2,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { listCategories } from "@/lib/categories";
 import { listAccounts } from "@/lib/accounts";
+import { DEMO_EMAIL } from "@/lib/config";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import { CategoriesSettings } from "@/components/settings/categories-settings";
 import { RecurringSettings } from "@/components/settings/recurring-settings";
+import { DemoDataSettings } from "@/components/settings/demo-data-settings";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -43,6 +45,13 @@ export default async function SettingsPage() {
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recurring</h2>
         <RecurringSettings dueRules={dueRules} allRules={allRules} accounts={accounts} categories={categories} />
       </div>
+
+      {user.email === DEMO_EMAIL && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Demo data</h2>
+          <DemoDataSettings />
+        </div>
+      )}
     </div>
   );
 }
