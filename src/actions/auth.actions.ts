@@ -1,12 +1,23 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { signOut } from "@/auth";
+import { signIn, signOut } from "@/auth";
+import { DEMO_EMAIL } from "@/lib/config";
 import { signupSchema } from "@/lib/validations/auth";
 import { createUser, type SignupResult } from "@/lib/signup";
 
 export async function signOutAction(): Promise<void> {
   await signOut({ redirectTo: "/login" });
+}
+
+const DEMO_PASSWORD = "demopassword123"; // the seeded demo account's own password, published throughout this project
+
+export async function viewDemoAction(): Promise<void> {
+  await signIn("credentials", {
+    email: DEMO_EMAIL,
+    password: DEMO_PASSWORD,
+    redirectTo: "/dashboard",
+  });
 }
 
 export async function signupAction(formData: FormData): Promise<SignupResult> {
