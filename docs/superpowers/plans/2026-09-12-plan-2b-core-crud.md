@@ -2850,6 +2850,13 @@ Expected: no errors.
 6. Revisit Accounts and confirm balances reflect everything added/deleted
    during this walkthrough.
 
+> **Found during verification:** `DialogContent` (Task 5's generated
+> component) had no height cap or scroll handling — a form taller than the
+> viewport (every form in this plan has 6+ fields) left its Save/submit
+> button unreachable below the fold, with no way to scroll to it. Fixed by
+> adding `max-h-[85vh] overflow-y-auto` to its className. This affects
+> every dialog in the app, not just one page.
+
 - [ ] **Step 4: Commit any fixes found**
 
 ```bash
