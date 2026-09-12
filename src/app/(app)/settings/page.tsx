@@ -1,10 +1,29 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { listCategories } from "@/lib/categories";
+import { listAccounts } from "@/lib/accounts";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
+import { CategoriesSettings } from "@/components/settings/categories-settings";
+import { RecurringSettings } from "@/components/settings/recurring-settings";
 
 export default async function SettingsPage() {
   const session = await auth();
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session!.user.id } });
+
+  const [categories, accounts, dueRules, allRules] = await Promise.all([
+    listCategories(prisma, user.id),
+    listAccounts(prisma, user.id),
+    prisma.recurringRule.findMany({
+      where: { userId: user.id, active: true, nextDate: { lte: new Date() } },
+      orderBy: { nextDate: "asc" },
+      include: { account: true },
+    }),
+    prisma.recurringRule.findMany({
+      where: { userId: user.id },
+      orderBy: { nextDate: "asc" },
+      include: { account: true, category: true },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -13,6 +32,16 @@ export default async function SettingsPage() {
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Appearance</h2>
         <AppearanceSettings initialAccentColor={user.accentColor} initialThemeMode={user.themeMode} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Categories</h2>
+        <CategoriesSettings categories={categories} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recurring</h2>
+        <RecurringSettings dueRules={dueRules} allRules={allRules} accounts={accounts} categories={categories} />
       </div>
     </div>
   );
