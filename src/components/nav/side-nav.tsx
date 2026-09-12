@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
@@ -15,6 +15,27 @@ type CategoryOption = { id: string; name: string; subcategories: { id: string; n
 
 const COLLAPSE_STORAGE_KEY = "sidebarCollapsed";
 
+// useSyncExternalStore reads localStorage in a hydration-safe way — the
+// server snapshot is always "not collapsed" (matching what the server
+// actually rendered), and the real client value is read on the client's
+// first paint without ever calling setState from inside an effect.
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getCollapsedSnapshot(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function getCollapsedServerSnapshot(): boolean {
+  return false;
+}
+
 export function SideNav({
   accounts,
   categories,
@@ -24,31 +45,18 @@ export function SideNav({
 }) {
   const pathname = usePathname();
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Read the stored preference once, after mount — reading localStorage
-  // during the initial render would disagree between server and client
-  // and trigger a hydration mismatch.
-  useEffect(() => {
-    try {
-      setCollapsed(localStorage.getItem(COLLAPSE_STORAGE_KEY) === "true");
-    } catch {
-      // localStorage can throw (private browsing, blocked site data) —
-      // fall back to the expanded default, already set above.
-    }
-  }, []);
+  const collapsed = useSyncExternalStore(subscribeToStorage, getCollapsedSnapshot, getCollapsedServerSnapshot);
 
   function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
-      } catch {
-        // Best-effort only — a failed write just means the preference
-        // won't persist to the next visit, not a broken toggle now.
-      }
-      return next;
-    });
+    try {
+      localStorage.setItem(COLLAPSE_STORAGE_KEY, String(!collapsed));
+    } catch {
+      // Best-effort only — a failed write just means the preference
+      // won't persist to the next visit, not a broken toggle now.
+    }
+    // The "storage" event only fires in *other* tabs — dispatch one
+    // manually so this tab's own useSyncExternalStore re-reads too.
+    window.dispatchEvent(new Event("storage"));
   }
 
   useEffect(() => {
