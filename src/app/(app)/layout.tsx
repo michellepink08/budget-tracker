@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
 import { TopNav } from "@/components/nav/top-nav";
+import { BottomNav } from "@/components/nav/bottom-nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -27,7 +28,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-background">
       <TopNav accounts={accounts} categories={categories} />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-20 md:pb-6">{children}</main>
+      <BottomNav accounts={accounts} categories={categories} />
     </div>
   );
 }
