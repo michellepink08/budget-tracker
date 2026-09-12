@@ -31,6 +31,7 @@ model User {
   installmentPurchases InstallmentPurchase[]
   installmentPayments  InstallmentPayment[]
   passwordResetTokens  PasswordResetToken[]
+  aliases              Alias[]
 }
 
 model Account {
@@ -294,4 +295,17 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Alias {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   // "account" | "category"
+  alias     String   // normalized (trimmed, lowercased) at write time
+  targetId  String   // an Account.id or Category.id, depending on kind
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, kind, alias])
 }
