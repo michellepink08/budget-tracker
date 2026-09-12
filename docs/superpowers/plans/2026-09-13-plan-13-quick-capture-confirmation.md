@@ -496,7 +496,7 @@ export async function executeDraft(
         dueDate: draft.dueDate.value,
         dueDateConfirmed: draft.dueDate.confirmed,
         accountId: draft.account.id,
-        categoryId: draft.category?.id,
+        categoryId: draft.category?.id ?? undefined,
         notes: draft.notes ?? undefined,
       });
       return { ok: true, resultingIds: [payable.id] };
