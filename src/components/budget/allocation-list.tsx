@@ -45,9 +45,13 @@ export function AllocationList({
                 existingCategoryName={allocation.category.name}
               />
             </div>
-            <div className="mt-2 h-2 rounded-full bg-muted">
+            <div className="mt-2 h-2 rounded-full bg-accent-tint">
               <div
-                className="h-2 rounded-full bg-primary"
+                className={
+                  allocation.remaining < 0
+                    ? "h-2 rounded-full bg-destructive"
+                    : "h-2 rounded-full bg-primary"
+                }
                 style={{ width: `${pct}%` }}
               />
             </div>
