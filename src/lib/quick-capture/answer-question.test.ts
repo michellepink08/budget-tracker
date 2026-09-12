@@ -124,4 +124,141 @@ describe("answerQuestion", () => {
     const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "safe_to_spend" }));
     expect(result.kind).toBe("unavailable");
   });
+
+  it("answers restricted_fund_balance for a resolved account regardless of restriction status", async () => {
+    const prisma = makeFakePrisma();
+    const result = await answerQuestion(
+      prisma,
+      "user-1",
+      1,
+      question({
+        questionType: "restricted_fund_balance",
+        account: { raw: "Emergency Fund", id: "acc-1", candidateIds: [] },
+      }),
+    );
+    expect(result).toEqual({ kind: "amount", label: "Emergency Fund", amountMinorUnits: 100000 });
+  });
+
+  it("sums all restricted funds for restricted_fund_balance with no named account", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "acc-1", name: "Emergency Fund" },
+          { id: "acc-2", name: "Vacation Fund" },
+        ]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn((args: { where: { id: string } }) =>
+          Promise.resolve({ id: args.where.id, openingBalance: args.where.id === "acc-1" ? 50000 : 30000 }),
+        ),
+      },
+    });
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "restricted_fund_balance" }));
+    expect(result).toEqual({ kind: "amount", label: "Restricted funds total", amountMinorUnits: 80000 });
+  });
+
+  it("returns zero for restricted_fund_balance when there are no restricted funds", async () => {
+    const prisma = makeFakePrisma();
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "restricted_fund_balance" }));
+    expect(result).toEqual({ kind: "amount", label: "Restricted funds total", amountMinorUnits: 0 });
+  });
+
+  it("answers restricted_fund_coverage when the named fund covers its obligations", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn().mockResolvedValue([{ id: "acc-1", name: "Emergency Fund" }]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 50000 }),
+      },
+      payable: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { id: "p1", name: "Insurance", amount: 23652, dueDate: new Date(2026, 9, 1), recurringPayableId: null },
+          ]),
+      },
+    });
+    const result = await answerQuestion(
+      prisma,
+      "user-1",
+      1,
+      question({
+        questionType: "restricted_fund_coverage",
+        account: { raw: "Emergency Fund", id: "acc-1", candidateIds: [] },
+      }),
+    );
+    expect(result).toEqual({
+      kind: "text",
+      label: "Restricted fund coverage",
+      text: "Yes — 500.00 covers 236.52 in upcoming obligations (263.48 left over).",
+    });
+  });
+
+  it("answers restricted_fund_coverage when the named fund falls short", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn().mockResolvedValue([{ id: "acc-1", name: "Emergency Fund" }]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 10000 }),
+      },
+      payable: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { id: "p1", name: "Big bill", amount: 30000, dueDate: new Date(2026, 9, 1), recurringPayableId: null },
+          ]),
+      },
+    });
+    const result = await answerQuestion(
+      prisma,
+      "user-1",
+      1,
+      question({
+        questionType: "restricted_fund_coverage",
+        account: { raw: "Emergency Fund", id: "acc-1", candidateIds: [] },
+      }),
+    );
+    expect(result).toEqual({
+      kind: "text",
+      label: "Restricted fund coverage",
+      text: "No — 100.00 is short of the 300.00 upcoming obligations by 200.00.",
+    });
+  });
+
+  it("auto-picks the sole restricted fund for restricted_fund_coverage when none is named", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn().mockResolvedValue([{ id: "acc-1", name: "Emergency Fund" }]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 50000 }),
+      },
+      payable: { findMany: vi.fn().mockResolvedValue([]) },
+    });
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "restricted_fund_coverage" }));
+    expect(result).toEqual({
+      kind: "text",
+      label: "Restricted fund coverage",
+      text: "Yes — 500.00 covers 0.00 in upcoming obligations (500.00 left over).",
+    });
+  });
+
+  it("asks which fund for restricted_fund_coverage when multiple exist and none is named", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "acc-1", name: "Emergency Fund" },
+          { id: "acc-2", name: "Vacation Fund" },
+        ]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 50000 }),
+      },
+    });
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "restricted_fund_coverage" }));
+    expect(result).toEqual({ kind: "unavailable", message: "Which fund did you mean?" });
+  });
+
+  it("reports no restricted funds set up for restricted_fund_coverage when there are none", async () => {
+    const prisma = makeFakePrisma();
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "restricted_fund_coverage" }));
+    expect(result).toEqual({ kind: "unavailable", message: "You don't have any restricted funds set up." });
+  });
 });

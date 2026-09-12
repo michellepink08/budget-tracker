@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeLiquidFunds } from "@/lib/liquid-funds";
+import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { computeAccountBalance } from "@/lib/account-balance";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { getCycleForDate } from "@/lib/cycle";
@@ -167,9 +168,39 @@ export async function answerQuestion(
 
     case "safe_to_spend":
       return { kind: "unavailable", message: "Safe-to-spend isn't available yet" };
-    case "restricted_fund_balance":
-    case "restricted_fund_coverage":
-      return { kind: "unavailable", message: "Restricted funds aren't available yet" };
+
+    case "restricted_fund_balance": {
+      if (draft.account?.id) {
+        const balance = await computeAccountBalance(prisma, draft.account.id);
+        return { kind: "amount", label: draft.account.raw, amountMinorUnits: balance };
+      }
+      const groups = await listRestrictedFundGroups(prisma, userId);
+      const total = groups.reduce((sum, g) => sum + g.balance, 0);
+      return { kind: "amount", label: "Restricted funds total", amountMinorUnits: total };
+    }
+
+    case "restricted_fund_coverage": {
+      const groups = await listRestrictedFundGroups(prisma, userId);
+      const named = draft.account?.id ? groups.find((g) => g.accountId === draft.account?.id) : undefined;
+      const fund = named ?? (groups.length === 1 ? groups[0] : undefined);
+
+      if (!fund) {
+        if (groups.length === 0) {
+          return { kind: "unavailable", message: "You don't have any restricted funds set up." };
+        }
+        return { kind: "unavailable", message: "Which fund did you mean?" };
+      }
+
+      const balanceMajor = (fund.balance / 100).toFixed(2);
+      const obligationMajor = (fund.obligationTotal / 100).toFixed(2);
+      const text =
+        fund.projectedBalance >= 0
+          ? `Yes — ${balanceMajor} covers ${obligationMajor} in upcoming obligations (${(fund.projectedBalance / 100).toFixed(2)} left over).`
+          : `No — ${balanceMajor} is short of the ${obligationMajor} upcoming obligations by ${(Math.abs(fund.projectedBalance) / 100).toFixed(2)}.`;
+
+      return { kind: "text", label: "Restricted fund coverage", text };
+    }
+
     case "expected_income":
       return { kind: "unavailable", message: "Expected income isn't available yet" };
   }
