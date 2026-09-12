@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/password-reset";
 import { requestPasswordReset, resetPassword } from "@/lib/password-reset";
+import { createMailer, sendPasswordResetEmail } from "@/lib/mailer";
 
 export type PasswordResetActionResult = { ok: true } | { ok: false; error: string };
 
@@ -20,11 +21,10 @@ export async function requestPasswordResetAction(
     if (result) {
       const baseUrl = process.env.APP_URL ?? "http://localhost:3000";
       const resetUrl = `${baseUrl}/reset-password?token=${result.token}`;
-      // Dev-mode placeholder: log instead of emailing. The real send-an-
-      // email call (Resend, SendGrid, etc.) is a deliberately deferred
-      // decision — see docs/ARCHITECTURE.md — and this is the one line
-      // that call replaces.
-      console.log(`[password reset] ${resetUrl}`);
+      // sendPasswordResetEmail never throws — a failed send is logged and
+      // swallowed inside it, so this stays a thin one-line call. See
+      // docs/ARCHITECTURE.md for the Gmail SMTP setup this depends on.
+      await sendPasswordResetEmail(createMailer(), parsed.data.email, resetUrl);
     }
   }
 
