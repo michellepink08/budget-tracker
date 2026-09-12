@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mic, MicOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import {
   confirmQuickCaptureDraftAction,
   undoQuickCaptureAction,
 } from "@/actions/quick-capture.actions";
+import { useVoiceCapture } from "@/lib/quick-capture/use-voice-capture";
 import type { CommandDraft } from "@/lib/quick-capture/types";
 
 type DraftState = {
@@ -77,6 +79,7 @@ export function QuickCapturePanel({
   const [drafts, setDrafts] = useState<DraftState[] | null>(null);
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  const voice = useVoiceCapture(setText);
 
   // Reset local state on close via the dialog's own open-change callback
   // (not an effect watching `open`) — resetting state directly inside an
@@ -86,6 +89,7 @@ export function QuickCapturePanel({
       setText("");
       setDrafts(null);
       setParseError(null);
+      voice.stop();
     }
     onOpenChange(next);
   }
@@ -149,10 +153,32 @@ export function QuickCapturePanel({
               }}
               placeholder="Paid 180 for food using cash"
             />
+            {voice.supported && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={parsing}
+                aria-label={voice.listening ? "Stop voice input" : "Start voice input"}
+                onClick={() => (voice.listening ? voice.stop() : voice.start())}
+              >
+                {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
             <Button type="button" onClick={handleParse} disabled={parsing || !text.trim()}>
               {parsing ? "..." : "Parse"}
             </Button>
           </div>
+
+          {voice.error && (
+            <p className="text-sm text-destructive">
+              {voice.error === "not-allowed"
+                ? "Microphone access was denied. You can still type your command."
+                : voice.error === "no-speech"
+                  ? "Didn't catch that — try again or type instead."
+                  : "Voice input isn't working right now — please type instead."}
+            </p>
+          )}
 
           {!drafts && (
             <div className="flex flex-col gap-1 text-xs text-muted-foreground">
