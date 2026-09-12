@@ -10,6 +10,7 @@ export const ACCENT_COLORS = [
   { value: "indigo", label: "Indigo", swatch: "#3730a3" },
   { value: "rose", label: "Rose", swatch: "#be123c" },
   { value: "stone", label: "Stone", swatch: "#44403c" },
+  { value: "wine", label: "Wine", swatch: "#7c1d3f" },
 ] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number]["value"];
 export const ACCENT_COLOR_VALUES = ACCENT_COLORS.map((c) => c.value) as [AccentColor, ...AccentColor[]];

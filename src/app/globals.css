@@ -183,6 +183,14 @@
   --ring: #44403c;
   --accent-tint: #e7e5e4;
 }
+[data-accent="wine"] {
+  --nav-background: #4a0f26;
+  --nav-foreground: #fafafa;
+  --primary: #7c1d3f;
+  --primary-foreground: #ffffff; /* 9.98:1 */
+  --ring: #7c1d3f;
+  --accent-tint: #eed4dc;
+}
 
 /* Dark mode gets its own --accent-tint per accent (a dark-tinted
    background stays visually recessive against the dark page background;
@@ -193,6 +201,7 @@
 .dark[data-accent="indigo"] { --accent-tint: #1e1c4a; }
 .dark[data-accent="rose"] { --accent-tint: #3a0a17; }
 .dark[data-accent="stone"] { --accent-tint: #262421; }
+.dark[data-accent="wine"] { --accent-tint: #2e0f18; }
 
 @layer base {
   * {
