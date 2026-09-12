@@ -6,6 +6,10 @@ import { listDuePayables } from "@/lib/payables";
 import { listDueInstallmentPayments } from "@/lib/installment-purchases";
 import { computeLiquidFunds } from "@/lib/liquid-funds";
 import { listRestrictedFundGroups } from "@/lib/restricted-funds";
+import { listAccounts } from "@/lib/accounts";
+import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
+import { computeSafeToSpend } from "@/lib/safe-to-spend";
+import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { formatMoney } from "@/lib/money";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -19,17 +23,44 @@ export default async function DashboardPage() {
 
   const activePeriod = await resolveBudgetPeriodForDate(prisma, user.id, now, user.cycleStartDay);
 
-  const [liquidFunds, allocations, duePayables, dueInstallments, restrictedFunds] = await Promise.all([
-    computeLiquidFunds(prisma, user.id),
-    listAllocationsWithActuals(prisma, user.id, activePeriod.id),
-    listDuePayables(prisma, user.id, horizon),
-    listDueInstallmentPayments(prisma, user.id, horizon),
-    listRestrictedFundGroups(prisma, user.id),
-  ]);
+  const [liquidFunds, allocations, duePayables, dueInstallments, restrictedFunds, accounts, cutoffDuePayables, recommendation] =
+    await Promise.all([
+      computeLiquidFunds(prisma, user.id),
+      listAllocationsWithActuals(prisma, user.id, activePeriod.id),
+      listDuePayables(prisma, user.id, horizon),
+      listDueInstallmentPayments(prisma, user.id, horizon),
+      listRestrictedFundGroups(prisma, user.id),
+      listAccounts(prisma, user.id),
+      listDuePayables(prisma, user.id, activePeriod.endDate),
+      getRecommendedFundingTransfer(prisma, user.id, now),
+    ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
   const totalActual = allocations.reduce((sum, a) => sum + a.actual, 0);
   const totalRemaining = totalPlanned - totalActual;
+
+  const restrictedAccountIds = new Set(restrictedFunds.map((f) => f.accountId));
+  const safeToSpend = computeSafeToSpend({
+    liquidFunds,
+    totalRemaining,
+    payables: cutoffDuePayables,
+    restrictedAccountIds,
+    cutoffEnd: activePeriod.endDate,
+  });
+
+  let recommendationView = null;
+  if (recommendation) {
+    const fromAccount = accounts.find((a) => a.id === recommendation.fromAccountId);
+    const toAccount = accounts.find((a) => a.id === recommendation.toAccountId);
+    if (fromAccount && toAccount) {
+      recommendationView = {
+        fromAccountName: fromAccount.name,
+        toAccountName: toAccount.name,
+        amount: recommendation.amount,
+        currency: fromAccount.currency,
+      };
+    }
+  }
 
   const purchaseIds = [...new Set(dueInstallments.map((p) => p.installmentPurchaseId))];
   const purchases = purchaseIds.length
@@ -58,7 +89,11 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Dashboard</h1>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border p-4">
+          <p className="text-sm text-muted-foreground">Safe to spend</p>
+          <p className="text-2xl font-semibold">{formatMoney(safeToSpend, user.currency)}</p>
+        </div>
         <div className="rounded-lg border p-4">
           <p className="text-sm text-muted-foreground">Liquid funds</p>
           <p className="text-2xl font-semibold">{formatMoney(liquidFunds, user.currency)}</p>
@@ -73,6 +108,8 @@ export default async function DashboardPage() {
           <p className="text-2xl font-semibold">{formatMoney(totalRemaining, user.currency)}</p>
         </div>
       </div>
+
+      <FundingRecommendationBanner recommendation={recommendationView} />
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Upcoming (next 7 days)</h2>
