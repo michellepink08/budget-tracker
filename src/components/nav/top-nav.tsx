@@ -10,6 +10,7 @@ const links = [
   { href: "/budget", label: "Budget" },
   { href: "/categories", label: "Categories" },
   { href: "/accounts", label: "Accounts" },
+  { href: "/bills", label: "Bills" },
   { href: "/recurring", label: "Recurring" },
   { href: "/settings", label: "Settings" },
 ];
