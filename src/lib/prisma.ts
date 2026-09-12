@@ -1,14 +1,20 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-// Uses the better-sqlite3 driver adapter (an in-process native addon)
-// instead of Prisma's default query-engine binary, which this machine's
-// Application Control policy blocks from running as a spawned process.
-// See prisma/schema.sql for the equivalent note about schema pushes.
+// Neon's driver needs a WebSocket implementation. The edge runtime has a
+// native `WebSocket` global; Vercel's Node.js runtime (what this app
+// actually runs on) does not, so it's polyfilled with `ws`.
+neonConfig.webSocketConstructor = ws;
+
+// Uses Neon's WebSocket-based driver adapter — avoids holding pooled TCP
+// connections across Vercel's serverless cold starts, and (like the
+// SQLite adapter it replaces) is pure JS, so it never needs the native
+// schema-engine/query-engine binaries this machine's Application Control
+// policy blocks.
 function createPrismaClient() {
-  const adapter = new PrismaBetterSqlite3({
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-  });
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
   return new PrismaClient({ adapter });
 }
 
