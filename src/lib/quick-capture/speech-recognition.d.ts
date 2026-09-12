@@ -28,4 +28,7 @@ declare global {
     SpeechRecognition?: new () => SpeechRecognitionLike;
     webkitSpeechRecognition?: new () => SpeechRecognitionLike;
   }
+
+  var SpeechRecognition: (new () => SpeechRecognitionLike) | undefined;
+  var webkitSpeechRecognition: (new () => SpeechRecognitionLike) | undefined;
 }
