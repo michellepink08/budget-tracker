@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet } from "lucide-react";
 import { SignOutButton } from "@/components/nav/sign-out-button";
+import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
 import { APP_NAME } from "@/lib/config";
 
 const links = [
@@ -12,7 +13,16 @@ const links = [
   { href: "/settings", label: "Settings" },
 ];
 
-export function TopNav() {
+type AccountOption = { id: string; name: string; currency: string };
+type CategoryOption = { id: string; name: string; subcategories: { id: string; name: string }[] };
+
+export function TopNav({
+  accounts,
+  categories,
+}: {
+  accounts: AccountOption[];
+  categories: CategoryOption[];
+}) {
   return (
     <header className="border-b">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -31,7 +41,10 @@ export function TopNav() {
             </Link>
           ))}
         </nav>
-        <SignOutButton />
+        <div className="flex items-center gap-2">
+          <AddTransactionButton accounts={accounts} categories={categories} />
+          <SignOutButton />
+        </div>
       </div>
     </header>
   );
