@@ -52,6 +52,9 @@ export default function LoginPage() {
           <Input id="password" type="password" {...register("password")} />
           {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
         </div>
+        <Link href="/forgot-password" className="text-sm underline">
+          Forgot password?
+        </Link>
         {serverError && <p className="text-sm text-destructive">{serverError}</p>}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Logging in..." : "Log in"}

@@ -41,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const publicPaths = ["/", "/login", "/signup"];
+      const publicPaths = ["/", "/login", "/signup", "/forgot-password", "/reset-password"];
       if (publicPaths.includes(request.nextUrl.pathname)) return true;
       return isLoggedIn;
     },
