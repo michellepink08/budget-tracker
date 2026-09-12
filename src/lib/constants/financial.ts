@@ -41,4 +41,5 @@ export type BudgetPeriodStatus = (typeof BUDGET_PERIOD_STATUSES)[number];
 export const ROLLOVER_MODES = ["NONE", "CARRY_UNUSED", "CARRY_OVERSPEND", "CARRY_BOTH"] as const;
 export type RolloverMode = (typeof ROLLOVER_MODES)[number];
 
-// RECURRING_FREQUENCIES is Plan 3A.2 (RecurringRule doesn't exist yet).
+export const RECURRING_FREQUENCIES = ["WEEKLY", "MONTHLY", "CUSTOM"] as const;
+export type RecurringFrequency = (typeof RECURRING_FREQUENCIES)[number];

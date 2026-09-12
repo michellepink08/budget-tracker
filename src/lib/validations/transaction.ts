@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // TRANSFER isn't here — it's created via transferSchema/createTransfer
 // (Plan 2A), not the regular transaction form.
-const NON_TRANSFER_TYPES = [
+export const NON_TRANSFER_TYPES = [
   "EXPENSE",
   "INCOME",
   "REFUND",
