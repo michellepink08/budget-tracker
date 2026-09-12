@@ -84,6 +84,22 @@ CREATE TABLE IF NOT EXISTS "BudgetPeriod" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "BudgetPeriod_userId_startDate_key" ON "BudgetPeriod" ("userId", "startDate");
 
+CREATE TABLE IF NOT EXISTS "BudgetAllocation" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "budgetPeriodId" TEXT NOT NULL,
+  "categoryId" TEXT NOT NULL,
+  "plannedAmount" INTEGER NOT NULL,
+  "rolloverMode" TEXT NOT NULL,
+  "rolloverAmount" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("budgetPeriodId") REFERENCES "BudgetPeriod" ("id"),
+  FOREIGN KEY ("categoryId") REFERENCES "Category" ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "BudgetAllocation_budgetPeriodId_categoryId_key" ON "BudgetAllocation" ("budgetPeriodId", "categoryId");
+
 CREATE TABLE IF NOT EXISTS "Transaction" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "userId" TEXT NOT NULL,

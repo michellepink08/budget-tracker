@@ -17,11 +17,12 @@ model User {
   createdAt     DateTime @default(now())
   onboardedAt   DateTime?
 
-  accounts      Account[]
-  categories    Category[]
-  subcategories Subcategory[]
-  budgetPeriods BudgetPeriod[]
-  transactions  Transaction[]
+  accounts          Account[]
+  categories        Category[]
+  subcategories     Subcategory[]
+  budgetPeriods     BudgetPeriod[]
+  budgetAllocations BudgetAllocation[]
+  transactions      Transaction[]
 }
 
 model Account {
@@ -56,8 +57,9 @@ model Category {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  user          User          @relation(fields: [userId], references: [id])
+  user          User               @relation(fields: [userId], references: [id])
   subcategories Subcategory[]
+  allocations   BudgetAllocation[]
   transactions  Transaction[]
 }
 
@@ -84,10 +86,29 @@ model BudgetPeriod {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id])
+  user         User               @relation(fields: [userId], references: [id])
+  allocations  BudgetAllocation[]
   transactions Transaction[]
 
   @@unique([userId, startDate])
+}
+
+model BudgetAllocation {
+  id             String   @id @default(cuid())
+  userId         String
+  budgetPeriodId String
+  categoryId     String
+  plannedAmount  Int
+  rolloverMode   String
+  rolloverAmount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  budgetPeriod BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
+  category     Category     @relation(fields: [categoryId], references: [id])
+
+  @@unique([budgetPeriodId, categoryId])
 }
 
 model Transaction {
