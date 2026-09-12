@@ -326,7 +326,7 @@ export async function computeCategoryActual(
     where: { budgetPeriodId, categoryId },
   });
   const net = transactions.reduce((sum, txn) => sum + txn.amount, 0);
-  return -net;
+  return net === 0 ? 0 : -net; // avoid returning -0 (fails toBe(0) in tests)
 }
 ```
 
