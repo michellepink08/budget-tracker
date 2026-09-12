@@ -8,11 +8,18 @@ import ws from "ws";
 // actually runs on) does not, so it's polyfilled with `ws`.
 neonConfig.webSocketConstructor = ws;
 
-// Uses Neon's WebSocket-based driver adapter — avoids holding pooled TCP
-// connections across Vercel's serverless cold starts, and (like the
-// SQLite adapter it replaces) is pure JS, so it never needs the native
-// schema-engine/query-engine binaries this machine's Application Control
-// policy blocks.
+// Route queries over HTTP fetch instead of holding a persistent WebSocket
+// open. This module's `prisma` singleton is reused across requests within
+// the same warm serverless function — a held-open WebSocket can get
+// silently severed by the platform while the function is frozen between
+// invocations, so the next request fails with "Connection terminated
+// unexpectedly" against a dead socket. Fetch-per-query has no such
+// connection to go stale.
+neonConfig.poolQueryViaFetch = true;
+
+// Uses Neon's driver adapter — pure JS, like the SQLite adapter it
+// replaces, so it never needs the native schema-engine/query-engine
+// binaries this machine's Application Control policy blocks.
 function createPrismaClient() {
   const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
   return new PrismaClient({ adapter });
