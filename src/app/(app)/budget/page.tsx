@@ -50,7 +50,7 @@ export default async function BudgetPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PeriodPicker periods={periods} />
+          <PeriodPicker periods={periods} activePeriodId={activePeriod.id} />
           <PeriodFormDialog />
           <AllocationFormDialog
             budgetPeriodId={activePeriod.id}

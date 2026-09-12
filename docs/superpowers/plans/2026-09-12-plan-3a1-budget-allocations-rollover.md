@@ -1199,18 +1199,28 @@ export function AllocationList({
 // src/components/budget/period-picker.tsx
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { formatCycleRange } from "@/lib/cycle";
 
 type PeriodOption = { id: string; startDate: Date; endDate: Date };
 
-export function PeriodPicker({ periods }: { periods: PeriodOption[] }) {
+// activePeriodId must be the page's own resolved period, not re-derived
+// here — the page's fallback logic (query param -> current cycle ->
+// newest period) doesn't match "first in the list" when no query param is
+// set, so guessing independently made the picker's visible selection
+// disagree with what was actually being displayed/edited.
+export function PeriodPicker({
+  periods,
+  activePeriodId,
+}: {
+  periods: PeriodOption[];
+  activePeriodId: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   return (
     <select
-      defaultValue={searchParams.get("periodId") ?? periods[0]?.id ?? ""}
+      value={activePeriodId}
       onChange={(e) => router.push(`/budget?periodId=${e.target.value}`)}
       className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
     >
@@ -1357,7 +1367,7 @@ export default async function BudgetPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PeriodPicker periods={periods} />
+          <PeriodPicker periods={periods} activePeriodId={activePeriod.id} />
           <PeriodFormDialog />
           <AllocationFormDialog
             budgetPeriodId={activePeriod.id}
@@ -1485,6 +1495,16 @@ Expected: no errors.
    again, since nothing's allocated in the new period).
 7. Switch back to the current period — confirm your allocations are
    still there.
+
+> **Found during verification:** `PeriodPicker`'s default selection was
+> independently computed as `periods[0]` (newest by `startDate`) whenever
+> no `periodId` query param was set — but the page's own `activePeriod`
+> resolution falls back to *the current cycle's period* in that same case,
+> not necessarily the newest one. The two disagreed, so the dropdown could
+> show one period selected while the page actually displayed/edited a
+> different one. Fixed by having the page pass its resolved
+> `activePeriod.id` down as a prop instead of letting the picker guess
+> independently.
 
 - [ ] **Step 4: Commit any fixes found**
 
