@@ -66,7 +66,7 @@ const savings = await prisma.account.create({
   },
 });
 
-const creditCard = await prisma.account.create({
+await prisma.account.create({
   data: {
     userId: user.id,
     name: "Everyday Rewards Card",
