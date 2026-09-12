@@ -12,6 +12,7 @@ const links = [
   { href: "/accounts", label: "Accounts" },
   { href: "/bills", label: "Bills" },
   { href: "/loans-cards", label: "Loans & Cards" },
+  { href: "/reports", label: "Reports" },
   { href: "/recurring", label: "Recurring" },
   { href: "/settings", label: "Settings" },
 ];
