@@ -33,7 +33,7 @@ export default async function SettingsPage() {
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Appearance</h2>
-        <AppearanceSettings initialAccentColor={user.accentColor} initialThemeMode={user.themeMode} />
+        <AppearanceSettings initialThemeMode={user.themeMode} />
       </div>
 
       <div>
