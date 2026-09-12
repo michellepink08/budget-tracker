@@ -5,6 +5,7 @@ import { listAllocationsWithActuals } from "@/lib/budget-allocations";
 import { listDuePayables } from "@/lib/payables";
 import { listDueInstallmentPayments } from "@/lib/installment-purchases";
 import { computeLiquidFunds } from "@/lib/liquid-funds";
+import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { formatMoney } from "@/lib/money";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -18,11 +19,12 @@ export default async function DashboardPage() {
 
   const activePeriod = await resolveBudgetPeriodForDate(prisma, user.id, now, user.cycleStartDay);
 
-  const [liquidFunds, allocations, duePayables, dueInstallments] = await Promise.all([
+  const [liquidFunds, allocations, duePayables, dueInstallments, restrictedFunds] = await Promise.all([
     computeLiquidFunds(prisma, user.id),
     listAllocationsWithActuals(prisma, user.id, activePeriod.id),
     listDuePayables(prisma, user.id, horizon),
     listDueInstallmentPayments(prisma, user.id, horizon),
+    listRestrictedFundGroups(prisma, user.id),
   ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
@@ -90,6 +92,34 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      {restrictedFunds.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Restricted funds</h2>
+          <div className="flex flex-col gap-2">
+            {restrictedFunds.map((fund) => (
+              <div key={fund.accountId} className="rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">{fund.accountName}</p>
+                  <p className="font-medium">{formatMoney(fund.balance, user.currency)}</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {fund.obligationTotal > 0
+                    ? `Obligation: ${formatMoney(fund.obligationTotal, user.currency)}${
+                        fund.nextPayable
+                          ? ` · Next: ${fund.nextPayable.name} — ${formatMoney(fund.nextPayable.amount, user.currency)} due ${fund.nextPayable.dueDate.toLocaleDateString()}`
+                          : ""
+                      }`
+                    : "No upcoming obligations"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Projected after payment: {formatMoney(fund.projectedBalance, user.currency)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
