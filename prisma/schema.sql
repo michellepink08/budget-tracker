@@ -128,3 +128,25 @@ CREATE INDEX IF NOT EXISTS "Transaction_userId_idx" ON "Transaction" ("userId");
 CREATE INDEX IF NOT EXISTS "Transaction_accountId_idx" ON "Transaction" ("accountId");
 CREATE INDEX IF NOT EXISTS "Transaction_destinationAccountId_idx" ON "Transaction" ("destinationAccountId");
 CREATE INDEX IF NOT EXISTS "Transaction_budgetPeriodId_idx" ON "Transaction" ("budgetPeriodId");
+
+CREATE TABLE IF NOT EXISTS "RecurringRule" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "transactionType" TEXT NOT NULL,
+  "amount" INTEGER NOT NULL,
+  "frequency" TEXT NOT NULL,
+  "intervalDays" INTEGER,
+  "nextDate" DATETIME NOT NULL,
+  "accountId" TEXT NOT NULL,
+  "categoryId" TEXT,
+  "subcategoryId" TEXT,
+  "active" INTEGER NOT NULL DEFAULT 1,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("accountId") REFERENCES "Account" ("id"),
+  FOREIGN KEY ("categoryId") REFERENCES "Category" ("id"),
+  FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory" ("id")
+);
+CREATE INDEX IF NOT EXISTS "RecurringRule_userId_idx" ON "RecurringRule" ("userId");

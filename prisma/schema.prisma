@@ -23,6 +23,7 @@ model User {
   budgetPeriods     BudgetPeriod[]
   budgetAllocations BudgetAllocation[]
   transactions      Transaction[]
+  recurringRules    RecurringRule[]
 }
 
 model Account {
@@ -40,9 +41,10 @@ model Account {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  user             User          @relation(fields: [userId], references: [id])
-  transactionsFrom Transaction[] @relation("TransactionAccount")
-  transactionsTo   Transaction[] @relation("TransactionDestinationAccount")
+  user             User            @relation(fields: [userId], references: [id])
+  transactionsFrom Transaction[]   @relation("TransactionAccount")
+  transactionsTo   Transaction[]   @relation("TransactionDestinationAccount")
+  recurringRules   RecurringRule[]
 }
 
 model Category {
@@ -57,10 +59,11 @@ model Category {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  user          User               @relation(fields: [userId], references: [id])
-  subcategories Subcategory[]
-  allocations   BudgetAllocation[]
-  transactions  Transaction[]
+  user           User               @relation(fields: [userId], references: [id])
+  subcategories  Subcategory[]
+  allocations    BudgetAllocation[]
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
 }
 
 model Subcategory {
@@ -71,9 +74,10 @@ model Subcategory {
   sortOrder  Int       @default(0)
   archivedAt DateTime?
 
-  user         User          @relation(fields: [userId], references: [id])
-  category     Category      @relation(fields: [categoryId], references: [id])
-  transactions Transaction[]
+  user           User            @relation(fields: [userId], references: [id])
+  category       Category        @relation(fields: [categoryId], references: [id])
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
 }
 
 model BudgetPeriod {
@@ -135,4 +139,26 @@ model Transaction {
   category           Category?     @relation(fields: [categoryId], references: [id])
   subcategory        Subcategory?  @relation(fields: [subcategoryId], references: [id])
   budgetPeriod       BudgetPeriod? @relation(fields: [budgetPeriodId], references: [id])
+}
+
+model RecurringRule {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  transactionType String
+  amount          Int
+  frequency       String
+  intervalDays    Int?
+  nextDate        DateTime
+  accountId       String
+  categoryId      String?
+  subcategoryId   String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  account     Account      @relation(fields: [accountId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
 }
