@@ -7,19 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import { onboardingSchema } from "@/lib/validations/onboarding";
 import { completeOnboardingAction } from "@/actions/onboarding.actions";
+import { ACCENT_COLORS } from "@/lib/constants/appearance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type OnboardingInput = z.infer<typeof onboardingSchema>;
-
-const ACCENT_COLORS = [
-  { value: "coral", label: "Coral", swatch: "#ff6b5e" },
-  { value: "blue", label: "Blue", swatch: "#3b82f6" },
-  { value: "green", label: "Green", swatch: "#16a34a" },
-  { value: "purple", label: "Purple", swatch: "#8b5cf6" },
-  { value: "neutral", label: "Neutral", swatch: "#71717a" },
-];
 
 const CURRENCIES = ["PHP", "USD"];
 
