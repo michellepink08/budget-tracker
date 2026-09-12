@@ -30,7 +30,7 @@ it("resolves a mentioned account name inside a question", async () => {
 });
 
 it("leaves account null in a question when nothing matches", async () => {
-  const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "How much cash do I have left?");
+  const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "How much do I have in my wallet?");
   expect(draft.intent).toBe("question");
   if (draft.intent === "question") {
     expect(draft.account).toBeNull();
