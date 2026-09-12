@@ -18,17 +18,27 @@ type CategoryOption = { id: string; name: string; subcategories: { id: string; n
 export function AddTransactionButton({
   accounts,
   categories,
+  variant = "header",
 }: {
   accounts: AccountOption[];
   categories: CategoryOption[];
+  variant?: "header" | "tab";
 }) {
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" className="gap-1" />}>
+      <DialogTrigger
+        render={
+          variant === "tab" ? (
+            <Button size="icon" className="rounded-full" aria-label="Add transaction" />
+          ) : (
+            <Button size="sm" className="gap-1" />
+          )
+        }
+      >
         <Plus className="h-4 w-4" />
-        Add
+        {variant === "header" && "Add"}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
