@@ -103,7 +103,7 @@ Expected: FAIL — `Cannot find module '@/lib/quick-capture/parse-amount'`
 // misparse. None of this app's supported command phrasings hit that
 // case (dates are always written as words: "yesterday", "last Saturday",
 // "August 27"), so it isn't handled here.
-const AMOUNT_PATTERN = /\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?/;
+const AMOUNT_PATTERN = /\d+(?:,\d{3})*(?:\.\d+)?/;
 
 export function parseAmountMajorUnits(text: string): number | null {
   const match = text.match(AMOUNT_PATTERN);
