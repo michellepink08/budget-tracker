@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
+import { QuickCapturePanel } from "@/components/quick-capture/quick-capture-panel";
 import { APP_NAME } from "@/lib/config";
 
 const links = [
@@ -29,6 +31,18 @@ export function SideNav({
   categories: CategoryOption[];
 }) {
   const pathname = usePathname();
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setQuickCaptureOpen(true);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <aside className="hidden w-56 shrink-0 flex-col bg-[var(--nav-background)] text-[var(--nav-foreground)] md:flex">
@@ -36,6 +50,13 @@ export function SideNav({
         <Wallet className="h-5 w-5" />
         {APP_NAME}
       </div>
+      <button
+        type="button"
+        onClick={() => setQuickCaptureOpen(true)}
+        className="mx-2 mt-2 rounded-md border border-white/15 px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/70 hover:bg-white/10"
+      >
+        Quick Capture <span className="float-right text-xs opacity-60">⌘K</span>
+      </button>
       <nav className="flex flex-1 flex-col gap-1 p-2 text-sm">
         {links.map((link) => {
           const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
@@ -58,6 +79,7 @@ export function SideNav({
         <AddTransactionButton accounts={accounts} categories={categories} />
         <SignOutButton />
       </div>
+      <QuickCapturePanel open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} />
     </aside>
   );
 }

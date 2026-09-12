@@ -1,0 +1,211 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  parseQuickCaptureAction,
+  confirmQuickCaptureDraftAction,
+  undoQuickCaptureAction,
+} from "@/actions/quick-capture.actions";
+import type { CommandDraft } from "@/lib/quick-capture/types";
+
+type DraftState = {
+  draft: CommandDraft;
+  status: "pending" | "confirmed" | "error";
+  error?: string;
+  logId?: string;
+};
+
+const EXAMPLES = [
+  "Paid 180 for food using cash",
+  "Transferred 1,000 from BPI to GCash",
+  "Received 5,000 from Rei in BPI Savings",
+];
+
+function summarize(draft: CommandDraft): string {
+  switch (draft.intent) {
+    case "expense":
+    case "income":
+    case "refund":
+    case "credit_card_charge":
+      return `${draft.intent.replace("_", " ")} — ${(draft.amountMinorUnits / 100).toFixed(2)} (${draft.account.raw})${
+        draft.date.confirmed ? "" : " · estimated date"
+      }`;
+    case "transfer":
+      return `transfer — ${(draft.amountMinorUnits / 100).toFixed(2)} from ${draft.sourceAccount.raw} to ${draft.destinationAccount.raw}`;
+    case "credit_card_payment":
+      return `credit card payment — ${(draft.amountMinorUnits / 100).toFixed(2)}`;
+    case "loan_payment":
+      return `loan payment — ${(draft.amountMinorUnits / 100).toFixed(2)}`;
+    case "person_borrowed":
+      return `${draft.personName} borrowed ${(draft.amountMinorUnits / 100).toFixed(2)} from ${draft.account.raw}`;
+    case "reconciliation":
+      return `reconcile ${draft.account.raw} to ${(draft.actualBalanceMinorUnits / 100).toFixed(2)}`;
+    case "payable_create":
+      return `payable — ${draft.name}, ${(draft.amountMinorUnits / 100).toFixed(2)}${
+        draft.dueDate.confirmed ? "" : " · estimated due date"
+      }`;
+    case "payable_update":
+      return `update payable${draft.amountMinorUnits ? ` to ${(draft.amountMinorUnits / 100).toFixed(2)}` : ""}`;
+    case "transaction_update":
+      return `update transaction${draft.amountMinorUnits ? ` to ${(draft.amountMinorUnits / 100).toFixed(2)}` : ""}`;
+    case "transaction_delete":
+      return "delete transaction — this can't be undone";
+    case "question":
+      return "question — answering isn't available yet";
+  }
+}
+
+export function QuickCapturePanel({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const router = useRouter();
+  const [text, setText] = useState("");
+  const [drafts, setDrafts] = useState<DraftState[] | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setText("");
+      setDrafts(null);
+      setParseError(null);
+    }
+  }, [open]);
+
+  async function handleParse() {
+    setParsing(true);
+    setParseError(null);
+    const result = await parseQuickCaptureAction(text);
+    setParsing(false);
+    if (!result.ok) {
+      setParseError(result.error);
+      return;
+    }
+    setDrafts(result.drafts.map((draft) => ({ draft, status: "pending" as const })));
+  }
+
+  async function handleConfirm(index: number) {
+    if (!drafts) return;
+    const entry = drafts[index];
+    const result = await confirmQuickCaptureDraftAction(entry.draft);
+    setDrafts((prev) =>
+      prev!.map((d, i) =>
+        i === index
+          ? result.ok
+            ? { ...d, status: "confirmed" as const, logId: result.logId }
+            : { ...d, status: "error" as const, error: result.error }
+          : d,
+      ),
+    );
+  }
+
+  async function handleUndo(index: number) {
+    if (!drafts) return;
+    const entry = drafts[index];
+    if (!entry.logId) return;
+    await undoQuickCaptureAction(entry.logId);
+    setDrafts((prev) =>
+      prev!.map((d, i) => (i === index ? { ...d, status: "pending" as const, logId: undefined } : d)),
+    );
+  }
+
+  function handleCancel(index: number) {
+    setDrafts((prev) => (prev ? prev.filter((_, i) => i !== index) : prev));
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Quick Capture</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            <Input
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleParse();
+              }}
+              placeholder="Paid 180 for food using cash"
+            />
+            <Button type="button" onClick={handleParse} disabled={parsing || !text.trim()}>
+              {parsing ? "..." : "Parse"}
+            </Button>
+          </div>
+
+          {!drafts && (
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+              {EXAMPLES.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  className="text-left underline"
+                  onClick={() => setText(example)}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {parseError && <p className="text-sm text-destructive">{parseError}</p>}
+
+          {drafts?.map((entry, index) => (
+            <div key={index} className="rounded-lg border p-3 text-sm">
+              <p className="mb-2">{summarize(entry.draft)}</p>
+
+              {entry.draft.clarification && entry.status === "pending" && (
+                <p className="mb-2 text-amber-600">{entry.draft.clarification.question}</p>
+              )}
+
+              {entry.status === "pending" && !entry.draft.clarification && entry.draft.intent !== "question" && (
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={() => handleConfirm(index)}>
+                    Confirm
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => handleCancel(index)}>
+                    Cancel
+                  </Button>
+                </div>
+              )}
+
+              {entry.status === "confirmed" && (
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <span>Added ✓</span>
+                  {entry.draft.intent !== "transaction_delete" && (
+                    <button type="button" className="underline" onClick={() => handleUndo(index)}>
+                      Undo
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => {
+                      onOpenChange(false);
+                      router.push("/transactions");
+                    }}
+                  >
+                    View
+                  </button>
+                </div>
+              )}
+
+              {entry.status === "error" && <p className="text-destructive">{entry.error}</p>}
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
