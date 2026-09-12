@@ -334,6 +334,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
   return {
     account: {
       findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
       findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 100000 }),
     },
     transaction: { findMany: vi.fn().mockResolvedValue([]) },
