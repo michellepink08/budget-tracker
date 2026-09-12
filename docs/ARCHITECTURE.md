@@ -53,12 +53,10 @@ One-time setup for whichever Gmail account will send these:
 
 Without these two variables set, `createMailer()` will build a transport that fails auth on every send — which `sendPasswordResetEmail` catches and logs, so the app keeps working (the reset link just won't arrive by email; check the server logs for the failure).
 
-## Deployment: SQLite → Postgres
+## Deployment: Vercel + Postgres (Neon)
 
-This schema was written from the start to not require a rewrite when moving off SQLite. To switch:
+The app is deployed on Vercel, backed by a Postgres database provisioned through Vercel's Storage tab (Neon under the hood). `src/lib/prisma.ts` uses `@prisma/adapter-neon` — a WebSocket-based driver adapter well suited to serverless cold starts, and (like the SQLite adapter it replaced) pure JS, so it never needs the native schema-engine/query-engine binaries this development machine's Application Control policy blocks.
 
-1. Change `prisma/schema.prisma`'s `datasource db` block: `provider = "postgresql"`, and point `DATABASE_URL` at a real Postgres connection string.
-2. Swap `@prisma/adapter-better-sqlite3` for a Postgres-compatible driver adapter (or Prisma's default query engine — the schema-engine-binary constraint documented in the README is specific to this one development machine's Application Control policy, not to Postgres or to production deployment generally).
-3. Apply the schema against the new database.
+Schema changes are applied by Vercel's own build step (`prisma db push`, part of the project's configured Build Command), which runs on Vercel's unrestricted Linux build machine — never on this Windows machine. That's also why `prisma/schema.sql` and `scripts/db-push.mjs` (the old hand-rolled SQLite-syntax workaround for the same binary block) were retired: schema application no longer needs to happen locally at all.
 
-`prisma/schema.sql` — the hand-written mirror this project uses locally via `npm run db:push` — is this machine's own workaround for a blocked native binary. It isn't part of what a normal deployment target needs; a real Postgres target can use Prisma's own migration tooling directly.
+**Single shared database:** for now, the same Postgres database serves both production and local development — the same one-environment model this project has always had (previously one local SQLite file), just relocated to the cloud. The practical consequence: a schema change only takes effect once deployed (edit `schema.prisma`, commit, push, let Vercel's build apply it) — local dev then sees the new schema automatically, since it points at the same database. Splitting into separate dev/prod databases later (e.g. via Neon's branching, or Vercel's Development/Preview/Production environment-variable scoping) is a clean future upgrade if stronger isolation is ever needed — not built here.
