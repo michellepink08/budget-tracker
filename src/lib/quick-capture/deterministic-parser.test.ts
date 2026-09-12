@@ -208,6 +208,22 @@ describe("parseCommand", () => {
     }
   });
 
+  it("resolves a mentioned account name inside a question", async () => {
+    const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "How much is in my BPI Savings?");
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.account?.id).toBe("acc-bpi");
+    }
+  });
+
+  it("leaves account null in a question when nothing matches", async () => {
+    const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "How much do I have in my wallet?");
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.account).toBeNull();
+    }
+  });
+
   it("converts and rounds minor units correctly", async () => {
     const [draft] = await parseCommand(makeFakePrisma(), makeContext(), "Paid 19.999 for food using cash");
     if (draft.intent === "expense") {

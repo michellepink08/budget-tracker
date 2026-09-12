@@ -66,6 +66,20 @@ function detectCutoffOverride(text: string): "previous" | "current" | "next" | n
   return null;
 }
 
+// Generic, question-only extraction: does any known account/category
+// name appear as a substring of the clause? Prefers the longest match
+// (so "BPI Savings" wins over a shorter false-positive). Unlike
+// resolveRefOrClarify, this never blocks on a clarification — a
+// read-only question always falls back to a sensible default instead
+// of asking a follow-up, since nothing is being written.
+function findMentionedRef(clause: string, candidates: ResolveCandidate[]): ResolvedRef | null {
+  const lower = clause.toLowerCase();
+  const matches = candidates.filter((c) => lower.includes(c.name.toLowerCase()));
+  if (matches.length === 0) return null;
+  const best = matches.reduce((a, b) => (b.name.length > a.name.length ? b : a));
+  return { raw: best.name, id: best.id, candidateIds: [] };
+}
+
 // Splits a multi-command input like "Paid 180 food cash, 213 medicine
 // cash and 703 food GCash" into independent clauses. Deliberately
 // simple: split on commas and the word "and" that aren't inside a
@@ -301,13 +315,13 @@ const clauseParsers: ClauseParser[] = [
   // write-intent above.
   {
     test: (lower) => lower.trim().endsWith("?"),
-    parse: async (_prisma, _ctx, clause) => {
+    parse: async (_prisma, ctx, clause) => {
       const matched = QUESTION_PATTERNS.find((p) => p.test.test(clause.toLowerCase()));
       return {
         intent: "question",
         questionType: matched?.questionType ?? "liquid_funds",
-        account: null,
-        category: null,
+        account: findMentionedRef(clause, ctx.accounts),
+        category: findMentionedRef(clause, ctx.categories),
         clauseText: clause,
         clarification: null,
       };
