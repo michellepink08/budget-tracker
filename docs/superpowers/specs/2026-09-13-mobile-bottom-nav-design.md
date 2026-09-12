@@ -1,5 +1,7 @@
 # Mobile Bottom Nav — Design
 
+> **Superseded 2026-09-13** by [Plan 15](../plans/2026-09-13-plan-15-nav-overhaul.md) — the mobile bottom nav this describes was replaced with a left-side drawer, per updated navigation requirements. Kept here for history, not deleted.
+
 **Status:** Approved by user, 2026-09-13
 
 ## Goal

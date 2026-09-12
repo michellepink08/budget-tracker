@@ -1,5 +1,7 @@
 # Mobile Bottom Nav Implementation Plan
 
+> **Superseded 2026-09-13** by [Plan 15](2026-09-13-plan-15-nav-overhaul.md) — the mobile bottom nav this describes was replaced with a left-side drawer, per updated navigation requirements. Kept here for history, not deleted.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add the distinct mobile bottom navigation (Home, Transactions, Add, Bills, Accounts, More) the original design spec called for, alongside the existing desktop `TopNav`.
