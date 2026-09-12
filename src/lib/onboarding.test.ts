@@ -16,7 +16,7 @@ describe("completeOnboarding", () => {
     await completeOnboarding(prisma, "user-1", {
       cycleStartDay: 25,
       currency: "PHP",
-      accentColor: "emerald",
+      accentColor: "wine",
     });
 
     expect(prisma.user.update).toHaveBeenCalledTimes(1);
@@ -24,7 +24,7 @@ describe("completeOnboarding", () => {
     expect(args.where).toEqual({ id: "user-1" });
     expect(args.data.cycleStartDay).toBe(25);
     expect(args.data.currency).toBe("PHP");
-    expect(args.data.accentColor).toBe("emerald");
+    expect(args.data.accentColor).toBe("wine");
     expect(args.data.onboardedAt).toBeInstanceOf(Date);
   });
 });
