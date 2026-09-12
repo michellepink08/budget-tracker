@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-manrope);
+  --color-accent-tint: var(--accent-tint);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,111 +49,150 @@
 }
 
 :root {
-  --background: #faf3e8;
-  --foreground: #2b241c;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
   --card: #ffffff;
-  --card-foreground: #2b241c;
+  --card-foreground: #0a0a0a;
   --popover: #ffffff;
-  --popover-foreground: #2b241c;
-  --primary: #ff6b5e;
-  --primary-foreground: #ffffff;
-  --secondary: #efe6d8;
-  --secondary-foreground: #3f3a32;
-  --muted: #f1e9da;
-  --muted-foreground: #7a7266;
-  --accent: #e7e1cf;
-  --accent-foreground: #2b241c;
+  --popover-foreground: #0a0a0a;
+  --primary: #059669;
+  --primary-foreground: #0a0a0a; /* white failed WCAG AA here (3.77:1) — dark text clears it (5.25:1) */
+  --secondary: #f0f0f0;
+  --secondary-foreground: #262626;
+  --muted: #f0f0f0;
+  --muted-foreground: #737373;
+  --accent: #e5e5e5;
+  --accent-foreground: #0a0a0a;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e4dac5;
-  --input: #e4dac5;
-  --ring: #ff6b5e;
-  --chart-1: #ff6b5e;
-  --chart-2: #6b8f71;
-  --chart-3: #e3a857;
-  --chart-4: #c97b63;
-  --chart-5: #a69b87;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #059669;
+  --chart-1: #be123c;
+  --chart-2: #059669;
+  --chart-3: #b45309;
+  --chart-4: #3730a3;
+  --chart-5: #0d9488;
   --radius: 0.625rem;
-  --sidebar: #f1e9da;
-  --sidebar-foreground: #2b241c;
-  --sidebar-primary: #ff6b5e;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7e1cf;
-  --sidebar-accent-foreground: #2b241c;
-  --sidebar-border: #e4dac5;
-  --sidebar-ring: #ff6b5e;
+  --sidebar: #f0f0f0;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #e5e5e5;
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #059669;
 
-  /* Brand chrome — the nav bar and major section headers. Fixed; does not
-     change with the user's accent color (design spec's "Visual identity"). */
-  --nav-background: #2f4a3e;
-  --nav-foreground: #f5f1e8;
+  /* Nav bar and progress-bar track background — both now derive from the
+     user's chosen accent (dark and light tonal shades respectively). These
+     are the accent-less defaults (Emerald), overridden per accent below. */
+  --nav-background: #065f46;
+  --nav-foreground: #fafafa;
+  --accent-tint: #d1fae5;
 }
 
 .dark {
-  --background: #201c16;
-  --foreground: #f0e9da;
-  --card: #2a251d;
-  --card-foreground: #f0e9da;
-  --popover: #2a251d;
-  --popover-foreground: #f0e9da;
-  --primary: #ff6b5e;
-  --primary-foreground: #ffffff;
-  --secondary: #362f26;
-  --secondary-foreground: #f0e9da;
-  --muted: #362f26;
-  --muted-foreground: #a79c8a;
-  --accent: #3a3226;
-  --accent-foreground: #f0e9da;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #059669;
+  --primary-foreground: #0a0a0a;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: #423a2e;
-  --input: #423a2e;
-  --ring: #ff6b5e;
-  --chart-1: #ff6b5e;
-  --chart-2: #6b8f71;
-  --chart-3: #e3a857;
-  --chart-4: #c97b63;
-  --chart-5: #a69b87;
-  --sidebar: #2a251d;
-  --sidebar-foreground: #f0e9da;
-  --sidebar-primary: #ff6b5e;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #3a3226;
-  --sidebar-accent-foreground: #f0e9da;
-  --sidebar-border: #423a2e;
-  --sidebar-ring: #ff6b5e;
+  --border: #2e2e2e;
+  --input: #2e2e2e;
+  --ring: #059669;
+  --chart-1: #be123c;
+  --chart-2: #059669;
+  --chart-3: #b45309;
+  --chart-4: #3730a3;
+  --chart-5: #0d9488;
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #2e2e2e;
+  --sidebar-ring: #059669;
 
-  --nav-background: #1d2e25;
-  --nav-foreground: #f0e9da;
+  --nav-background: #065f46;
+  --nav-foreground: #fafafa;
+  --accent-tint: #0f2e22;
 }
 
-/* Per-user accent — overrides only --primary/--primary-foreground/--ring.
-   Never the brand chrome (--background, --nav-background, etc.) above.
-   Same hex values in light and dark mode — see this plan's "Documented
-   simplifications". */
-[data-accent="coral"] {
-  --primary: #ff6b5e;
-  --primary-foreground: #2b241c; /* white failed WCAG AA here (2.79:1) — dark text clears it (5.48:1) */
-  --ring: #ff6b5e;
+/* Per-user accent — three tonal shades derived from one chosen color:
+   --nav-background/--nav-foreground (dark shade, nav bar), --primary/
+   --primary-foreground/--ring (base shade, buttons/active states/on-track
+   progress fill), --accent-tint (light shade, progress-bar track
+   background). Every --primary-foreground pairing is computed and
+   verified against WCAG AA (4.5:1) — see comments below for any that
+   needed dark text instead of white. */
+[data-accent="emerald"] {
+  --nav-background: #065f46;
+  --nav-foreground: #fafafa;
+  --primary: #059669;
+  --primary-foreground: #0a0a0a; /* white failed AA (3.77:1) — dark text clears it (5.25:1) */
+  --ring: #059669;
+  --accent-tint: #d1fae5;
 }
-[data-accent="blue"] {
-  --primary: #2563eb; /* darkened from #3b82f6 — that shade failed AA with either white or dark text */
-  --primary-foreground: #ffffff; /* 5.17:1 */
-  --ring: #2563eb;
+[data-accent="teal"] {
+  --nav-background: #134e4a;
+  --nav-foreground: #fafafa;
+  --primary: #0d9488;
+  --primary-foreground: #0a0a0a; /* white failed AA (3.74:1) — dark text clears it (5.29:1) */
+  --ring: #0d9488;
+  --accent-tint: #ccfbf1;
 }
-[data-accent="green"] {
-  --primary: #15803d; /* darkened from #16a34a for the same reason */
+[data-accent="amber"] {
+  --nav-background: #78350f;
+  --nav-foreground: #fafafa;
+  --primary: #b45309;
   --primary-foreground: #ffffff; /* 5.02:1 */
-  --ring: #15803d;
+  --ring: #b45309;
+  --accent-tint: #fef3c7;
 }
-[data-accent="purple"] {
-  --primary: #7c3aed; /* darkened from #8b5cf6 for the same reason */
-  --primary-foreground: #ffffff; /* 5.70:1 */
-  --ring: #7c3aed;
+[data-accent="indigo"] {
+  --nav-background: #312e81;
+  --nav-foreground: #fafafa;
+  --primary: #3730a3;
+  --primary-foreground: #ffffff; /* 9.93:1 */
+  --ring: #3730a3;
+  --accent-tint: #e0e7ff;
 }
-[data-accent="neutral"] {
-  --primary: #52525b;
-  --primary-foreground: #ffffff; /* already fine (7.73:1) — unchanged */
-  --ring: #52525b;
+[data-accent="rose"] {
+  --nav-background: #881337;
+  --nav-foreground: #fafafa;
+  --primary: #be123c;
+  --primary-foreground: #ffffff; /* 6.29:1 */
+  --ring: #be123c;
+  --accent-tint: #ffe4e6;
 }
+[data-accent="stone"] {
+  --nav-background: #292524;
+  --nav-foreground: #fafafa;
+  --primary: #44403c;
+  --primary-foreground: #ffffff; /* 10.27:1 */
+  --ring: #44403c;
+  --accent-tint: #e7e5e4;
+}
+
+/* Dark mode gets its own --accent-tint per accent (a dark-tinted
+   background stays visually recessive against the dark page background;
+   the light-mode tint above would look like a bright highlight instead). */
+.dark[data-accent="emerald"] { --accent-tint: #0f2e22; }
+.dark[data-accent="teal"] { --accent-tint: #0d2e2b; }
+.dark[data-accent="amber"] { --accent-tint: #2e1a06; }
+.dark[data-accent="indigo"] { --accent-tint: #1e1c4a; }
+.dark[data-accent="rose"] { --accent-tint: #3a0a17; }
+.dark[data-accent="stone"] { --accent-tint: #262421; }
 
 @layer base {
   * {
