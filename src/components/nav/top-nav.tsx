@@ -37,7 +37,7 @@ export function TopNav({
           <Wallet className="h-5 w-5" />
           {APP_NAME}
         </div>
-        <nav className="flex items-center gap-4 overflow-x-auto text-sm">
+        <nav className="hidden items-center gap-4 overflow-x-auto text-sm md:flex">
           {links.map((link) => {
             const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
             return (
