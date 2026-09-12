@@ -38,5 +38,7 @@ export type TransactionStatus = (typeof TRANSACTION_STATUSES)[number];
 export const BUDGET_PERIOD_STATUSES = ["UPCOMING", "ACTIVE", "CLOSED"] as const;
 export type BudgetPeriodStatus = (typeof BUDGET_PERIOD_STATUSES)[number];
 
-// ROLLOVER_MODES and RECURRING_FREQUENCIES are Plan 3A (BudgetAllocation
-// and RecurringRule don't exist yet) — add them there, not here.
+export const ROLLOVER_MODES = ["NONE", "CARRY_UNUSED", "CARRY_OVERSPEND", "CARRY_BOTH"] as const;
+export type RolloverMode = (typeof ROLLOVER_MODES)[number];
+
+// RECURRING_FREQUENCIES is Plan 3A.2 (RecurringRule doesn't exist yet).
