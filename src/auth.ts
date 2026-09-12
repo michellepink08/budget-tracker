@@ -5,6 +5,11 @@ import { verifyPassword } from "@/lib/password";
 import { loginSchema } from "@/lib/validations/auth";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Auth.js doesn't auto-detect Vercel and trust its proxy — without this,
+  // every /api/auth/* route (even ones that never touch the database, like
+  // /api/auth/providers) throws UntrustedHost, which surfaces to users as
+  // a generic "problem with the server configuration" error.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
