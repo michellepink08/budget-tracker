@@ -1,0 +1,227 @@
+import { describe, expect, it, vi } from "vitest";
+import { executeDraft, undoExecution } from "@/lib/quick-capture/execute";
+import type { CommandDraft } from "@/lib/quick-capture/types";
+
+function ref(id: string | null, raw = "x") {
+  return { raw, id, candidateIds: [] };
+}
+
+function makeFakePrisma(overrides: Record<string, any> = {}) {
+  return {
+    transaction: {
+      create: vi.fn().mockResolvedValue({ id: "txn-new" }),
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue({ id: "txn-1", amount: -1000, date: new Date(), description: "old" }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+      update: vi.fn().mockResolvedValue({}),
+    },
+    budgetPeriod: {
+      findUnique: vi.fn().mockResolvedValue({ id: "period-1" }),
+    },
+    account: {
+      findFirst: vi.fn().mockResolvedValue({ id: "acc-1" }),
+      findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 0 }),
+    },
+    payable: {
+      create: vi.fn().mockResolvedValue({ id: "pay-new" }),
+      findFirst: vi.fn().mockResolvedValue({ id: "pay-1", amount: 1000, dueDate: new Date(), notes: "old note" }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    creditCard: { findFirst: vi.fn().mockResolvedValue({ id: "cc-1" }) },
+    loan: { findFirst: vi.fn().mockResolvedValue({ id: "loan-1", remainingBalance: 5000, name: "Car loan" }) },
+    ...overrides,
+  } as any;
+}
+
+const now = new Date(2026, 8, 13);
+
+describe("executeDraft", () => {
+  it("creates an expense transaction", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "expense",
+      amountMinorUnits: 18000,
+      account: ref("acc-1"),
+      category: null,
+      description: "food",
+      date: { value: now, confirmed: true },
+      cutoffOverride: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result).toEqual({ ok: true, resultingIds: ["txn-new"] });
+  });
+
+  it("creates two linked rows plus a fee transaction for a transfer with a fee", async () => {
+    const prisma = makeFakePrisma({
+      transaction: {
+        create: vi
+          .fn()
+          .mockResolvedValueOnce({ id: "txn-out" })
+          .mockResolvedValueOnce({ id: "txn-in" })
+          .mockResolvedValueOnce({ id: "txn-fee" }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      budgetPeriod: { findUnique: vi.fn().mockResolvedValue({ id: "period-1" }) },
+    });
+    const draft: CommandDraft = {
+      intent: "transfer",
+      amountMinorUnits: 100000,
+      feeMinorUnits: 1500,
+      sourceAccount: ref("acc-1"),
+      destinationAccount: ref("acc-2"),
+      description: "Transfer",
+      date: { value: now, confirmed: true },
+      cutoffOverride: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result).toEqual({ ok: true, resultingIds: ["txn-out", "txn-in", "txn-fee"] });
+  });
+
+  it("records money borrowed by another person as an expense with the person's name in the description", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "person_borrowed",
+      amountMinorUnits: 50000,
+      account: ref("acc-1"),
+      personName: "Mama",
+      date: { value: now, confirmed: true },
+      clauseText: "x",
+      clarification: null,
+    };
+    await executeDraft(prisma, "user-1", 1, draft);
+    expect(prisma.transaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ description: "Lent to Mama" }) }),
+    );
+  });
+
+  it("applies a reconciliation and returns the adjustment transaction id", async () => {
+    const prisma = makeFakePrisma();
+    prisma.account.findUniqueOrThrow.mockResolvedValue({ id: "acc-1", openingBalance: 40000 });
+    const draft: CommandDraft = {
+      intent: "reconciliation",
+      account: ref("acc-1"),
+      actualBalanceMinorUnits: 50000,
+      date: { value: now, confirmed: true },
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result).toEqual({ ok: true, resultingIds: ["txn-new"] });
+  });
+
+  it("creates a payable with dueDateConfirmed carried through", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "payable_create",
+      name: "EastWest hospital bill",
+      amountMinorUnits: 1551914,
+      dueDate: { value: now, confirmed: false },
+      statementDate: null,
+      account: ref("acc-1"),
+      category: null,
+      notes: null,
+      cutoff: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result).toEqual({ ok: true, resultingIds: ["pay-new"] });
+    expect(prisma.payable.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ dueDateConfirmed: false }) }),
+    );
+  });
+
+  it("updates a transaction and returns its previous values for Undo", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "transaction_update",
+      target: ref("txn-1"),
+      amountMinorUnits: 25000,
+      date: null,
+      description: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.resultingIds).toEqual(["txn-1"]);
+      expect(result.previousValues).toEqual({ amount: -1000, date: expect.any(Date), description: "old" });
+    }
+  });
+
+  it("deletes a transaction with no undo-able ids", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "transaction_delete",
+      target: ref("txn-1"),
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result).toEqual({ ok: true, resultingIds: [] });
+  });
+
+  it("refuses to execute a question draft", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "question",
+      questionType: "liquid_funds",
+      account: null,
+      category: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    const result = await executeDraft(prisma, "user-1", 1, draft);
+    expect(result.ok).toBe(false);
+  });
+
+  it("scopes everything to the given userId", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "transaction_delete",
+      target: ref("txn-1"),
+      clauseText: "x",
+      clarification: null,
+    };
+    await executeDraft(prisma, "user-42", 1, draft);
+    expect(prisma.transaction.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "user-42" }) }),
+    );
+  });
+});
+
+describe("undoExecution", () => {
+  it("deletes created transaction rows", async () => {
+    const prisma = makeFakePrisma();
+    const result = await undoExecution(prisma, "user-1", "expense", ["txn-new"], null);
+    expect(result).toEqual({ ok: true });
+    expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["txn-new"] }, userId: "user-1" },
+    });
+  });
+
+  it("restores previous values for a transaction update", async () => {
+    const prisma = makeFakePrisma();
+    const previousValues = { amount: -1000, date: now, description: "old" };
+    const result = await undoExecution(prisma, "user-1", "transaction_update", ["txn-1"], previousValues);
+    expect(result).toEqual({ ok: true });
+    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["txn-1"] }, userId: "user-1" },
+      data: previousValues,
+    });
+  });
+
+  it("is a no-op when there are no resultingIds (e.g. an already-balanced reconciliation, or a delete)", async () => {
+    const prisma = makeFakePrisma();
+    const result = await undoExecution(prisma, "user-1", "transaction_delete", [], null);
+    expect(result).toEqual({ ok: true });
+    expect(prisma.transaction.deleteMany).not.toHaveBeenCalled();
+  });
+});
