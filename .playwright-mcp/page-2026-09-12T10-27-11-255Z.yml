@@ -1,0 +1,24 @@
+- generic [ref=f14e1]:
+  - generic [ref=f14e2]:
+    - heading "Log in" [level=1] [ref=f14e3]
+    - generic [ref=f14e4]:
+      - generic [ref=f14e5]:
+        - generic [ref=f14e6]: Email
+        - textbox "Email" [ref=f14e7]: demo@example.com
+      - generic [ref=f14e8]:
+        - generic [ref=f14e9]: Password
+        - textbox "Password" [active] [ref=f14e10]: demopassword123
+      - button "Log in" [ref=f14e11]
+    - paragraph [ref=f14e12]:
+      - text: Don't have an account?
+      - link "Sign up" [ref=f14e13] [cursor=pointer]:
+        - /url: /signup
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f14e23] [cursor=pointer]:
+    - generic [ref=f14e51]:
+      - text: Compiling
+      - generic [ref=f14e52]:
+        - generic [ref=f14e53]: .
+        - generic [ref=f14e54]: .
+        - generic [ref=f14e55]: .
+  - alert [ref=f14e31]

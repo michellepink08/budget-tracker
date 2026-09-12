@@ -1,0 +1,38 @@
+- generic [active] [ref=f17e1]:
+  - generic [ref=f17e2]:
+    - banner [ref=f17e3]:
+      - generic [ref=f17e4]:
+        - generic [ref=f17e5]: Budget Tracker
+        - navigation [ref=f17e9]:
+          - link "Dashboard" [ref=f17e10] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Transactions" [ref=f17e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Budget" [ref=f17e12] [cursor=pointer]:
+            - /url: /budget
+          - link "Bills" [ref=f17e13] [cursor=pointer]:
+            - /url: /bills
+          - link "Accounts" [ref=f17e14] [cursor=pointer]:
+            - /url: /accounts
+          - link "Loans & Cards" [ref=f17e15] [cursor=pointer]:
+            - /url: /loans-cards
+          - link "Reports" [ref=f17e16] [cursor=pointer]:
+            - /url: /reports
+          - link "Settings" [ref=f17e17] [cursor=pointer]:
+            - /url: /settings
+        - generic [ref=f17e18]:
+          - button "Add" [ref=f17e19]
+          - button "Sign out" [ref=f17e21]
+    - main [ref=f17e22]:
+      - generic [ref=f17e23]:
+        - heading "Reports" [level=1] [ref=f17e24]
+        - heading "Spending by category (this cycle)" [level=2] [ref=f17e26]
+        - heading "Income vs. expense (last 6 cycles)" [level=2] [ref=f17e30]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f17e38] [cursor=pointer]:
+    - generic [ref=f17e41]:
+      - text: Compiling
+      - generic [ref=f17e42]:
+        - generic [ref=f17e43]: .
+        - generic [ref=f17e44]: .
+        - generic [ref=f17e45]: .

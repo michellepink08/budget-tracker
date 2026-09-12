@@ -1,0 +1,46 @@
+- generic [active] [ref=f15e1]:
+  - generic [ref=f15e2]:
+    - banner [ref=f15e3]:
+      - generic [ref=f15e4]:
+        - generic [ref=f15e5]: Budget Tracker
+        - navigation [ref=f15e9]:
+          - link "Dashboard" [ref=f15e10] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Transactions" [ref=f15e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Budget" [ref=f15e12] [cursor=pointer]:
+            - /url: /budget
+          - link "Bills" [ref=f15e13] [cursor=pointer]:
+            - /url: /bills
+          - link "Accounts" [ref=f15e14] [cursor=pointer]:
+            - /url: /accounts
+          - link "Loans & Cards" [ref=f15e15] [cursor=pointer]:
+            - /url: /loans-cards
+          - link "Reports" [ref=f15e16] [cursor=pointer]:
+            - /url: /reports
+          - link "Settings" [ref=f15e17] [cursor=pointer]:
+            - /url: /settings
+        - generic [ref=f15e18]:
+          - button "Add" [ref=f15e19]
+          - button "Sign out" [ref=f15e21]
+    - main [ref=f15e22]:
+      - generic [ref=f15e23]:
+        - generic [ref=f15e24]:
+          - heading "Bills" [level=1] [ref=f15e25]
+          - generic [ref=f15e26]:
+            - button "Add recurring bill" [ref=f15e27]
+            - button "Add bill" [ref=f15e28]
+        - generic [ref=f15e29]:
+          - heading "Recurring bills" [level=2] [ref=f15e30]
+          - paragraph [ref=f15e31]: No recurring bills yet.
+        - generic [ref=f15e32]:
+          - heading "All bills" [level=2] [ref=f15e33]
+          - paragraph [ref=f15e34]: No bills yet.
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f15e40] [cursor=pointer]:
+    - generic [ref=f15e43]:
+      - text: Compiling
+      - generic [ref=f15e44]:
+        - generic [ref=f15e45]: .
+        - generic [ref=f15e46]: .
+        - generic [ref=f15e47]: .
