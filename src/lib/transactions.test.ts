@@ -108,6 +108,26 @@ describe("updateTransaction", () => {
   });
 });
 
+describe("updateTransaction — amount/date/account", () => {
+  it("updates amount, date, and accountId when given", async () => {
+    const prisma = {
+      transaction: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    } as any;
+
+    const result = await updateTransaction(prisma, "user-1", "txn-1", {
+      amount: 25000,
+      date: new Date(2026, 8, 1),
+      accountId: "acc-2",
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+      where: { id: "txn-1", userId: "user-1" },
+      data: { amount: 25000, date: new Date(2026, 8, 1), accountId: "acc-2" },
+    });
+  });
+});
+
 describe("deleteTransaction", () => {
   it("deletes a single (non-transfer) row scoped to the user", async () => {
     const prisma = makeFakePrisma();

@@ -100,6 +100,9 @@ export type TransactionEditableInput = {
   notes?: string;
   categoryId?: string | null;
   subcategoryId?: string | null;
+  amount?: number; // minor units — the caller is responsible for the correct sign
+  date?: Date;
+  accountId?: string;
 };
 
 export async function updateTransaction(
