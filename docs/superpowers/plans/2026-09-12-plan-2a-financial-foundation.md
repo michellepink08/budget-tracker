@@ -879,8 +879,8 @@ describe("resolveBudgetPeriodForDate", () => {
     expect(prisma.budgetPeriod.create).toHaveBeenCalledTimes(1);
     const args = prisma.budgetPeriod.create.mock.calls[0][0];
     expect(args.data.userId).toBe("user-1");
-    expect(args.data.startDate).toEqual(new Date(2026, 7, 11));
-    expect(args.data.endDate).toEqual(new Date(2026, 8, 10));
+    expect(args.data.startDate).toEqual(new Date(2026, 8, 11));
+    expect(args.data.endDate).toEqual(new Date(2026, 9, 10));
     expect(args.data.status).toBe("ACTIVE");
   });
 });
