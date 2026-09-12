@@ -1,6 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeLiquidFunds } from "@/lib/liquid-funds";
 import { listRestrictedFundGroups } from "@/lib/restricted-funds";
+import { listAllocationsWithActuals } from "@/lib/budget-allocations";
+import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { computeAccountBalance } from "@/lib/account-balance";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { getCycleForDate } from "@/lib/cycle";
@@ -18,7 +20,7 @@ export type QuestionAnswer =
 
 type AnswerPrisma = Pick<
   PrismaClient,
-  "account" | "transaction" | "budgetPeriod" | "category" | "payable" | "creditCard"
+  "account" | "transaction" | "budgetPeriod" | "budgetAllocation" | "category" | "payable" | "creditCard"
 >;
 
 async function totalExpenseForPeriod(
@@ -166,8 +168,25 @@ export async function answerQuestion(
       };
     }
 
-    case "safe_to_spend":
-      return { kind: "unavailable", message: "Safe-to-spend isn't available yet" };
+    case "safe_to_spend": {
+      const [liquidFunds, period, restrictedGroups] = await Promise.all([
+        computeLiquidFunds(prisma, userId),
+        resolveBudgetPeriodForDate(prisma, userId, now, cycleStartDay),
+        listRestrictedFundGroups(prisma, userId),
+      ]);
+      const allocations = await listAllocationsWithActuals(prisma, userId, period.id);
+      const totalRemaining = allocations.reduce((sum, a) => sum + (a.effectivePlanned - a.actual), 0);
+      const payables = await listDuePayables(prisma, userId, period.endDate);
+      const restrictedAccountIds = new Set(restrictedGroups.map((g) => g.accountId));
+      const safeToSpend = computeSafeToSpend({
+        liquidFunds,
+        totalRemaining,
+        payables: payables as { accountId: string; amount: number; dueDate: Date }[],
+        restrictedAccountIds,
+        cutoffEnd: period.endDate,
+      });
+      return { kind: "amount", label: "Safe to spend", amountMinorUnits: safeToSpend };
+    }
 
     case "restricted_fund_balance": {
       if (draft.account?.id) {

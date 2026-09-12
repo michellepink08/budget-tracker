@@ -119,10 +119,49 @@ describe("answerQuestion", () => {
     expect(result.kind).toBe("unavailable");
   });
 
-  it("reports unavailable for safe_to_spend", async () => {
-    const prisma = makeFakePrisma();
+  it("answers safe_to_spend using liquid funds, remaining budget, and upcoming obligations", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        // Two different queries share this one mock (computeLiquidFunds's
+        // includeInLiquidFunds:true and listRestrictedFundGroups's :false) —
+        // branch on the filter so each gets the right accounts back.
+        findMany: vi.fn((args: { where: { includeInLiquidFunds?: boolean } }) =>
+          Promise.resolve(args.where.includeInLiquidFunds === false ? [] : [{ id: "acc-1" }]),
+        ),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 100000 }),
+      },
+      budgetPeriod: {
+        findUnique: vi.fn().mockResolvedValue({ id: "period-1", endDate: new Date(2026, 8, 30) }),
+        create: vi.fn(),
+      },
+      budgetAllocation: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            {
+              id: "alloc-1",
+              categoryId: "cat-1",
+              category: { name: "Food" },
+              plannedAmount: 20000,
+              rolloverAmount: 0,
+              rolloverMode: "RESET",
+            },
+          ]),
+      },
+      payable: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ accountId: "acc-1", amount: 15000, dueDate: new Date(2026, 8, 20) }]),
+      },
+    });
     const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "safe_to_spend" }));
-    expect(result.kind).toBe("unavailable");
+    expect(result.kind).toBe("amount");
+    if (result.kind === "amount") {
+      expect(result.label).toBe("Safe to spend");
+      // liquidFunds 100000 - obligations 15000 - totalRemaining (20000 planned - 0 actual) = 65000
+      expect(result.amountMinorUnits).toBe(65000);
+    }
   });
 
   it("answers restricted_fund_balance for a resolved account regardless of restriction status", async () => {

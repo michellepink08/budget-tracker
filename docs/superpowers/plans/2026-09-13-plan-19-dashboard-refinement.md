@@ -150,7 +150,12 @@ Replace the existing `"reports unavailable for safe_to_spend"` test in `src/lib/
   it("answers safe_to_spend using liquid funds, remaining budget, and upcoming obligations", async () => {
     const prisma = makeFakePrisma({
       account: {
-        findMany: vi.fn().mockResolvedValue([{ id: "acc-1" }]),
+        // Two different queries share this one mock (computeLiquidFunds's
+        // includeInLiquidFunds:true and listRestrictedFundGroups's :false) —
+        // branch on the filter so each gets the right accounts back.
+        findMany: vi.fn((args: { where: { includeInLiquidFunds?: boolean } }) =>
+          Promise.resolve(args.where.includeInLiquidFunds === false ? [] : [{ id: "acc-1" }]),
+        ),
         findFirst: vi.fn().mockResolvedValue(null),
         findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 100000 }),
       },
