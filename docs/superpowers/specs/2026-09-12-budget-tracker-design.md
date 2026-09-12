@@ -492,9 +492,24 @@ Unchanged from v1:
 - **Plan 2B: Core CRUD interface** — Accounts, Categories/Subcategories,
   Transactions pages; a global "Add Transaction" modal; search/filters;
   responsive layouts; empty/loading/error states.
-- **Plan 3A: Planning features** — budget allocations, rollover logic,
-  recurring transactions (UI), bills/payables, transfer recommendations,
-  account reconciliation (UI).
+- **Plan 3A: Planning features** — split into three sub-plans, each
+  independently shippable (the combined scope was too large for one plan,
+  the same reasoning that split Plan 2 into 2A/2B):
+  - **Plan 3A.1** — `BudgetAllocation` schema, rollover math, the Budget
+    page (current + previous periods, planned/actual/remaining/% used per
+    category, manual period creation).
+  - **Plan 3A.2** — `RecurringRule` schema, due-date advancement, the
+    Recurring page (CRUD plus the due-now confirm/edit/skip review list —
+    replaces today's placeholder page).
+  - **Plan 3A.3** — `Payable`/`RecurringPayable` schema, the Bills page,
+    transfer recommendations, and account reconciliation (a
+    `previewReconciliation`/`applyReconciliation` service plus preview +
+    confirm UI, per this doc's "Account-balance rules" section — Plan 2A
+    deliberately didn't build reconciliation at all, so this is new work,
+    not an extension of existing code).
+- **Plan 3B: Debt features and dashboard** — loans, credit cards,
+  installment purchases and schedules, dashboard calculations, reports,
+  Settings integration, accent-color/theme wiring.
 - **Plan 3B: Debt features and dashboard** — loans, credit cards,
   installment purchases and schedules, dashboard calculations, reports,
   Settings integration, accent-color/theme wiring.
