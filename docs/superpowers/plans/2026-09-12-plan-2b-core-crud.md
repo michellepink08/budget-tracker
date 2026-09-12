@@ -16,7 +16,7 @@
 
 **Read first:** `docs/superpowers/specs/2026-09-12-budget-tracker-design.md` and `docs/superpowers/plans/2026-09-12-plan-2a-financial-foundation.md`. This plan builds directly on Plan 2A's domain services (`src/lib/cycle.ts`, `transaction-rules.ts`, `budget-period.ts`, `transfers.ts`, `account-balance.ts`) — don't re-derive that logic here.
 
-**A note on generated shadcn component APIs:** this project's shadcn setup uses `@base-ui/react` under the hood (see Plan 1 Task 3), not Radix. The component *usage* shown below (`DialogTrigger`/`DialogContent`/`SelectItem`/etc.) follows shadcn's standard documented API, which the registry normalizes across primitive libraries — but if a generated component's actual export names differ once added in Task 5, adapt the later tasks' JSX to match what was actually generated rather than fighting it.
+**A note on generated shadcn component APIs:** this project's shadcn setup uses `@base-ui/react` under the hood (see Plan 1 Task 3), not Radix. Export names (`DialogTrigger`/`DialogContent`/`SelectItem`/etc.) match shadcn's standard documented API. **One real difference confirmed once Task 5 generated the files:** Base UI trigger/close components take a `render={<Component .../>}` prop instead of Radix's `asChild` + child-element pattern — e.g. `<DialogTrigger render={<Button variant="outline" />}>Edit</DialogTrigger>`, not `<DialogTrigger asChild><Button>Edit</Button></DialogTrigger>`. Every `asChild` usage below (`DialogTrigger`, `AlertDialogTrigger`) needs this same rewrite — the button's text/children move to be the trigger's children, and the button's props move into the `render` element.
 
 ---
 
@@ -1370,10 +1370,8 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant={existing ? "outline" : "default"}>
-          {existing ? "Edit" : "Add account"}
-        </Button>
+      <DialogTrigger render={<Button variant={existing ? "outline" : "default"} />}>
+        {existing ? "Edit" : "Add account"}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -1766,10 +1764,8 @@ export function CategoryFormDialog({ existing }: { existing?: ExistingCategory }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant={existing ? "outline" : "default"}>
-          {existing ? "Edit" : "Add category"}
-        </Button>
+      <DialogTrigger render={<Button variant={existing ? "outline" : "default"} />}>
+        {existing ? "Edit" : "Add category"}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -2397,11 +2393,7 @@ export function DeleteTransactionButton({ transactionId }: { transactionId: stri
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          Delete
-        </Button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger render={<Button variant="ghost" size="sm" />}>Delete</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
@@ -2638,11 +2630,9 @@ export function AddTransactionButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add
-        </Button>
+      <DialogTrigger render={<Button size="sm" className="gap-1" />}>
+        <Plus className="h-4 w-4" />
+        Add
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
