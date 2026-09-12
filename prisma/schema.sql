@@ -221,3 +221,38 @@ CREATE TABLE IF NOT EXISTS "CreditCard" (
   FOREIGN KEY ("accountId") REFERENCES "Account" ("id")
 );
 CREATE INDEX IF NOT EXISTS "CreditCard_userId_idx" ON "CreditCard" ("userId");
+
+CREATE TABLE IF NOT EXISTS "InstallmentPurchase" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "totalAmount" INTEGER NOT NULL,
+  "numberOfTerms" INTEGER NOT NULL,
+  "accountId" TEXT NOT NULL,
+  "categoryId" TEXT,
+  "startDate" DATETIME NOT NULL,
+  "archivedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("accountId") REFERENCES "Account" ("id"),
+  FOREIGN KEY ("categoryId") REFERENCES "Category" ("id")
+);
+CREATE INDEX IF NOT EXISTS "InstallmentPurchase_userId_idx" ON "InstallmentPurchase" ("userId");
+
+CREATE TABLE IF NOT EXISTS "InstallmentPayment" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "installmentPurchaseId" TEXT NOT NULL,
+  "termNumber" INTEGER NOT NULL,
+  "amount" INTEGER NOT NULL,
+  "dueDate" DATETIME NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "paidTransactionId" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("userId") REFERENCES "User" ("id"),
+  FOREIGN KEY ("installmentPurchaseId") REFERENCES "InstallmentPurchase" ("id")
+);
+CREATE INDEX IF NOT EXISTS "InstallmentPayment_userId_idx" ON "InstallmentPayment" ("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "InstallmentPayment_installmentPurchaseId_termNumber_key" ON "InstallmentPayment" ("installmentPurchaseId", "termNumber");
