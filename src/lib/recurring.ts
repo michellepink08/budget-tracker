@@ -70,35 +70,41 @@ export async function listDueRecurringRules(
 export type ConfirmOverrides = { amount?: number; date?: Date };
 
 export async function confirmRecurringOccurrence(
-  prisma: Pick<PrismaClient, "recurringRule" | "transaction" | "budgetPeriod">,
+  prisma: Pick<PrismaClient, "recurringRule" | "transaction" | "budgetPeriod" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   ruleId: string,
   overrides: ConfirmOverrides,
 ): Promise<RecurringMutationResult> {
-  const rule = await prisma.recurringRule.findFirst({ where: { id: ruleId, userId } });
-  if (!rule) {
-    return { ok: false, error: "Recurring rule not found" };
-  }
+  // Posting the transaction and advancing nextDate happen atomically — a
+  // failure partway through must never post a transaction without
+  // advancing the schedule (which would let the same occurrence be
+  // confirmed twice) or advance the schedule without actually posting.
+  return prisma.$transaction(async (tx) => {
+    const rule = await tx.recurringRule.findFirst({ where: { id: ruleId, userId } });
+    if (!rule) {
+      return { ok: false, error: "Recurring rule not found" };
+    }
 
-  await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: rule.transactionType as SignableTransactionType,
-    amount: overrides.amount ?? rule.amount,
-    date: overrides.date ?? rule.nextDate,
-    accountId: rule.accountId,
-    categoryId: rule.categoryId ?? undefined,
-    subcategoryId: rule.subcategoryId ?? undefined,
-    description: rule.name,
+    await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: rule.transactionType as SignableTransactionType,
+      amount: overrides.amount ?? rule.amount,
+      date: overrides.date ?? rule.nextDate,
+      accountId: rule.accountId,
+      categoryId: rule.categoryId ?? undefined,
+      subcategoryId: rule.subcategoryId ?? undefined,
+      description: rule.name,
+    });
+
+    const nextDate = advanceNextDate(
+      rule.nextDate,
+      rule.frequency as RecurringFrequency,
+      rule.intervalDays ?? undefined,
+    );
+    await tx.recurringRule.update({ where: { id: ruleId }, data: { nextDate } });
+
+    return { ok: true };
   });
-
-  const nextDate = advanceNextDate(
-    rule.nextDate,
-    rule.frequency as RecurringFrequency,
-    rule.intervalDays ?? undefined,
-  );
-  await prisma.recurringRule.update({ where: { id: ruleId }, data: { nextDate } });
-
-  return { ok: true };
 }
 
 export async function skipRecurringOccurrence(

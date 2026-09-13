@@ -24,7 +24,7 @@ const SAMPLE_RULE = {
 };
 
 function makeFakePrisma(rule: unknown = SAMPLE_RULE) {
-  return {
+  const prisma = {
     recurringRule: {
       create: vi.fn().mockResolvedValue({ id: "rule-new" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -39,7 +39,9 @@ function makeFakePrisma(rule: unknown = SAMPLE_RULE) {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
-  } as any;
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return prisma as any;
 }
 
 describe("createRecurringRule", () => {
