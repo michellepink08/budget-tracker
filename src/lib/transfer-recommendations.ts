@@ -1,10 +1,24 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeAccountBalance } from "@/lib/account-balance";
 
+export type FundingObligation = {
+  payableId: string;
+  name: string;
+  amount: number;
+  dueDate: Date;
+};
+
 export type FundingRecommendation = {
   fromAccountId: string;
   toAccountId: string;
   amount: number; // minor units, non-negative
+  // Plan-38 §1: a suggested transfer must show its reason, which
+  // obligations it funds, and the source account's balance afterward — it
+  // never affects any balance itself until the user approves the resulting
+  // transfer via the normal transfer flow.
+  reason: string;
+  obligations: FundingObligation[];
+  remainingSourceBalance: number;
 };
 
 const LIQUID_PURPOSES = ["DISPOSABLE", "SAVINGS"];
@@ -73,9 +87,26 @@ export async function getRecommendedFundingTransfer(
 
   if (!bestSource) return null;
 
+  const amount = Math.min(shortfall, bestSource.balance);
+  const obligations: FundingObligation[] = upcomingPayables.map(
+    (p: { id: string; name: string; amount: number; dueDate: Date }) => ({
+      payableId: p.id,
+      name: p.name,
+      amount: p.amount,
+      dueDate: p.dueDate,
+    }),
+  );
+  const reason =
+    obligations.length === 1
+      ? `Covers "${obligations[0].name}", due ${obligations[0].dueDate.toLocaleDateString()}`
+      : `Covers ${obligations.length} bills due within ${lookAheadDays} days, totaling ${upcomingTotal} minor units`;
+
   return {
     fromAccountId: bestSource.accountId,
     toAccountId: fundingAccount.id,
-    amount: Math.min(shortfall, bestSource.balance),
+    amount,
+    reason,
+    obligations,
+    remainingSourceBalance: bestSource.balance - amount,
   };
 }

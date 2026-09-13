@@ -76,7 +76,7 @@ describe("getRecommendedFundingTransfer", () => {
 
   it("returns null when the funding account can already cover what's due", async () => {
     const prisma = makeFakePrisma({
-      payables: [{ accountId: "checking", amount: 100000, dueDate: new Date(2026, 8, 15) }],
+      payables: [{ id: "p1", name: "Rent", accountId: "checking", amount: 100000, dueDate: new Date(2026, 8, 15) }],
       balances: { checking: 200000 },
     });
 
@@ -88,14 +88,41 @@ describe("getRecommendedFundingTransfer", () => {
   it("recommends transferring the shortfall from the highest-balance eligible account", async () => {
     const prisma = makeFakePrisma({
       otherAccounts: [SAVINGS_ACCOUNT, CREDIT_CARD_ACCOUNT],
-      payables: [{ accountId: "checking", amount: 300000, dueDate: new Date(2026, 8, 15) }],
+      payables: [{ id: "p1", name: "Rent", accountId: "checking", amount: 300000, dueDate: new Date(2026, 8, 15) }],
       balances: { checking: 50000, savings: 1000000, cc: 5000000 },
     });
 
     const result = await getRecommendedFundingTransfer(prisma, "user-1", new Date(2026, 8, 12));
 
     // shortfall = 300000 - 50000 = 250000; credit card is excluded as a source
-    expect(result).toEqual({ fromAccountId: "savings", toAccountId: "checking", amount: 250000 });
+    expect(result).toEqual({
+      fromAccountId: "savings",
+      toAccountId: "checking",
+      amount: 250000,
+      reason: expect.stringContaining("Rent"),
+      obligations: [{ payableId: "p1", name: "Rent", amount: 300000, dueDate: new Date(2026, 8, 15) }],
+      // The source account's balance after the suggested (but not yet
+      // applied) transfer — 1,000,000 minus the 250,000 shortfall.
+      remainingSourceBalance: 750000,
+    });
+  });
+
+  it("includes one obligation per unpaid payable being funded, not just the next one", async () => {
+    const prisma = makeFakePrisma({
+      otherAccounts: [SAVINGS_ACCOUNT],
+      payables: [
+        { id: "p1", name: "Rent", accountId: "checking", amount: 200000, dueDate: new Date(2026, 8, 14) },
+        { id: "p2", name: "Internet", accountId: "checking", amount: 100000, dueDate: new Date(2026, 8, 16) },
+      ],
+      balances: { checking: 50000, savings: 1000000 },
+    });
+
+    const result = await getRecommendedFundingTransfer(prisma, "user-1", new Date(2026, 8, 12));
+
+    expect(result?.obligations).toEqual([
+      { payableId: "p1", name: "Rent", amount: 200000, dueDate: new Date(2026, 8, 14) },
+      { payableId: "p2", name: "Internet", amount: 100000, dueDate: new Date(2026, 8, 16) },
+    ]);
   });
 
   it("returns null when no eligible source account has a positive balance", async () => {

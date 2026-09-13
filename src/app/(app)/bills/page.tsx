@@ -64,6 +64,9 @@ export default async function BillsPage() {
         toAccountName: toAccount.name,
         amount: recommendation.amount,
         currency: toAccount.currency,
+        reason: recommendation.reason,
+        obligations: recommendation.obligations,
+        remainingSourceBalance: recommendation.remainingSourceBalance,
       };
     }
   }

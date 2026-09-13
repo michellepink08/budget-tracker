@@ -80,6 +80,9 @@ export default async function DashboardPage() {
         toAccountName: toAccount.name,
         amount: recommendation.amount,
         currency: fromAccount.currency,
+        reason: recommendation.reason,
+        obligations: recommendation.obligations,
+        remainingSourceBalance: recommendation.remainingSourceBalance,
       };
     }
   }
