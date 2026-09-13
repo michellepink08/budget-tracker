@@ -3,6 +3,7 @@ import { createExpenseLikeTransaction } from "@/lib/transactions";
 import { recordAudit } from "@/lib/audit-log";
 import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
+import { createAlias } from "@/lib/aliases";
 
 export type ReceiptMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -51,7 +52,7 @@ export async function removeImage(
 }
 
 export async function addLine(
-  prisma: Pick<PrismaClient, "receipt" | "receiptLine">,
+  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias">,
   userId: string,
   receiptId: string,
   input: {
@@ -69,6 +70,11 @@ export async function addLine(
     return { ok: false, error: "Receipt not found" };
   }
   const line = await prisma.receiptLine.create({ data: { userId, receiptId, ...input } });
+
+  if (input.catalogItemId && input.name.trim()) {
+    await createAlias(prisma, userId, { kind: "shopping_item", alias: input.name, targetId: input.catalogItemId });
+  }
+
   return { ok: true, id: line.id };
 }
 
@@ -82,7 +88,7 @@ async function assertOwnedLine(
 }
 
 export async function updateLine(
-  prisma: Pick<PrismaClient, "receiptLine">,
+  prisma: Pick<PrismaClient, "receiptLine" | "alias">,
   userId: string,
   lineId: string,
   input: Partial<{
@@ -99,6 +105,11 @@ export async function updateLine(
     return { ok: false, error: "Line not found" };
   }
   const line = await prisma.receiptLine.update({ where: { id: lineId }, data: input });
+
+  if (input.catalogItemId && input.name?.trim()) {
+    await createAlias(prisma, userId, { kind: "shopping_item", alias: input.name, targetId: input.catalogItemId });
+  }
+
   return { ok: true, id: line.id };
 }
 

@@ -37,6 +37,10 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       create: vi.fn().mockResolvedValue({ id: "period-1" }),
     },
     auditLog: { create: vi.fn().mockResolvedValue({ id: "audit-1" }) },
+    alias: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn().mockResolvedValue({}),
+    },
     ...overrides,
   };
   prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
@@ -150,6 +154,63 @@ describe("addLine / updateLine / deleteLine", () => {
     });
     const result = await deleteLine(prisma, "user-1", "line-1");
     expect(result.ok).toBe(true);
+  });
+});
+
+describe("addLine / updateLine — alias learning", () => {
+  it("addLine learns a shopping_item alias when given an explicit catalogItemId", async () => {
+    const prisma = makeFakePrisma({
+      receipt: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1" }), update: vi.fn() },
+    });
+    await addLine(prisma, "user-1", "receipt-1", {
+      catalogItemId: "catalog-1",
+      rawText: null,
+      name: "Milk",
+      quantity: 1,
+      unitPrice: 15000,
+      lineTotal: 15000,
+      categoryId: null,
+      excluded: false,
+    });
+    expect(prisma.alias.upsert).toHaveBeenCalledWith({
+      where: { userId_kind_alias: { userId: "user-1", kind: "shopping_item", alias: "milk" } },
+      update: { targetId: "catalog-1" },
+      create: { userId: "user-1", kind: "shopping_item", alias: "milk", targetId: "catalog-1" },
+    });
+  });
+
+  it("addLine does not write an alias when left unmatched", async () => {
+    const prisma = makeFakePrisma({
+      receipt: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1" }), update: vi.fn() },
+    });
+    await addLine(prisma, "user-1", "receipt-1", {
+      catalogItemId: null,
+      rawText: null,
+      name: "Random one-off item",
+      quantity: 1,
+      unitPrice: 15000,
+      lineTotal: 15000,
+      categoryId: null,
+      excluded: false,
+    });
+    expect(prisma.alias.upsert).not.toHaveBeenCalled();
+  });
+
+  it("updateLine learns a shopping_item alias when the catalog item is set", async () => {
+    const prisma = makeFakePrisma({
+      receiptLine: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "line-1", userId: "user-1" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "line-1", ...data })),
+        delete: vi.fn(),
+      },
+    });
+    await updateLine(prisma, "user-1", "line-1", { catalogItemId: "catalog-2", name: "Bread" });
+    expect(prisma.alias.upsert).toHaveBeenCalledWith({
+      where: { userId_kind_alias: { userId: "user-1", kind: "shopping_item", alias: "bread" } },
+      update: { targetId: "catalog-2" },
+      create: { userId: "user-1", kind: "shopping_item", alias: "bread", targetId: "catalog-2" },
+    });
   });
 });
 
