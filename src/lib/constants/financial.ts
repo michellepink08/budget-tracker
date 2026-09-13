@@ -87,3 +87,9 @@ export type IncomeForecastStatus = (typeof INCOME_FORECAST_STATUSES)[number];
 // Statuses counted as "reliable" (design doc: CONFIRMED/EXPECTED only —
 // ESTIMATED/UNCERTAIN lines are shown but excluded from reliable income).
 export const RELIABLE_INCOME_STATUSES: readonly IncomeForecastStatus[] = ["CONFIRMED", "EXPECTED"];
+
+export const SHOPPING_ITEM_PRIORITIES = ["LOW", "NORMAL", "HIGH"] as const;
+export type ShoppingItemPriority = (typeof SHOPPING_ITEM_PRIORITIES)[number];
+
+export const PRICE_SOURCES = ["MANUAL", "RECEIPT"] as const; // RECEIPT unused until Plan 24
+export type PriceSource = (typeof PRICE_SOURCES)[number];
