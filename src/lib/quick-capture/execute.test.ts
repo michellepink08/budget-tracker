@@ -452,3 +452,68 @@ describe("undoExecution — shopping_list_add", () => {
     });
   });
 });
+
+describe("shopping_list_select", () => {
+  it("selects the matching item on the current list", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1" }) },
+      shoppingListItem: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "item-1", isSelected: false, freeTextName: null, catalogItem: { canonicalName: "Rice" } },
+        ]),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_list_select",
+      item: { raw: "rice", id: null, candidateIds: [] },
+      clauseText: "Mark rice for the next trip",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: true, resultingIds: ["item-1"], previousValues: { isSelected: false } });
+    expect(prisma.shoppingListItem.update).toHaveBeenCalledWith({
+      where: { id: "item-1" },
+      data: { isSelected: true },
+    });
+  });
+
+  it("reports an error when nothing on the current list matches", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1" }) },
+      shoppingListItem: { findMany: vi.fn().mockResolvedValue([]), update: vi.fn() },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_list_select",
+      item: { raw: "durian", id: null, candidateIds: [] },
+      clauseText: "Mark durian for the next trip",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: false, error: "That item isn't on your current shopping list" });
+  });
+});
+
+describe("undoExecution — shopping_list_select", () => {
+  it("restores the item's previous isSelected value", async () => {
+    const prisma = makeFakePrisma({
+      shoppingListItem: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    });
+
+    const result = await undoExecution(
+      prisma,
+      "user-1",
+      "shopping_list_select",
+      ["item-1"],
+      { isSelected: false },
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.shoppingListItem.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["item-1"] }, userId: "user-1" },
+      data: { isSelected: false },
+    });
+  });
+});

@@ -344,6 +344,26 @@ const clauseParsers: ClauseParser[] = [
       };
     },
   },
+  // Shopping list item selection — "Mark rice and chicken for the next
+  // trip". Resolution against the CURRENT list's own items (not the full
+  // catalog) can't happen here — the parser only has the full catalog
+  // candidate list, not the current list's contents — so this carries the
+  // raw name through unresolved; executeDraft resolves it against the
+  // current list at confirm time and reports "item not found on your
+  // current list" there if it doesn't match.
+  {
+    test: (lower) => /\bmark\b/.test(lower) && /\b(next trip|shopping list)\b/.test(lower),
+    parse: async (_prisma, _ctx, clause) => {
+      const nameMatch = clause.match(/\bmark\s+(.+?)\s+for\b/i);
+      const itemNameRaw = (nameMatch?.[1] ?? clause).trim();
+      return {
+        intent: "shopping_list_select",
+        item: { raw: itemNameRaw, id: null, candidateIds: [] },
+        clauseText: clause,
+        clarification: null,
+      };
+    },
+  },
   // Shopping list add — "Add rice to my shopping list" (also matches a
   // bare split fragment like "milk to my shopping list" left over from a
   // multi-item clause such as "Add rice and milk to my shopping list" —

@@ -254,6 +254,30 @@ export async function executeDraft(
       return { ok: true, resultingIds: [item.id] };
     }
 
+    case "shopping_list_select": {
+      const list = await prisma.shoppingList.findFirst({ where: { userId, isCurrent: true } });
+      if (!list) return { ok: false, error: "No current shopping list" };
+
+      const lower = draft.item.raw.toLowerCase();
+      const items = await prisma.shoppingListItem.findMany({
+        where: { userId, listId: list.id },
+        include: { catalogItem: true },
+      });
+      const match = (
+        items as {
+          id: string;
+          isSelected: boolean;
+          freeTextName: string | null;
+          catalogItem: { canonicalName: string } | null;
+        }[]
+      ).find((item) => (item.catalogItem?.canonicalName ?? item.freeTextName ?? "").toLowerCase().includes(lower));
+      if (!match) return { ok: false, error: "That item isn't on your current shopping list" };
+
+      const previousValues = { isSelected: match.isSelected };
+      await prisma.shoppingListItem.update({ where: { id: match.id }, data: { isSelected: true } });
+      return { ok: true, resultingIds: [match.id], previousValues };
+    }
+
     case "question":
       return { ok: false, error: "Answering questions isn't available yet" };
   }
@@ -291,6 +315,14 @@ export async function undoExecution(
 
   if (intent === "shopping_list_add") {
     await prisma.shoppingListItem.deleteMany({ where: { id: { in: resultingIds }, userId } });
+    return { ok: true };
+  }
+
+  if (intent === "shopping_list_select" && previousValues) {
+    await prisma.shoppingListItem.updateMany({
+      where: { id: { in: resultingIds }, userId },
+      data: previousValues,
+    });
     return { ok: true };
   }
 

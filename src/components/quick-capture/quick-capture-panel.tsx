@@ -61,6 +61,8 @@ function summarize(draft: CommandDraft): string {
       return `schedule shopping for ${draft.date.value.toLocaleDateString()}`;
     case "shopping_list_add":
       return `add ${draft.itemNameRaw} to shopping list`;
+    case "shopping_list_select":
+      return `mark ${draft.item.raw} for the next trip`;
     case "question": {
       const answer = draft.answer;
       if (!answer) return "question";

@@ -318,3 +318,17 @@ describe("shopping_list_add", () => {
     }
   });
 });
+
+describe("shopping_list_select", () => {
+  it("parses 'Mark rice for the next trip' into a shopping_list_select draft", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "Mark rice for the next trip");
+
+    expect(draft.intent).toBe("shopping_list_select");
+    if (draft.intent === "shopping_list_select") {
+      expect(draft.item.raw).toBe("rice");
+    }
+  });
+});
