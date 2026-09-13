@@ -241,4 +241,15 @@
   html {
     @apply font-sans;
   }
+  /* Plan-38 §9: native form controls (a raw <select>'s open dropdown,
+     checkboxes, date pickers) are rendered by the OS/browser and can't be
+     restyled with CSS — but color-scheme tells the browser which palette
+     to render them in, so a native select's options are never
+     light-on-light or dark-on-dark regardless of our own theme. */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
 }

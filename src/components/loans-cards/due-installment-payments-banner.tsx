@@ -52,7 +52,7 @@ export function DueInstallmentPaymentsBanner({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Installments due</h2>
         <select
-          className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-8 rounded-lg border border-input bg-input px-2 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           value={payingAccountId}
           onChange={(e) => setPayingAccountId(e.target.value)}
         >

@@ -84,7 +84,7 @@ export function ReceiptLineRow({
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
         <select
-          className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+          className="h-9 rounded-lg border border-input bg-input px-2 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           value={catalogItemId}
           onChange={(e) => setCatalogItemId(e.target.value)}
         >

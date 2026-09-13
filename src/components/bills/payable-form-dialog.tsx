@@ -121,7 +121,7 @@ export function PayableFormDialog({
             <Label htmlFor="accountId">Paying account</Label>
             <select
               id="accountId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("accountId")}
             >
               {accounts.map((a) => (
@@ -136,7 +136,7 @@ export function PayableFormDialog({
             <Label htmlFor="categoryId">Category</Label>
             <select
               id="categoryId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("categoryId")}
             >
               <option value="">None</option>

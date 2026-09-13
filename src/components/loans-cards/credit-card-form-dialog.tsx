@@ -105,7 +105,7 @@ export function CreditCardFormDialog({
             <Label htmlFor="accountId">Account</Label>
             <select
               id="accountId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               disabled={!!existing}
               {...register("accountId")}
             >

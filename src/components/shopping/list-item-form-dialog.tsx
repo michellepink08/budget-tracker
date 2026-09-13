@@ -115,7 +115,7 @@ export function ListItemFormDialog({
               <Label htmlFor="catalogItemId">From catalog (optional)</Label>
               <select
                 id="catalogItemId"
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
                 {...register("catalogItemId")}
               >
                 <option value="">None — use the name below</option>
@@ -155,7 +155,7 @@ export function ListItemFormDialog({
             <Label htmlFor="priority">Priority</Label>
             <select
               id="priority"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("priority")}
             >
               {SHOPPING_ITEM_PRIORITIES.map((priority) => (

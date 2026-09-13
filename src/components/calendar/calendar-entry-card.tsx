@@ -147,7 +147,7 @@ export function CalendarEntryCard({
               <>
                 {accounts.length > 0 && (
                   <select
-                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+                    className="h-8 rounded-lg border border-input bg-input px-2 text-xs shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
                   >

@@ -82,7 +82,7 @@ export function TransactionForm({
             name="type"
             value={type}
             onChange={(e) => setType(e.target.value as typeof type)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           >
             {REGULAR_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -110,7 +110,7 @@ export function TransactionForm({
             <select
               id="sourceAccountId"
               name="sourceAccountId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               required
             >
               {accounts.map((a) => (
@@ -125,7 +125,7 @@ export function TransactionForm({
             <select
               id="destinationAccountId"
               name="destinationAccountId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               required
             >
               {accounts.map((a) => (
@@ -143,7 +143,7 @@ export function TransactionForm({
             <select
               id="accountId"
               name="accountId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               required
             >
               {accounts.map((a) => (
@@ -161,7 +161,7 @@ export function TransactionForm({
               name="categoryId"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
             >
               <option value="">None</option>
               {categories.map((c) => (
@@ -178,7 +178,7 @@ export function TransactionForm({
               <select
                 id="subcategoryId"
                 name="subcategoryId"
-                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               >
                 <option value="">None</option>
                 {selectedCategory.subcategories.map((s) => (

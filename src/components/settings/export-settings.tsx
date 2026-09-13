@@ -25,7 +25,7 @@ export function ExportSettings({
             id="export-format"
             name="format"
             defaultValue="csv"
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           >
             <option value="csv">CSV</option>
             <option value="xlsx">XLSX</option>
@@ -41,7 +41,7 @@ export function ExportSettings({
             id="export-type"
             name="type"
             defaultValue=""
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           >
             <option value="">All types</option>
             <option value="EXPENSE">Expense</option>
@@ -61,7 +61,7 @@ export function ExportSettings({
             id="export-account"
             name="accountId"
             defaultValue=""
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           >
             <option value="">All accounts</option>
             {accounts.map((a) => (
@@ -80,7 +80,7 @@ export function ExportSettings({
             id="export-category"
             name="categoryId"
             defaultValue=""
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           >
             <option value="">All categories</option>
             {categories.map((c) => (
@@ -99,7 +99,7 @@ export function ExportSettings({
             id="export-date-from"
             type="date"
             name="dateFrom"
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           />
         </div>
 
@@ -111,7 +111,7 @@ export function ExportSettings({
             id="export-date-to"
             type="date"
             name="dateTo"
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
           />
         </div>
       </div>

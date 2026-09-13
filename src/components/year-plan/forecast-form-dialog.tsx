@@ -114,7 +114,7 @@ export function ForecastFormDialog({
             <Label htmlFor="phaseId">Phase (optional)</Label>
             <select
               id="phaseId"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("phaseId")}
             >
               <option value="">None</option>
@@ -129,7 +129,7 @@ export function ForecastFormDialog({
             <Label htmlFor="source">Source</Label>
             <select
               id="source"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("source")}
             >
               {INCOME_FORECAST_SOURCES.map((source) => (
@@ -156,7 +156,7 @@ export function ForecastFormDialog({
             <Label htmlFor="status">Status</Label>
             <select
               id="status"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
               {...register("status")}
             >
               {INCOME_FORECAST_STATUSES.map((status) => (
