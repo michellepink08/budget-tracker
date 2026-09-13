@@ -33,6 +33,11 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     },
     creditCard: { findFirst: vi.fn().mockResolvedValue({ id: "cc-1" }) },
     loan: { findFirst: vi.fn().mockResolvedValue({ id: "loan-1", remainingBalance: 5000, name: "Car loan" }) },
+    shoppingList: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
+    shoppingListItem: { create: vi.fn(), findMany: vi.fn().mockResolvedValue([]), update: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() },
+    shoppingCatalogItem: { findFirst: vi.fn().mockResolvedValue(null) },
+    shoppingPriceHistory: { findFirst: vi.fn().mockResolvedValue(null) },
+    yearPlanPhase: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn(), updateMany: vi.fn() },
     ...overrides,
   };
   prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
@@ -276,5 +281,66 @@ describe("undoExecution", () => {
     const result = await undoExecution(prisma, "user-1", "transaction_delete", [], null);
     expect(result).toEqual({ ok: true });
     expect(prisma.transaction.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("shopping_schedule", () => {
+  it("sets the current list's plannedDate", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: {
+        findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1", plannedDate: null }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_schedule",
+      date: { value: new Date(2026, 8, 19), confirmed: true },
+      clauseText: "Schedule grocery shopping for Saturday",
+      clarification: null,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(prisma.shoppingList.update).toHaveBeenCalledWith({
+      where: { id: "list-1" },
+      data: { plannedDate: new Date(2026, 8, 19) },
+    });
+  });
+
+  it("reports an error when there's no current list", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_schedule",
+      date: { value: new Date(2026, 8, 19), confirmed: true },
+      clauseText: "Schedule grocery shopping for Saturday",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: false, error: "No current shopping list to schedule" });
+  });
+});
+
+describe("undoExecution — shopping_schedule", () => {
+  it("restores the list's previous plannedDate", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    });
+
+    const result = await undoExecution(
+      prisma,
+      "user-1",
+      "shopping_schedule",
+      ["list-1"],
+      { plannedDate: null },
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.shoppingList.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["list-1"] }, userId: "user-1" },
+      data: { plannedDate: null },
+    });
   });
 });

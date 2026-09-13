@@ -13,7 +13,18 @@ export type ExecuteResult =
 
 type ExecutePrisma = Pick<
   PrismaClient,
-  "transaction" | "budgetPeriod" | "account" | "payable" | "creditCard" | "loan" | "$transaction"
+  | "transaction"
+  | "budgetPeriod"
+  | "account"
+  | "payable"
+  | "creditCard"
+  | "loan"
+  | "shoppingList"
+  | "shoppingListItem"
+  | "shoppingCatalogItem"
+  | "shoppingPriceHistory"
+  | "yearPlanPhase"
+  | "$transaction"
 >;
 
 // Dispatches one confirmed draft to the existing domain function for its
@@ -197,6 +208,14 @@ export async function executeDraft(
       return { ok: true, resultingIds: [] };
     }
 
+    case "shopping_schedule": {
+      const list = await prisma.shoppingList.findFirst({ where: { userId, isCurrent: true } });
+      if (!list) return { ok: false, error: "No current shopping list to schedule" };
+      const previousValues = { plannedDate: list.plannedDate };
+      await prisma.shoppingList.update({ where: { id: list.id }, data: { plannedDate: draft.date.value } });
+      return { ok: true, resultingIds: [list.id], previousValues };
+    }
+
     case "question":
       return { ok: false, error: "Answering questions isn't available yet" };
   }
@@ -206,7 +225,7 @@ export async function executeDraft(
 // never a guess. transaction_delete and any already-balanced
 // reconciliation have no resultingIds, so undoing them is a no-op.
 export async function undoExecution(
-  prisma: Pick<PrismaClient, "transaction" | "payable">,
+  prisma: Pick<PrismaClient, "transaction" | "payable" | "shoppingList" | "shoppingListItem" | "yearPlanPhase">,
   userId: string,
   intent: CommandDraft["intent"],
   resultingIds: string[],
@@ -218,6 +237,14 @@ export async function undoExecution(
 
   if (intent === "transaction_update" && previousValues) {
     await prisma.transaction.updateMany({
+      where: { id: { in: resultingIds }, userId },
+      data: previousValues,
+    });
+    return { ok: true };
+  }
+
+  if (intent === "shopping_schedule" && previousValues) {
+    await prisma.shoppingList.updateMany({
       where: { id: { in: resultingIds }, userId },
       data: previousValues,
     });

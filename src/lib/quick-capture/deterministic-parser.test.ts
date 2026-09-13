@@ -279,3 +279,14 @@ describe("splitClauses", () => {
     ]);
   });
 });
+
+describe("shopping_schedule", () => {
+  it("parses 'Schedule grocery shopping for Saturday' into a shopping_schedule draft", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "Schedule grocery shopping for Saturday");
+
+    expect(draft.intent).toBe("shopping_schedule");
+  });
+});

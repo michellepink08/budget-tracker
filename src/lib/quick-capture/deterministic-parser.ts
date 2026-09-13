@@ -313,6 +313,21 @@ const clauseParsers: ClauseParser[] = [
       };
     },
   },
+  // Shopping schedule — "Schedule grocery shopping for Saturday" / "Move
+  // the shopping schedule to Sunday"
+  {
+    test: (lower) => /\bschedule\b/.test(lower) && /\b(shopping|grocery)\b/.test(lower),
+    parse: async (_prisma, ctx, clause) => {
+      const dateMatch = clause.match(/\b(?:for|to)\s+(.+?)(?:\.|$)/i);
+      const date = toDateField(parseRelativeOrExplicitDate(dateMatch?.[1] ?? clause, ctx.now, "future"));
+      return {
+        intent: "shopping_schedule",
+        date,
+        clauseText: clause,
+        clarification: null,
+      };
+    },
+  },
   // Read-only question — anything ending in "?" that didn't match a
   // write-intent above.
   {

@@ -57,6 +57,8 @@ function summarize(draft: CommandDraft): string {
       return `update transaction${draft.amountMinorUnits ? ` to ${(draft.amountMinorUnits / 100).toFixed(2)}` : ""}`;
     case "transaction_delete":
       return "delete transaction — this can't be undone";
+    case "shopping_schedule":
+      return `schedule shopping for ${draft.date.value.toLocaleDateString()}`;
     case "question": {
       const answer = draft.answer;
       if (!answer) return "question";
