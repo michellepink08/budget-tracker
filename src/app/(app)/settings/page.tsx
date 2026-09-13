@@ -8,6 +8,7 @@ import { CategoriesSettings } from "@/components/settings/categories-settings";
 import { RecurringSettings } from "@/components/settings/recurring-settings";
 import { ExportSettings } from "@/components/settings/export-settings";
 import { DemoDataSettings } from "@/components/settings/demo-data-settings";
+import { ReceiptsSettings } from "@/components/settings/receipts-settings";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -50,6 +51,11 @@ export default async function SettingsPage() {
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Export</h2>
         <ExportSettings accounts={accounts} categories={categories} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Receipts</h2>
+        <ReceiptsSettings initialAutoDeleteImages={user.receiptAutoDeleteImages} />
       </div>
 
       {user.email === DEMO_EMAIL && (

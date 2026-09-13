@@ -7,3 +7,11 @@ export async function updateThemeMode(
 ): Promise<void> {
   await prisma.user.update({ where: { id: userId }, data: { themeMode } });
 }
+
+export async function updateReceiptAutoDeleteImages(
+  prisma: Pick<PrismaClient, "user">,
+  userId: string,
+  receiptAutoDeleteImages: boolean,
+): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { receiptAutoDeleteImages } });
+}

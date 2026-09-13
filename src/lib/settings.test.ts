@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { updateThemeMode } from "@/lib/settings";
+import { updateReceiptAutoDeleteImages, updateThemeMode } from "@/lib/settings";
 
 function makeFakePrisma() {
   return {
@@ -18,6 +18,19 @@ describe("updateThemeMode", () => {
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: "user-1" },
       data: { themeMode: "dark" },
+    });
+  });
+});
+
+describe("updateReceiptAutoDeleteImages", () => {
+  it("updates the user's stored receiptAutoDeleteImages flag", async () => {
+    const prisma = makeFakePrisma();
+
+    await updateReceiptAutoDeleteImages(prisma, "user-1", true);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { receiptAutoDeleteImages: true },
     });
   });
 });
