@@ -236,6 +236,7 @@ model Receipt {
   userId               String
   transactionId        String?
   storeId              String?
+  rawStoreText         String?
   purchaseDate         DateTime?
   receiptNumber        String?
   subtotal             Int?
@@ -548,7 +549,7 @@ model PasswordResetToken {
 model Alias {
   id        String   @id @default(cuid())
   userId    String
-  kind      String   // "account" | "category" | "shopping_item"
+  kind      String   // "account" | "category" | "shopping_item" | "shopping_store"
   alias     String   // normalized (trimmed, lowercased) at write time
   targetId  String   // an Account.id or Category.id, depending on kind
   createdAt DateTime @default(now())
