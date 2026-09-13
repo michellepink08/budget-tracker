@@ -42,6 +42,7 @@ model Account {
   openingBalance          Int       @default(0)
   currency                String    @default("PHP")
   includeInLiquidFunds    Boolean   @default(true)
+  purpose                 String    @default("DISPOSABLE")
   isPrimaryFundingAccount Boolean   @default(false)
   color                   String
   icon                    String

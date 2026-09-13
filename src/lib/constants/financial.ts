@@ -16,6 +16,9 @@ export const ACCOUNT_TYPES = [
 ] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
+export const ACCOUNT_PURPOSES = ["DISPOSABLE", "SAVINGS", "RESTRICTED", "CREDIT", "DEBT"] as const;
+export type AccountPurpose = (typeof ACCOUNT_PURPOSES)[number];
+
 export const CATEGORY_TYPES = ["INCOME", "EXPENSE", "SAVINGS", "DEBT_PAYMENT"] as const;
 export type CategoryType = (typeof CATEGORY_TYPES)[number];
 
