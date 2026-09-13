@@ -316,6 +316,14 @@ export function QuickCapturePanel({
             </p>
           )}
 
+          {voice.listening && !voice.error && (
+            <p className="text-xs text-muted-foreground">
+              {voiceMode === "approving"
+                ? "Listening — say confirm, cancel, or undo"
+                : "Listening — say your command"}
+            </p>
+          )}
+
           {!drafts && (
             <div className="flex flex-col gap-1 text-xs text-muted-foreground">
               {EXAMPLES.map((example) => (
