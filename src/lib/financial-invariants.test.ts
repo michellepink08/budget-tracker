@@ -246,3 +246,36 @@ describe("§13 invariant: currency calculations never use floating-point money d
     expect(toMajorUnits(minor, "PHP")).toBeCloseTo(1234.56, 2);
   });
 });
+
+describe("§11 invariant: reversing a payable payment restores it to exactly its pre-payment state", () => {
+  it("reversePayablePayment clears paidTransactionId and deletes only the payment transaction — no other account is touched", async () => {
+    const prisma: any = {
+      transaction: { deleteMany: vi.fn() },
+      payable: { update: vi.fn() },
+      auditLog: { create: vi.fn().mockResolvedValue({ id: "audit-reverse-1" }) },
+    };
+    prisma.$transaction = vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+
+    const { reversePayablePayment } = await import("@/lib/audit-log-reversal");
+    const result = await reversePayablePayment(prisma, "user-1", {
+      id: "audit-1",
+      userId: "user-1",
+      entityType: "PAYABLE_PAYMENT",
+      entityId: "payable-1",
+      action: "CREATE",
+      source: "FORM",
+      previousValuesJson: null,
+      newValuesJson: null,
+      relatedRecordIds: ["txn-1"],
+    } as any);
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.payable.update).toHaveBeenCalledWith({
+      where: { id: "payable-1" },
+      data: { status: "PENDING", paidTransactionId: null },
+    });
+    // Exactly the one payment transaction is deleted — nothing else.
+    expect(prisma.transaction.deleteMany).toHaveBeenCalledTimes(1);
+    expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["txn-1"] }, userId: "user-1" } });
+  });
+});
