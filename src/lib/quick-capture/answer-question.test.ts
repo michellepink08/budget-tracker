@@ -123,10 +123,10 @@ describe("answerQuestion", () => {
     const prisma = makeFakePrisma({
       account: {
         // Two different queries share this one mock (computeLiquidFunds's
-        // includeInLiquidFunds:true and listRestrictedFundGroups's :false) —
-        // branch on the filter so each gets the right accounts back.
-        findMany: vi.fn((args: { where: { includeInLiquidFunds?: boolean } }) =>
-          Promise.resolve(args.where.includeInLiquidFunds === false ? [] : [{ id: "acc-1" }]),
+        // purpose:{in:[...]} and listRestrictedFundGroups's purpose:"RESTRICTED")
+        // — branch on the filter shape so each gets the right accounts back.
+        findMany: vi.fn((args: { where: { purpose?: unknown } }) =>
+          Promise.resolve(args.where.purpose === "RESTRICTED" ? [] : [{ id: "acc-1" }]),
         ),
         findFirst: vi.fn().mockResolvedValue(null),
         findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-1", openingBalance: 100000 }),
