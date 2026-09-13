@@ -10,6 +10,7 @@ import {
   deleteTransaction,
   updateTransaction,
 } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 
 export type TransactionActionResult = { ok: true } | { ok: false; error: string };
@@ -39,10 +40,18 @@ export async function createTransactionAction(
   if (!parsed.success) return { ok: false, error: "Please check the transaction details" };
 
   const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const input = { ...parsed.data, amount: toMinorUnits(parsed.data.amount, account.currency) };
 
-  await createExpenseLikeTransaction(prisma, user.id, user.cycleStartDay, {
-    ...parsed.data,
-    amount: toMinorUnits(parsed.data.amount, account.currency),
+  await prisma.$transaction(async (tx) => {
+    const transaction = await createExpenseLikeTransaction(tx, user.id, user.cycleStartDay, input);
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "TRANSACTION",
+      entityId: transaction.id,
+      action: "CREATE",
+      source: "FORM",
+      newValues: { rows: [transaction] },
+    });
   });
 
   revalidatePath("/transactions");
@@ -73,9 +82,18 @@ export async function createTransferAction(formData: FormData): Promise<Transact
     return { ok: false, error: "Transfers between different currencies aren't supported yet" };
   }
 
-  await createTransferTransaction(prisma, user.id, user.cycleStartDay, {
-    ...parsed.data,
-    amount: toMinorUnits(parsed.data.amount, source.currency),
+  const input = { ...parsed.data, amount: toMinorUnits(parsed.data.amount, source.currency) };
+
+  await prisma.$transaction(async (tx) => {
+    const transfer = await createTransferTransaction(tx, user.id, user.cycleStartDay, input);
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "TRANSFER",
+      entityId: transfer.outgoingTransactionId,
+      action: "CREATE",
+      source: "FORM",
+      relatedRecordIds: [transfer.incomingTransactionId],
+    });
   });
 
   revalidatePath("/transactions");
@@ -89,11 +107,34 @@ export async function updateTransactionAction(
   const user = await currentUser();
   if (!user) return { ok: false, error: "You must be logged in" };
 
-  const result = await updateTransaction(prisma, user.id, transactionId, {
+  const before = await prisma.transaction.findFirst({ where: { id: transactionId, userId: user.id } });
+  if (!before) return { ok: false, error: "Transaction not found" };
+
+  const input = {
     description: String(formData.get("description") ?? ""),
     notes: (formData.get("notes") as string) || undefined,
     categoryId: (formData.get("categoryId") as string) || null,
     subcategoryId: (formData.get("subcategoryId") as string) || null,
+  };
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updateResult = await updateTransaction(tx, user.id, transactionId, input);
+    if (!updateResult.ok) return updateResult;
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "TRANSACTION",
+      entityId: transactionId,
+      action: "UPDATE",
+      source: "FORM",
+      previousValues: {
+        description: before.description,
+        notes: before.notes,
+        categoryId: before.categoryId,
+        subcategoryId: before.subcategoryId,
+      },
+      newValues: input,
+    });
+    return updateResult;
   });
 
   if (result.ok) revalidatePath("/transactions");
@@ -106,7 +147,21 @@ export async function deleteTransactionAction(
   const user = await currentUser();
   if (!user) return { ok: false, error: "You must be logged in" };
 
-  const result = await deleteTransaction(prisma, user.id, transactionId);
+  const result = await prisma.$transaction(async (tx) => {
+    const deleteResult = await deleteTransaction(tx, user.id, transactionId);
+    if (!deleteResult.ok) return deleteResult;
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "TRANSACTION",
+      entityId: transactionId,
+      action: "DELETE",
+      source: "FORM",
+      previousValues: { rows: deleteResult.deletedRows },
+      relatedRecordIds: deleteResult.deletedRows.slice(1).map((r) => r.id as string),
+    });
+    return deleteResult;
+  });
+
   if (result.ok) revalidatePath("/transactions");
-  return result;
+  return { ok: result.ok, ...(result.ok ? {} : { error: result.error }) } as TransactionActionResult;
 }
