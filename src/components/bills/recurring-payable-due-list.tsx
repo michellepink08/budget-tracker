@@ -9,6 +9,7 @@ import {
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 type DueRule = {
   id: string;
@@ -46,13 +47,13 @@ export function RecurringPayableDueList({ rules }: { rules: DueRule[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+    <Card variant="highlight" className="flex flex-col gap-3 p-4">
       <h2 className="text-sm font-medium">Recurring bills due</h2>
       {rules.map((rule) => (
         <form
           key={rule.id}
           action={(formData) => handleConfirm(rule.id, formData)}
-          className="flex flex-wrap items-center gap-2 rounded-md bg-background p-3"
+          className="flex flex-wrap items-center gap-2 rounded-md bg-card p-3"
         >
           <div className="mr-auto">
             <p className="font-medium">{rule.name}</p>
@@ -81,6 +82,6 @@ export function RecurringPayableDueList({ rules }: { rules: DueRule[] }) {
           </Button>
         </form>
       ))}
-    </div>
+    </Card>
   );
 }

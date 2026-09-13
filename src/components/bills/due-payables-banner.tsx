@@ -6,6 +6,7 @@ import { markPayablePaidAction } from "@/actions/payable.actions";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 type DuePayable = {
   id: string;
@@ -33,13 +34,13 @@ export function DuePayablesBanner({ payables }: { payables: DuePayable[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+    <Card variant="highlight" className="flex flex-col gap-3 p-4">
       <h2 className="text-sm font-medium">Due this week</h2>
       {payables.map((payable) => (
         <form
           key={payable.id}
           action={(formData) => handleMarkPaid(payable.id, formData)}
-          className="flex flex-wrap items-center gap-2 rounded-md bg-background p-3"
+          className="flex flex-wrap items-center gap-2 rounded-md bg-card p-3"
         >
           <div className="mr-auto">
             <p className="font-medium">{payable.name}</p>
@@ -65,6 +66,6 @@ export function DuePayablesBanner({ payables }: { payables: DuePayable[] }) {
           </Button>
         </form>
       ))}
-    </div>
+    </Card>
   );
 }

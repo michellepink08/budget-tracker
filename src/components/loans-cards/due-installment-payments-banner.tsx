@@ -7,6 +7,7 @@ import { payInstallmentTermAction } from "@/actions/installment-purchase.actions
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 type AccountOption = { id: string; name: string; currency: string };
 
@@ -47,7 +48,7 @@ export function DueInstallmentPaymentsBanner({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+    <Card variant="highlight" className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Installments due</h2>
         <select
@@ -66,7 +67,7 @@ export function DueInstallmentPaymentsBanner({
         <form
           key={payment.id}
           action={(formData) => handlePay(payment.id, formData)}
-          className="flex flex-wrap items-center gap-2 rounded-md bg-background p-3"
+          className="flex flex-wrap items-center gap-2 rounded-md bg-card p-3"
         >
           <div className="mr-auto">
             <p className="font-medium">
@@ -87,6 +88,6 @@ export function DueInstallmentPaymentsBanner({
           </Button>
         </form>
       ))}
-    </div>
+    </Card>
   );
 }
