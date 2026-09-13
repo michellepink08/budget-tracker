@@ -32,7 +32,7 @@ export function TopNav({
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Open navigation"
-          className="rounded-md p-1 hover:bg-white/10"
+          className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -41,7 +41,7 @@ export function TopNav({
           type="button"
           onClick={() => setQuickCaptureOpen(true)}
           aria-label="Quick Capture"
-          className="rounded-md p-1 hover:bg-white/10"
+          className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
         >
           <span className="text-sm">⌘K</span>
         </button>

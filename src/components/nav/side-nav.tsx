@@ -87,7 +87,7 @@ export function SideNav({
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="shrink-0 rounded-md p-1 text-[var(--nav-foreground)]/70 hover:bg-white/10"
+          className="shrink-0 rounded-md p-1 text-[var(--nav-foreground)]/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -97,7 +97,7 @@ export function SideNav({
         type="button"
         onClick={() => setQuickCaptureOpen(true)}
         title="Quick Capture (⌘K)"
-        className="mx-2 mt-2 rounded-md border border-white/15 px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/70 hover:bg-white/10"
+        className="mx-2 mt-2 rounded-md border border-white/15 px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
       >
         {collapsed ? (
           "⌘K"
@@ -119,7 +119,7 @@ export function SideNav({
               title={link.label}
               className={
                 (isActive ? "bg-white/15 font-medium" : "text-[var(--nav-foreground)]/80 hover:bg-white/10") +
-                " flex items-center gap-2 rounded-md px-3 py-2"
+                " flex items-center gap-2 rounded-md px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
               }
             >
               <Icon className="h-4 w-4 shrink-0" />
