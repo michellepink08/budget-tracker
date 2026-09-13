@@ -3,8 +3,14 @@ import {
   addIncomeForecast,
   addPhase,
   createYearPlan,
+  deleteIncomeForecast,
+  deletePhase,
+  deleteYearPlan,
   getActiveYearPlan,
   linkForecastToTransaction,
+  updateIncomeForecast,
+  updatePhase,
+  updateYearPlan,
 } from "@/lib/year-plan";
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
@@ -12,13 +18,24 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     yearPlan: {
       create: vi.fn(async ({ data }: any) => ({ id: "plan-1", ...data })),
       findFirst: vi.fn().mockResolvedValue(null),
+      update: vi.fn(async ({ data }: any) => ({ id: "plan-1", ...data })),
+      delete: vi.fn(async () => ({ id: "plan-1" })),
     },
     yearPlanPhase: {
       create: vi.fn(async ({ data }: any) => ({ id: "phase-1", ...data })),
+      findFirst: vi.fn().mockResolvedValue(null),
+      update: vi.fn(async ({ data }: any) => ({ id: "phase-1", ...data })),
+      updateMany: vi.fn(async () => ({ count: 0 })),
+      deleteMany: vi.fn(async () => ({ count: 0 })),
+      delete: vi.fn(async () => ({ id: "phase-1" })),
     },
     incomeForecast: {
       create: vi.fn(async ({ data }: any) => ({ id: "forecast-1", ...data })),
       update: vi.fn(async ({ data }: any) => ({ id: "forecast-1", ...data })),
+      findFirst: vi.fn().mockResolvedValue(null),
+      updateMany: vi.fn(async () => ({ count: 0 })),
+      deleteMany: vi.fn(async () => ({ count: 0 })),
+      delete: vi.fn(async () => ({ id: "forecast-1" })),
     },
     transaction: { update: vi.fn(), findMany: vi.fn() },
     account: { update: vi.fn(), findMany: vi.fn() },
@@ -162,5 +179,160 @@ describe("getActiveYearPlan", () => {
       where: { userId: "user-1", scenario: "EXPECTED", endDate: { gte: asOf } },
       orderBy: { startDate: "desc" },
     });
+  });
+});
+
+describe("updateYearPlan", () => {
+  it("rejects when the plan does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await updateYearPlan(prisma, "user-1", "plan-1", { name: "Renamed", minCashBuffer: 5000 });
+    expect(result.ok).toBe(false);
+    expect(prisma.yearPlan.update).not.toHaveBeenCalled();
+  });
+
+  it("updates the plan when it belongs to the user", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "plan-1", userId: "user-1" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "plan-1", ...data })),
+      },
+    });
+    const result = await updateYearPlan(prisma, "user-1", "plan-1", { name: "Renamed", minCashBuffer: 5000 });
+    expect(result.ok).toBe(true);
+    expect(prisma.yearPlan.update).toHaveBeenCalledWith({
+      where: { id: "plan-1" },
+      data: { name: "Renamed", minCashBuffer: 5000 },
+    });
+  });
+});
+
+describe("deleteYearPlan", () => {
+  it("rejects when the plan does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await deleteYearPlan(prisma, "user-1", "plan-1");
+    expect(result.ok).toBe(false);
+    expect(prisma.yearPlan.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes forecasts and phases before deleting the plan itself", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "plan-1", userId: "user-1" }),
+        delete: vi.fn(async () => ({ id: "plan-1" })),
+      },
+    });
+    const result = await deleteYearPlan(prisma, "user-1", "plan-1");
+    expect(result.ok).toBe(true);
+    expect(prisma.incomeForecast.deleteMany).toHaveBeenCalledWith({ where: { yearPlanId: "plan-1" } });
+    expect(prisma.yearPlanPhase.deleteMany).toHaveBeenCalledWith({ where: { yearPlanId: "plan-1" } });
+    expect(prisma.yearPlan.delete).toHaveBeenCalledWith({ where: { id: "plan-1" } });
+  });
+});
+
+describe("updatePhase", () => {
+  it("rejects when the phase does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await updatePhase(prisma, "user-1", "phase-1", { label: "Renamed" });
+    expect(result.ok).toBe(false);
+    expect(prisma.yearPlanPhase.update).not.toHaveBeenCalled();
+  });
+
+  it("updates the phase when it belongs to the user", async () => {
+    const prisma = makeFakePrisma({
+      yearPlanPhase: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "phase-1", userId: "user-1" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "phase-1", ...data })),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(),
+      },
+    });
+    const result = await updatePhase(prisma, "user-1", "phase-1", { label: "Renamed" });
+    expect(result.ok).toBe(true);
+    expect(prisma.yearPlanPhase.update).toHaveBeenCalledWith({ where: { id: "phase-1" }, data: { label: "Renamed" } });
+  });
+});
+
+describe("deletePhase", () => {
+  it("rejects when the phase does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await deletePhase(prisma, "user-1", "phase-1");
+    expect(result.ok).toBe(false);
+    expect(prisma.yearPlanPhase.delete).not.toHaveBeenCalled();
+  });
+
+  it("unlinks referencing forecasts (sets phaseId to null) before deleting the phase", async () => {
+    const prisma = makeFakePrisma({
+      yearPlanPhase: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "phase-1", userId: "user-1" }),
+        update: vi.fn(),
+        updateMany: vi.fn(async () => ({ count: 2 })),
+        deleteMany: vi.fn(),
+        delete: vi.fn(async () => ({ id: "phase-1" })),
+      },
+    });
+    const result = await deletePhase(prisma, "user-1", "phase-1");
+    expect(result.ok).toBe(true);
+    expect(prisma.incomeForecast.updateMany).toHaveBeenCalledWith({
+      where: { phaseId: "phase-1" },
+      data: { phaseId: null },
+    });
+    expect(prisma.yearPlanPhase.delete).toHaveBeenCalledWith({ where: { id: "phase-1" } });
+  });
+});
+
+describe("updateIncomeForecast", () => {
+  it("rejects when the forecast does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await updateIncomeForecast(prisma, "user-1", "forecast-1", { expectedAmount: 1000 });
+    expect(result.ok).toBe(false);
+  });
+
+  it("updates the forecast when it belongs to the user", async () => {
+    const prisma = makeFakePrisma({
+      incomeForecast: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "forecast-1", userId: "user-1" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "forecast-1", ...data })),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(),
+      },
+    });
+    const result = await updateIncomeForecast(prisma, "user-1", "forecast-1", { expectedAmount: 1000 });
+    expect(result.ok).toBe(true);
+    expect(prisma.incomeForecast.update).toHaveBeenCalledWith({
+      where: { id: "forecast-1" },
+      data: { expectedAmount: 1000 },
+    });
+  });
+});
+
+describe("deleteIncomeForecast", () => {
+  it("rejects when the forecast does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await deleteIncomeForecast(prisma, "user-1", "forecast-1");
+    expect(result.ok).toBe(false);
+    expect(prisma.incomeForecast.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes the forecast when it belongs to the user", async () => {
+    const prisma = makeFakePrisma({
+      incomeForecast: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "forecast-1", userId: "user-1" }),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(async () => ({ id: "forecast-1" })),
+      },
+    });
+    const result = await deleteIncomeForecast(prisma, "user-1", "forecast-1");
+    expect(result.ok).toBe(true);
+    expect(prisma.incomeForecast.delete).toHaveBeenCalledWith({ where: { id: "forecast-1" } });
   });
 });
