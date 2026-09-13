@@ -30,7 +30,7 @@ const SAMPLE_PURCHASE = {
 function makeFakePrisma(options: { payment?: unknown; purchase?: unknown } = {}) {
   const payment = "payment" in options ? options.payment : SAMPLE_PAYMENT;
   const purchase = "purchase" in options ? options.purchase : SAMPLE_PURCHASE;
-  return {
+  const prisma = {
     installmentPurchase: {
       create: vi.fn().mockResolvedValue({ id: "purchase-new" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -50,7 +50,9 @@ function makeFakePrisma(options: { payment?: unknown; purchase?: unknown } = {})
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
-  } as any;
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return prisma as any;
 }
 
 describe("createInstallmentPurchase", () => {

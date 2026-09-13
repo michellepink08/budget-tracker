@@ -90,35 +90,43 @@ export async function listDueInstallmentPayments(
 export type PayInstallmentTermInput = { accountId: string; amount?: number; date?: Date };
 
 export async function payInstallmentTerm(
-  prisma: Pick<PrismaClient, "installmentPurchase" | "installmentPayment" | "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "installmentPurchase" | "installmentPayment" | "transaction" | "budgetPeriod" | "$transaction"
+  >,
   userId: string,
   cycleStartDay: number,
   paymentId: string,
   input: PayInstallmentTermInput,
 ): Promise<InstallmentMutationResult> {
-  const payment = await prisma.installmentPayment.findFirst({
-    where: { id: paymentId, userId, status: "PENDING" },
-  });
-  if (!payment) {
-    return { ok: false, error: "Installment payment not found" };
-  }
+  // Atomic: the PENDING check, the payment transaction, and marking the
+  // term PAID all happen together — same duplicate-payment guard shape as
+  // markPayablePaid.
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.installmentPayment.findFirst({
+      where: { id: paymentId, userId, status: "PENDING" },
+    });
+    if (!payment) {
+      return { ok: false, error: "Installment payment not found" };
+    }
 
-  const purchase = await prisma.installmentPurchase.findFirst({
-    where: { id: payment.installmentPurchaseId },
-  });
+    const purchase = await tx.installmentPurchase.findFirst({
+      where: { id: payment.installmentPurchaseId },
+    });
 
-  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "CREDIT_CARD_PAYMENT",
-    amount: input.amount ?? payment.amount,
-    date: input.date ?? new Date(),
-    accountId: input.accountId,
-    description: `Installment: ${purchase!.name} (term ${payment.termNumber} of ${purchase!.numberOfTerms})`,
-  });
+    const transaction = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: "CREDIT_CARD_PAYMENT",
+      amount: input.amount ?? payment.amount,
+      date: input.date ?? new Date(),
+      accountId: input.accountId,
+      description: `Installment: ${purchase!.name} (term ${payment.termNumber} of ${purchase!.numberOfTerms})`,
+    });
 
-  await prisma.installmentPayment.update({
-    where: { id: paymentId },
-    data: { status: "PAID", paidTransactionId: transaction.id },
-  });
+    await tx.installmentPayment.update({
+      where: { id: paymentId },
+      data: { status: "PAID", paidTransactionId: transaction.id },
+    });
 
-  return { ok: true };
+    return { ok: true };
+  });
 }
