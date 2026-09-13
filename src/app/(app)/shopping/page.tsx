@@ -8,6 +8,9 @@ import { SavedListsView } from "@/components/shopping/saved-lists-view";
 import { CatalogView } from "@/components/shopping/catalog-view";
 import { PurchaseHistoryView } from "@/components/shopping/purchase-history-view";
 import { ListFormDialog } from "@/components/shopping/list-form-dialog";
+import { ReceiptCapture } from "@/components/receipts/receipt-capture";
+import { ReceiptReview } from "@/components/receipts/receipt-review";
+import { listAccounts } from "@/lib/accounts";
 
 const TABS = ["current", "saved", "catalog", "history", "scan"] as const;
 type Tab = (typeof TABS)[number];
@@ -58,7 +61,7 @@ export default async function ShoppingPage({
       {tab === "saved" && <SavedListsTab userId={user.id} categories={categories} />}
       {tab === "catalog" && <CatalogTab userId={user.id} currency={user.currency} categories={categories} />}
       {tab === "history" && <HistoryTab userId={user.id} currency={user.currency} />}
-      {tab === "scan" && <p className="text-muted-foreground">Receipt scanning is coming in a future update.</p>}
+      {tab === "scan" && <ScanReceiptTab userId={user.id} currency={user.currency} categories={categories} />}
     </div>
   );
 }
@@ -147,6 +150,49 @@ async function CatalogTab({
   );
 
   return <CatalogView items={withLatestPrice} categories={categories} currency={currency} />;
+}
+
+async function ScanReceiptTab({
+  userId,
+  currency,
+  categories,
+}: {
+  userId: string;
+  currency: string;
+  categories: { id: string; name: string }[];
+}) {
+  const activeReceipt = await prisma.receipt.findFirst({
+    where: { userId, status: { in: ["DRAFT", "REVIEWED"] } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!activeReceipt) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-muted-foreground">
+          Receipt scanning is not yet connected to a real OCR provider — every field is entered manually below.
+        </p>
+        <ReceiptCapture />
+      </div>
+    );
+  }
+
+  const [lines, catalogItems, accounts] = await Promise.all([
+    prisma.receiptLine.findMany({ where: { receiptId: activeReceipt.id } }),
+    prisma.shoppingCatalogItem.findMany({ where: { userId, archivedAt: null }, orderBy: { canonicalName: "asc" } }),
+    listAccounts(prisma, userId),
+  ]);
+
+  return (
+    <ReceiptReview
+      receipt={activeReceipt}
+      lines={lines}
+      currency={currency}
+      catalogItems={catalogItems.map((c) => ({ id: c.id, canonicalName: c.canonicalName }))}
+      accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
+      categories={categories}
+    />
+  );
 }
 
 async function HistoryTab({ userId, currency }: { userId: string; currency: string }) {
