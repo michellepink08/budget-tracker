@@ -111,3 +111,101 @@ export async function reversePayablePayment(
     return { ok: true };
   });
 }
+
+export async function reverseReceiptConfirmation(
+  prisma: Pick<PrismaClient, "transaction" | "shoppingPriceHistory" | "receipt" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    const [transactionId, ...priceHistoryIds] = entry.relatedRecordIds;
+    if (transactionId) {
+      await tx.transaction.deleteMany({ where: { id: { in: [transactionId] }, userId } });
+    }
+    if (priceHistoryIds.length > 0) {
+      await tx.shoppingPriceHistory.deleteMany({ where: { id: { in: priceHistoryIds }, userId } });
+    }
+    await tx.receipt.update({
+      where: { id: entry.entityId },
+      data: { status: "REVIEWED", transactionId: null },
+    });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECEIPT_CONFIRMATION",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reverseInstallmentPayment(
+  prisma: Pick<PrismaClient, "transaction" | "installmentPayment" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.transaction.deleteMany({ where: { id: { in: entry.relatedRecordIds }, userId } });
+    await tx.installmentPayment.update({
+      where: { id: entry.entityId },
+      data: { status: "PENDING", paidTransactionId: null },
+    });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "INSTALLMENT_PAYMENT",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reverseCreditCardPayment(
+  prisma: Pick<PrismaClient, "transaction" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.transaction.deleteMany({ where: { id: { in: [entry.entityId] }, userId } });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "CREDIT_CARD_PAYMENT",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reverseReconciliation(
+  prisma: Pick<PrismaClient, "transaction" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.transaction.deleteMany({ where: { id: { in: [entry.entityId] }, userId } });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECONCILIATION",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
