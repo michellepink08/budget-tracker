@@ -9,6 +9,7 @@ import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { listAccounts } from "@/lib/accounts";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
+import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
@@ -35,6 +36,7 @@ export default async function DashboardPage() {
     accounts,
     cutoffDuePayables,
     recommendation,
+    yearPlanSummary,
   ] = await Promise.all([
     computeDisposableTotal(prisma, user.id),
     computeSavingsTotal(prisma, user.id),
@@ -46,6 +48,7 @@ export default async function DashboardPage() {
     listAccounts(prisma, user.id),
     listDuePayables(prisma, user.id, activePeriod.endDate),
     getRecommendedFundingTransfer(prisma, user.id, now),
+    getYearPlanDashboardSummary(prisma, user.id, now),
   ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
@@ -135,6 +138,36 @@ export default async function DashboardPage() {
       </div>
 
       <FundingRecommendationBanner recommendation={recommendationView} />
+
+      {yearPlanSummary && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Card className="p-4">
+            <p className="text-sm text-muted-foreground">Expected income</p>
+            {yearPlanSummary.nextForecast ? (
+              <>
+                <p className="text-2xl font-semibold">
+                  {formatMoney(yearPlanSummary.nextForecast.expectedAmount, user.currency)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {yearPlanSummary.nextForecast.source} ·{" "}
+                  {yearPlanSummary.nextForecast.expectedDate.toLocaleDateString()}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">No upcoming forecasts</p>
+            )}
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm text-muted-foreground">Year Plan reserve</p>
+            <p className="text-2xl font-semibold">{formatMoney(yearPlanSummary.remainingReserve, user.currency)}</p>
+            <p className="text-sm text-muted-foreground">
+              {yearPlanSummary.recommendedSavingPerCutoff === null
+                ? "No more full-income cutoffs to save from"
+                : `${formatMoney(yearPlanSummary.recommendedSavingPerCutoff, user.currency)} / cutoff recommended`}
+            </p>
+          </Card>
+        </div>
+      )}
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Upcoming (next 7 days)</h2>
