@@ -10,6 +10,7 @@ import { listAccounts } from "@/lib/accounts";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
+import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
@@ -37,6 +38,7 @@ export default async function DashboardPage() {
     cutoffDuePayables,
     recommendation,
     yearPlanSummary,
+    shoppingSummary,
   ] = await Promise.all([
     computeDisposableTotal(prisma, user.id),
     computeSavingsTotal(prisma, user.id),
@@ -49,6 +51,7 @@ export default async function DashboardPage() {
     listDuePayables(prisma, user.id, activePeriod.endDate),
     getRecommendedFundingTransfer(prisma, user.id, now),
     getYearPlanDashboardSummary(prisma, user.id, now),
+    getShoppingDashboardSummary(prisma, user.id, user.cycleStartDay, now),
   ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
@@ -167,6 +170,22 @@ export default async function DashboardPage() {
             </p>
           </Card>
         </div>
+      )}
+
+      {shoppingSummary && (
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Shopping estimate</p>
+          <p className="text-2xl font-semibold">{formatMoney(shoppingSummary.estimatedTotal, user.currency)}</p>
+          {shoppingSummary.hasMissingPrice && (
+            <p className="text-sm text-warning">Some selected items are missing a price.</p>
+          )}
+          {shoppingSummary.allowance !== null && (
+            <p className={`text-sm ${shoppingSummary.overBudget ? "text-danger" : "text-muted-foreground"}`}>
+              {shoppingSummary.overBudget ? "Over allowance" : "Remaining allowance"}:{" "}
+              {formatMoney(shoppingSummary.allowance - shoppingSummary.estimatedTotal, user.currency)}
+            </p>
+          )}
+        </Card>
       )}
 
       <div>
