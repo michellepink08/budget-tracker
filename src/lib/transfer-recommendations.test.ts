@@ -7,6 +7,7 @@ const FUNDING_ACCOUNT = {
   isPrimaryFundingAccount: true,
   archivedAt: null,
   includeInLiquidFunds: true,
+  purpose: "DISPOSABLE",
   accountType: "CHECKING",
   openingBalance: 0,
 };
@@ -16,6 +17,7 @@ const SAVINGS_ACCOUNT = {
   isPrimaryFundingAccount: false,
   archivedAt: null,
   includeInLiquidFunds: true,
+  purpose: "SAVINGS",
   accountType: "SAVINGS",
   openingBalance: 0,
 };
@@ -25,6 +27,7 @@ const CREDIT_CARD_ACCOUNT = {
   isPrimaryFundingAccount: false,
   archivedAt: null,
   includeInLiquidFunds: true,
+  purpose: "CREDIT",
   accountType: "CREDIT_CARD",
   openingBalance: 0,
 };

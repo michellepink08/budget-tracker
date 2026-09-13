@@ -7,10 +7,7 @@ export type FundingRecommendation = {
   amount: number; // minor units, non-negative
 };
 
-// Credit and loan accounts are never a source of "real" funds to move —
-// same hard rule as liquid-funds totals (design spec's "Account-balance
-// rules").
-const EXCLUDED_FROM_SOURCE = ["CREDIT_CARD", "LOAN"];
+const LIQUID_PURPOSES = ["DISPOSABLE", "SAVINGS"];
 
 // A pure computation — no schema, nothing persisted. Surfaced as a
 // suggestion on the Bills page; the user still creates the actual
@@ -52,8 +49,7 @@ export async function getRecommendedFundingTransfer(
       userId,
       id: { not: fundingAccount.id },
       archivedAt: null,
-      includeInLiquidFunds: true,
-      accountType: { notIn: EXCLUDED_FROM_SOURCE },
+      purpose: { in: LIQUID_PURPOSES },
     },
   });
 
@@ -61,7 +57,7 @@ export async function getRecommendedFundingTransfer(
   // correct even against a test double that doesn't implement Prisma's
   // filtering semantics — the DB-level filter above is the fast path.
   const eligibleAccounts = otherAccounts.filter(
-    (account: { accountType: string }) => !EXCLUDED_FROM_SOURCE.includes(account.accountType),
+    (account: { purpose: string }) => LIQUID_PURPOSES.includes(account.purpose),
   );
 
   const balances = await Promise.all(
