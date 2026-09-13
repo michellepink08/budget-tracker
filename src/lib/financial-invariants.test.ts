@@ -174,7 +174,8 @@ describe("§13 invariant: receipt items never add spending beyond the parent tra
       },
       transaction: { create: vi.fn().mockResolvedValue({ id: "txn-1" }) },
       budgetPeriod: { findUnique: vi.fn().mockResolvedValue({ id: "period-1" }), create: vi.fn() },
-      shoppingPriceHistory: { create: vi.fn() },
+      shoppingPriceHistory: { create: vi.fn().mockResolvedValue({ id: "price-1" }) },
+      auditLog: { create: vi.fn().mockResolvedValue({ id: "audit-1" }) },
     };
     prisma.$transaction = vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
 
