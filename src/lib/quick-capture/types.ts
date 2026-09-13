@@ -14,6 +14,11 @@ export const QUICK_CAPTURE_INTENTS = [
   "payable_update",
   "transaction_update",
   "transaction_delete",
+  "shopping_list_add",
+  "shopping_list_select",
+  "shopping_schedule",
+  "year_plan_update_assumption",
+  "navigate",
   "question",
 ] as const;
 export type QuickCaptureIntent = (typeof QUICK_CAPTURE_INTENTS)[number];
@@ -34,6 +39,8 @@ export const QUESTION_TYPES = [
   "restricted_fund_balance",
   "restricted_fund_coverage",
   "expected_income",
+  "shopping_selected_total",
+  "year_plan_recommended_saving",
 ] as const;
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
@@ -184,6 +191,48 @@ export const transactionDeleteDraftSchema = z.object({
 });
 export type TransactionDeleteDraft = z.infer<typeof transactionDeleteDraftSchema>;
 
+export const shoppingListAddDraftSchema = z.object({
+  intent: z.literal("shopping_list_add"),
+  item: resolvedRefSchema, // resolved against ShoppingCatalogItem; id is null when it's a new free-text item
+  itemNameRaw: z.string(),
+  ...base,
+});
+export type ShoppingListAddDraft = z.infer<typeof shoppingListAddDraftSchema>;
+
+export const shoppingListSelectDraftSchema = z.object({
+  intent: z.literal("shopping_list_select"),
+  item: resolvedRefSchema, // resolved against the current list's own items, not the full catalog
+  ...base,
+});
+export type ShoppingListSelectDraft = z.infer<typeof shoppingListSelectDraftSchema>;
+
+export const shoppingScheduleDraftSchema = z.object({
+  intent: z.literal("shopping_schedule"),
+  date: dateFieldSchema,
+  ...base,
+});
+export type ShoppingScheduleDraft = z.infer<typeof shoppingScheduleDraftSchema>;
+
+export const yearPlanUpdateAssumptionDraftSchema = z.object({
+  intent: z.literal("year_plan_update_assumption"),
+  phase: resolvedRefSchema, // the YearPlanPhase being extended/shortened
+  newEndDate: dateFieldSchema,
+  ...base,
+});
+export type YearPlanUpdateAssumptionDraft = z.infer<typeof yearPlanUpdateAssumptionDraftSchema>;
+
+// Never confirmed through executeDraft/QuickCaptureLog — the panel
+// handles this entirely client-side as a router.push, since it changes
+// no data (design spec section G: "a navigation command, not a data
+// question").
+export const navigateDraftSchema = z.object({
+  intent: z.literal("navigate"),
+  route: z.string(),
+  label: z.string(),
+  ...base,
+});
+export type NavigateDraft = z.infer<typeof navigateDraftSchema>;
+
 export const questionDraftSchema = z.object({
   intent: z.literal("question"),
   questionType: z.enum(QUESTION_TYPES),
@@ -210,4 +259,9 @@ export type CommandDraft =
   | PayableUpdateDraft
   | TransactionUpdateDraft
   | TransactionDeleteDraft
+  | ShoppingListAddDraft
+  | ShoppingListSelectDraft
+  | ShoppingScheduleDraft
+  | YearPlanUpdateAssumptionDraft
+  | NavigateDraft
   | QuestionDraft;
