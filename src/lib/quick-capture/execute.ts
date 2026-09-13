@@ -287,6 +287,9 @@ export async function executeDraft(
       return { ok: true, resultingIds: [draft.phase.id], previousValues };
     }
 
+    case "navigate":
+      return { ok: false, error: "Navigation commands don't need to be confirmed" };
+
     case "question":
       return { ok: false, error: "Answering questions isn't available yet" };
   }

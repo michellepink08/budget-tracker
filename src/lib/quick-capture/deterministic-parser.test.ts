@@ -392,3 +392,18 @@ describe("year_plan_update_assumption", () => {
     expect(draft.clarification).not.toBeNull();
   });
 });
+
+describe("navigate", () => {
+  it("parses 'Show my Year Plan' into a navigate draft pointing at /year-plan", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "Show my Year Plan");
+
+    expect(draft.intent).toBe("navigate");
+    if (draft.intent === "navigate") {
+      expect(draft.route).toBe("/year-plan");
+      expect(draft.label).toBe("Year Plan");
+    }
+  });
+});

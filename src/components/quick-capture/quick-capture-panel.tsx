@@ -65,6 +65,8 @@ function summarize(draft: CommandDraft): string {
       return `mark ${draft.item.raw} for the next trip`;
     case "year_plan_update_assumption":
       return `update Year Plan phase end date to ${draft.newEndDate.value.toLocaleDateString()}`;
+    case "navigate":
+      return `go to ${draft.label}`;
     case "question": {
       const answer = draft.answer;
       if (!answer) return "question";
@@ -226,16 +228,33 @@ export function QuickCapturePanel({
                 <p className="mb-2 text-warning">{entry.draft.clarification.question}</p>
               )}
 
-              {entry.status === "pending" && !entry.draft.clarification && entry.draft.intent !== "question" && (
-                <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={() => handleConfirm(index)}>
-                    Confirm
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={() => handleCancel(index)}>
-                    Cancel
-                  </Button>
-                </div>
+              {entry.status === "pending" && entry.draft.intent === "navigate" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const route = entry.draft.intent === "navigate" ? entry.draft.route : "/";
+                    handleOpenChange(false);
+                    router.push(route);
+                  }}
+                >
+                  Go
+                </Button>
               )}
+
+              {entry.status === "pending" &&
+                !entry.draft.clarification &&
+                entry.draft.intent !== "question" &&
+                entry.draft.intent !== "navigate" && (
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={() => handleConfirm(index)}>
+                      Confirm
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => handleCancel(index)}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
 
               {entry.status === "confirmed" && (
                 <div className="flex items-center gap-2 text-success">

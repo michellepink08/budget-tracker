@@ -347,6 +347,23 @@ const clauseParsers: ClauseParser[] = [
       };
     },
   },
+  // Navigation — "Show my Year Plan" / "Show the Year Plan". Never
+  // confirmed through executeDraft — the panel handles this as a
+  // client-side route push. Scenario-specific phrasings ("Show the
+  // conservative Year Plan") are deferred until the Year Plan page itself
+  // supports viewing a non-expected scenario — it has no such UI today.
+  {
+    test: (lower) => /\bshow\b.*\byear plan\b/.test(lower),
+    parse: async (_prisma, _ctx, clause) => {
+      return {
+        intent: "navigate",
+        route: "/year-plan",
+        label: "Year Plan",
+        clauseText: clause,
+        clarification: null,
+      };
+    },
+  },
   // Year Plan assumption update — "Papa will probably be home by
   // December". Resolves to whichever phase on the active plan is not a
   // HOME_PHASE_TYPES phase and covers today — the one the statement is
