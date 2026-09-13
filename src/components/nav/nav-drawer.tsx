@@ -42,7 +42,7 @@ export function NavDrawer({
                 onClick={() => onOpenChange(false)}
                 className={
                   (isActive ? "bg-muted font-medium" : "hover:bg-muted") +
-                  " flex items-center gap-3 rounded-md px-3 py-2 text-sm"
+                  " flex items-center gap-3 rounded-md px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 }
               >
                 <Icon className="h-4 w-4 shrink-0" />
