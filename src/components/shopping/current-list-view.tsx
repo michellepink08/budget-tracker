@@ -45,7 +45,7 @@ export function CurrentListView({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card variant="highlight" className="p-4">
+      <Card variant="info" className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{list.name}</p>
           <div className="flex gap-2">

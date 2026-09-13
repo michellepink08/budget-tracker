@@ -47,7 +47,7 @@ export function DueList({ rules }: { rules: DueRule[] }) {
   }
 
   return (
-    <Card variant="highlight" className="flex flex-col gap-3 p-4">
+    <Card variant="warning" className="flex flex-col gap-3 p-4">
       <h2 className="text-sm font-medium">Due now</h2>
       {rules.map((rule) => (
         <form

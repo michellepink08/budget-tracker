@@ -39,6 +39,16 @@ const STATE_BADGE: Record<CalendarEntry["state"], string> = {
   UPCOMING: "Upcoming",
 };
 
+// Plan-38 §5: each state gets a distinct tint, not just colored text — so
+// an Overdue and an Upcoming entry never read as the same kind of card at
+// a glance, even before you read the label.
+const STATE_CARD_VARIANT: Record<CalendarEntry["state"], "success" | "danger" | "warning" | "default"> = {
+  PAID: "success",
+  OVERDUE: "danger",
+  SKIPPED: "default",
+  UPCOMING: "warning",
+};
+
 export function CalendarEntryCard({
   entry,
   currency,
@@ -67,7 +77,10 @@ export function CalendarEntryCard({
   const sourcePage = SOURCE_PAGE[entry.sourceType];
 
   return (
-    <Card className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+    <Card
+      variant={STATE_CARD_VARIANT[entry.state]}
+      className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div>
         <p className={`font-medium ${STATE_STYLE[entry.state]}`}>{entry.label}</p>
         <p className="text-sm text-muted-foreground">

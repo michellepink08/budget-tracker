@@ -1,11 +1,13 @@
 import { formatMoney } from "@/lib/money";
 import type { CalendarEntry } from "@/lib/calendar/aggregate";
 
+// Plan-38 §5: upcoming/pending is amber, not the brand color — brand wine
+// is reserved for interactive/primary UI, not a status meaning.
 const STATE_DOT: Record<CalendarEntry["state"], string> = {
   PAID: "bg-success",
   OVERDUE: "bg-danger",
   SKIPPED: "bg-muted-foreground",
-  UPCOMING: "bg-primary",
+  UPCOMING: "bg-warning",
 };
 
 // Overview only — no per-entry actions here (those live in Agenda/Cutoff

@@ -101,7 +101,7 @@ export default async function YearPlanPage() {
         </div>
       </div>
 
-      <Card variant="highlight" className="p-4">
+      <Card variant="info" className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{plan.name}</p>
           <div className="flex gap-2">

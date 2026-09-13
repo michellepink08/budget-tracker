@@ -48,7 +48,7 @@ export function DueInstallmentPaymentsBanner({
   }
 
   return (
-    <Card variant="highlight" className="flex flex-col gap-3 p-4">
+    <Card variant="warning" className="flex flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Installments due</h2>
         <select
