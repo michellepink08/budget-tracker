@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { addLineAction, confirmReceiptAction, updateReceiptTotalsAction } from "@/actions/receipt.actions";
+import {
+  addLineAction,
+  confirmReceiptAction,
+  updateReceiptStoreAction,
+  updateReceiptTotalsAction,
+} from "@/actions/receipt.actions";
 import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import { formatMoney, toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
@@ -39,6 +44,8 @@ export function ReceiptReview({
   catalogItems,
   accounts,
   categories,
+  storeName,
+  rawStoreText,
 }: {
   receipt: Receipt;
   lines: Line[];
@@ -46,6 +53,8 @@ export function ReceiptReview({
   catalogItems: { id: string; canonicalName: string }[];
   accounts: { id: string; name: string }[];
   categories: { id: string; name: string }[];
+  storeName: string | null;
+  rawStoreText: string | null;
 }) {
   const router = useRouter();
   const [subtotal, setSubtotal] = useState(receipt.subtotal === null ? "" : String(toMajorUnits(receipt.subtotal, currency)));
@@ -64,6 +73,8 @@ export function ReceiptReview({
   const [categoryId, setCategoryId] = useState("");
   const [isSavingTotals, setIsSavingTotals] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [storeNameInput, setStoreNameInput] = useState(storeName ?? "");
+  const [isSavingStore, setIsSavingStore] = useState(false);
 
   const { reconciled, difference } = computeReconciliation({
     subtotal: receipt.subtotal,
@@ -138,6 +149,20 @@ export function ReceiptReview({
     router.refresh();
   }
 
+  async function handleSaveStore() {
+    setIsSavingStore(true);
+    const formData = new FormData();
+    formData.set("storeName", storeNameInput);
+    const result = await updateReceiptStoreAction(receipt.id, formData);
+    setIsSavingStore(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Store saved");
+    router.refresh();
+  }
+
   async function handleConfirm() {
     setIsConfirming(true);
     const formData = new FormData();
@@ -156,6 +181,23 @@ export function ReceiptReview({
 
   return (
     <div className="flex flex-col gap-4">
+      <Card className="flex flex-col gap-2 p-3">
+        <p className="text-sm font-medium text-muted-foreground">Store</p>
+        {!storeName && rawStoreText && (
+          <p className="text-xs text-warning">Detected: &quot;{rawStoreText}&quot; — pick or type the actual store</p>
+        )}
+        <div className="flex gap-2">
+          <Input
+            value={storeNameInput}
+            onChange={(e) => setStoreNameInput(e.target.value)}
+            placeholder="e.g. SM Supermarket"
+          />
+          <Button size="sm" onClick={handleSaveStore} disabled={isSavingStore}>
+            {isSavingStore ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </Card>
+
       <div>
         <h3 className="mb-2 text-sm font-medium text-muted-foreground">Lines</h3>
         <div className="flex flex-col gap-2">
