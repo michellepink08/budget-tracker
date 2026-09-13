@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccounts } from "@/lib/accounts";
 import { computeAccountBalance } from "@/lib/account-balance";
+import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { AccountList } from "@/components/accounts/account-list";
 
@@ -9,12 +10,24 @@ export default async function AccountsPage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  const accounts = await listAccounts(prisma, userId);
+  const [accounts, restrictedFunds, savingsGoals] = await Promise.all([
+    listAccounts(prisma, userId),
+    listRestrictedFundGroups(prisma, userId),
+    prisma.savingsGoal.findMany({ where: { userId } }),
+  ]);
+
   const withBalances = await Promise.all(
-    accounts.map(async (account) => ({
-      ...account,
-      balance: await computeAccountBalance(prisma, account.id),
-    })),
+    accounts.map(async (account) => {
+      const pendingTransactions = await prisma.transaction.findMany({
+        where: { userId, accountId: account.id, status: "PENDING" },
+      });
+      return {
+        ...account,
+        balance: await computeAccountBalance(prisma, account.id),
+        pendingCount: pendingTransactions.length,
+        pendingTotal: pendingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0),
+      };
+    }),
   );
 
   return (
@@ -23,7 +36,7 @@ export default async function AccountsPage() {
         <h1 className="text-xl font-semibold">Accounts</h1>
         <AccountFormDialog />
       </div>
-      <AccountList accounts={withBalances} />
+      <AccountList accounts={withBalances} restrictedFunds={restrictedFunds} savingsGoals={savingsGoals} />
     </div>
   );
 }
