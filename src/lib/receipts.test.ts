@@ -7,6 +7,7 @@ import {
   deleteLine,
   removeImage,
   runOcrExtraction,
+  setReceiptStore,
   updateLine,
 } from "@/lib/receipts";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
@@ -329,6 +330,55 @@ describe("runOcrExtraction — store learning", () => {
     const updateCall = (prisma.receipt.update as any).mock.calls[0][0];
     expect(updateCall.data.rawStoreText).toBe("SOMETHING ELSE");
     expect(updateCall.data.storeId).toBeUndefined();
+  });
+});
+
+describe("setReceiptStore", () => {
+  it("resolves/creates the store and learns an alias from the receipt's raw store text", async () => {
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1", rawStoreText: "STO ALCPRO MKT" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+      shoppingStore: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn(async ({ data }: any) => ({ id: "store-new", ...data })),
+      },
+    });
+    const result = await setReceiptStore(prisma, "user-1", "receipt-1", "Alfamart");
+    expect(result.ok).toBe(true);
+    expect(prisma.receipt.update).toHaveBeenCalledWith({
+      where: { id: "receipt-1" },
+      data: { storeId: "store-new", rawStoreText: "Alfamart" },
+    });
+    expect(prisma.alias.upsert).toHaveBeenCalledWith({
+      where: { userId_kind_alias: { userId: "user-1", kind: "shopping_store", alias: "sto alcpro mkt" } },
+      update: { targetId: "store-new" },
+      create: { userId: "user-1", kind: "shopping_store", alias: "sto alcpro mkt", targetId: "store-new" },
+    });
+  });
+
+  it("does not write an alias when the receipt has no raw store text to learn from", async () => {
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1", rawStoreText: null }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+      shoppingStore: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn(async ({ data }: any) => ({ id: "store-new", ...data })),
+      },
+    });
+    await setReceiptStore(prisma, "user-1", "receipt-1", "Alfamart");
+    expect(prisma.alias.upsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the receipt does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await setReceiptStore(prisma, "user-1", "receipt-1", "Alfamart");
+    expect(result.ok).toBe(false);
   });
 });
 

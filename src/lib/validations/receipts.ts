@@ -30,3 +30,7 @@ export const confirmReceiptSchema = z.object({
   categoryId: z.string().nullable(),
   date: z.coerce.date(),
 });
+
+export const receiptStoreSchema = z.object({
+  storeName: z.string(),
+});

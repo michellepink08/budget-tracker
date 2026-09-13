@@ -5,6 +5,7 @@ import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
 import { createAlias, resolveAlias } from "@/lib/aliases";
 import { listActiveCatalogItems } from "@/lib/shopping-catalog";
+import { getOrCreateStore } from "@/lib/shopping-store";
 
 export type ReceiptMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -120,6 +121,30 @@ export async function updateLine(
   }
 
   return { ok: true, id: line.id };
+}
+
+export async function setReceiptStore(
+  prisma: Pick<PrismaClient, "receipt" | "shoppingStore" | "alias">,
+  userId: string,
+  receiptId: string,
+  storeName: string,
+): Promise<ReceiptMutationResult> {
+  const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, userId } });
+  if (!receipt) return { ok: false, error: "Receipt not found" };
+
+  const storeId = await getOrCreateStore(prisma, userId, storeName);
+  const rawStoreText = (receipt as { rawStoreText: string | null }).rawStoreText;
+
+  await prisma.receipt.update({
+    where: { id: receiptId },
+    data: { storeId, rawStoreText: storeName.trim() || null },
+  });
+
+  if (storeId && rawStoreText) {
+    await createAlias(prisma, userId, { kind: "shopping_store", alias: rawStoreText, targetId: storeId });
+  }
+
+  return { ok: true, id: receiptId };
 }
 
 export async function deleteLine(
