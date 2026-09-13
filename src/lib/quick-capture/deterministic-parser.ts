@@ -11,6 +11,7 @@ export type ParserContext = {
   currency: string; // e.g. "PHP" — this app is single-currency-per-user (see design spec: no multi-currency)
   accounts: ResolveCandidate[];
   categories: ResolveCandidate[];
+  shoppingItems: ResolveCandidate[];
   now: Date;
 };
 
@@ -56,6 +57,36 @@ async function resolveRefOrClarify(
       question: `Which account did you use for "${raw}"?`,
     },
   };
+}
+
+// Unlike resolveRefOrClarify, an unresolved shopping item is never an
+// error — ShoppingListItem.freeTextName exists exactly for "no catalog
+// match yet." Only a genuine ambiguity between two or more catalog items
+// asks a clarification.
+async function resolveShoppingItemOrClarify(
+  prisma: Pick<PrismaClient, "alias">,
+  ctx: ParserContext,
+  raw: string,
+): Promise<{ ref: ResolvedRef; clarification: CommandDraft["clarification"] }> {
+  const result: ResolveResult = await resolveAlias(prisma, ctx.userId, "shopping_item", raw, ctx.shoppingItems);
+
+  if (result.status === "resolved") {
+    return { ref: { raw, id: result.id, candidateIds: [] }, clarification: null };
+  }
+  if (result.status === "ambiguous") {
+    const names = result.candidateIds
+      .map((id) => ctx.shoppingItems.find((c) => c.id === id)?.name)
+      .filter((n): n is string => Boolean(n));
+    return {
+      ref: { raw, id: null, candidateIds: result.candidateIds },
+      clarification: {
+        field: "item",
+        question: `Which item did you mean: ${names.join(", ")}?`,
+        options: names,
+      },
+    };
+  }
+  return { ref: { raw, id: null, candidateIds: [] }, clarification: null };
 }
 
 function detectCutoffOverride(text: string): "previous" | "current" | "next" | null {
@@ -310,6 +341,27 @@ const clauseParsers: ClauseParser[] = [
             : refResult.status === "unresolved"
               ? { field: "target", question: "I couldn't find a matching recent transaction." }
               : null,
+      };
+    },
+  },
+  // Shopping list add — "Add rice to my shopping list" (also matches a
+  // bare split fragment like "milk to my shopping list" left over from a
+  // multi-item clause such as "Add rice and milk to my shopping list" —
+  // the shared splitter in this file splits on "and", so only the first
+  // item keeps the "add ... to" framing; later items still match here
+  // via the bare "X to my shopping list" fallback below).
+  {
+    test: (lower) => /\bshopping list\b/.test(lower),
+    parse: async (prisma, ctx, clause) => {
+      const nameMatch = clause.match(/^(?:add\s+)?(.+?)\s+to\s+(?:my\s+)?shopping list/i);
+      const itemNameRaw = (nameMatch?.[1] ?? clause).trim();
+      const { ref, clarification } = await resolveShoppingItemOrClarify(prisma, ctx, itemNameRaw);
+      return {
+        intent: "shopping_list_add",
+        item: ref,
+        itemNameRaw,
+        clauseText: clause,
+        clarification,
       };
     },
   },

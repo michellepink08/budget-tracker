@@ -19,6 +19,7 @@ function makeContext(overrides: Partial<ParserContext> = {}): ParserContext {
       { id: "cat-transport", name: "Transportation" },
       { id: "cat-health", name: "Health" },
     ],
+    shoppingItems: [],
     ...overrides,
   };
 }
@@ -288,5 +289,32 @@ describe("shopping_schedule", () => {
     const [draft] = await parseCommand(prisma, ctx, "Schedule grocery shopping for Saturday");
 
     expect(draft.intent).toBe("shopping_schedule");
+  });
+});
+
+describe("shopping_list_add", () => {
+  it("resolves a catalog match", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = { ...makeContext(), shoppingItems: [{ id: "cat-1", name: "Rice" }] };
+
+    const [draft] = await parseCommand(prisma, ctx, "Add rice to my shopping list");
+
+    expect(draft.intent).toBe("shopping_list_add");
+    if (draft.intent === "shopping_list_add") {
+      expect(draft.item.id).toBe("cat-1");
+    }
+  });
+
+  it("falls back to a free-text item name when nothing matches the catalog", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = { ...makeContext(), shoppingItems: [] };
+
+    const [draft] = await parseCommand(prisma, ctx, "Add quail eggs to my shopping list");
+
+    expect(draft.intent).toBe("shopping_list_add");
+    if (draft.intent === "shopping_list_add") {
+      expect(draft.item.id).toBeNull();
+      expect(draft.itemNameRaw).toBe("quail eggs");
+    }
   });
 });

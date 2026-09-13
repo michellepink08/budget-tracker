@@ -59,6 +59,8 @@ function summarize(draft: CommandDraft): string {
       return "delete transaction — this can't be undone";
     case "shopping_schedule":
       return `schedule shopping for ${draft.date.value.toLocaleDateString()}`;
+    case "shopping_list_add":
+      return `add ${draft.itemNameRaw} to shopping list`;
     case "question": {
       const answer = draft.answer;
       if (!answer) return "question";

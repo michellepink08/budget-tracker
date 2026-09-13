@@ -216,6 +216,44 @@ export async function executeDraft(
       return { ok: true, resultingIds: [list.id], previousValues };
     }
 
+    case "shopping_list_add": {
+      let list = await prisma.shoppingList.findFirst({ where: { userId, isCurrent: true } });
+      if (!list) {
+        list = await prisma.shoppingList.create({
+          data: { userId, name: "Shopping list", isCurrent: true, plannedDate: null, budgetCategoryId: null },
+        });
+      }
+
+      let categoryId: string | null = null;
+      let estimatedUnitPrice: number | null = null;
+      if (draft.item.id) {
+        const catalogItem = await prisma.shoppingCatalogItem.findFirst({ where: { id: draft.item.id, userId } });
+        categoryId = catalogItem?.categoryId ?? null;
+        const latestPrice = await prisma.shoppingPriceHistory.findFirst({
+          where: { userId, catalogItemId: draft.item.id },
+          orderBy: { confirmedAt: "desc" },
+        });
+        estimatedUnitPrice = latestPrice?.unitPrice ?? null;
+      }
+
+      const item = await prisma.shoppingListItem.create({
+        data: {
+          userId,
+          listId: list.id,
+          catalogItemId: draft.item.id,
+          freeTextName: draft.item.id ? null : draft.itemNameRaw,
+          quantity: 1,
+          unit: null,
+          estimatedUnitPrice,
+          preferredStoreId: null,
+          categoryId,
+          priority: "NORMAL",
+          notes: null,
+        },
+      });
+      return { ok: true, resultingIds: [item.id] };
+    }
+
     case "question":
       return { ok: false, error: "Answering questions isn't available yet" };
   }
@@ -248,6 +286,11 @@ export async function undoExecution(
       where: { id: { in: resultingIds }, userId },
       data: previousValues,
     });
+    return { ok: true };
+  }
+
+  if (intent === "shopping_list_add") {
+    await prisma.shoppingListItem.deleteMany({ where: { id: { in: resultingIds }, userId } });
     return { ok: true };
   }
 

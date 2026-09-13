@@ -344,3 +344,111 @@ describe("undoExecution — shopping_schedule", () => {
     });
   });
 });
+
+describe("shopping_list_add", () => {
+  it("adds a catalog-matched item, using its category and latest price", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1" }) },
+      shoppingListItem: { create: vi.fn().mockResolvedValue({ id: "item-1" }) },
+      shoppingCatalogItem: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1", categoryId: "cat-food" }) },
+      shoppingPriceHistory: { findFirst: vi.fn().mockResolvedValue({ unitPrice: 5500 }) },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_list_add",
+      item: { raw: "rice", id: "cat-1", candidateIds: [] },
+      itemNameRaw: "rice",
+      clauseText: "Add rice to my shopping list",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: true, resultingIds: ["item-1"] });
+    expect(prisma.shoppingListItem.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        listId: "list-1",
+        catalogItemId: "cat-1",
+        freeTextName: null,
+        quantity: 1,
+        unit: null,
+        estimatedUnitPrice: 5500,
+        preferredStoreId: null,
+        categoryId: "cat-food",
+        priority: "NORMAL",
+        notes: null,
+      },
+    });
+  });
+
+  it("adds a free-text item when nothing matched the catalog", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1" }) },
+      shoppingListItem: { create: vi.fn().mockResolvedValue({ id: "item-1" }) },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_list_add",
+      item: { raw: "quail eggs", id: null, candidateIds: [] },
+      itemNameRaw: "quail eggs",
+      clauseText: "Add quail eggs to my shopping list",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: true, resultingIds: ["item-1"] });
+    expect(prisma.shoppingListItem.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        listId: "list-1",
+        catalogItemId: null,
+        freeTextName: "quail eggs",
+        quantity: 1,
+        unit: null,
+        estimatedUnitPrice: null,
+        preferredStoreId: null,
+        categoryId: null,
+        priority: "NORMAL",
+        notes: null,
+      },
+    });
+  });
+
+  it("creates a current list on demand when none exists yet", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "list-new" }),
+      },
+      shoppingListItem: { create: vi.fn().mockResolvedValue({ id: "item-1" }) },
+    });
+
+    await executeDraft(prisma, "user-1", 25, {
+      intent: "shopping_list_add",
+      item: { raw: "rice", id: null, candidateIds: [] },
+      itemNameRaw: "rice",
+      clauseText: "Add rice to my shopping list",
+      clarification: null,
+    });
+
+    expect(prisma.shoppingList.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", name: "Shopping list", isCurrent: true, plannedDate: null, budgetCategoryId: null },
+    });
+    expect(prisma.shoppingListItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ listId: "list-new" }) }),
+    );
+  });
+});
+
+describe("undoExecution — shopping_list_add", () => {
+  it("deletes the created list item", async () => {
+    const prisma = makeFakePrisma({
+      shoppingListItem: { deleteMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    });
+
+    const result = await undoExecution(prisma, "user-1", "shopping_list_add", ["item-1"], null);
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["item-1"] }, userId: "user-1" },
+    });
+  });
+});

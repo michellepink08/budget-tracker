@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
+import { listActiveCatalogItems } from "@/lib/shopping-catalog";
 import { parseCommand } from "@/lib/quick-capture/deterministic-parser";
 import { executeDraft, undoExecution } from "@/lib/quick-capture/execute";
 import { answerQuestion } from "@/lib/quick-capture/answer-question";
@@ -23,9 +24,10 @@ export async function parseQuickCaptureAction(text: string): Promise<ParseQuickC
   if (!user) return { ok: false, error: "You must be logged in" };
   if (!text.trim()) return { ok: false, error: "Type a command first" };
 
-  const [accounts, categories] = await Promise.all([
+  const [accounts, categories, shoppingItems] = await Promise.all([
     listAccounts(prisma, user.id),
     listCategories(prisma, user.id),
+    listActiveCatalogItems(prisma, user.id),
   ]);
 
   const drafts = await parseCommand(
@@ -35,6 +37,7 @@ export async function parseQuickCaptureAction(text: string): Promise<ParseQuickC
       currency: user.currency,
       accounts: accounts.map((a) => ({ id: a.id, name: a.name })),
       categories: categories.map((c) => ({ id: c.id, name: c.name })),
+      shoppingItems,
       now: new Date(),
     },
     text,
