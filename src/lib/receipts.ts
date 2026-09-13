@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { createExpenseLikeTransaction } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
 
@@ -159,7 +160,7 @@ export async function runOcrExtraction(
 
 type ConfirmPrisma = Pick<
   PrismaClient,
-  "receipt" | "transaction" | "budgetPeriod" | "shoppingPriceHistory" | "$transaction"
+  "receipt" | "transaction" | "budgetPeriod" | "shoppingPriceHistory" | "auditLog" | "$transaction"
 >;
 
 // The one function in this module that touches a balance. Every other
@@ -212,13 +213,14 @@ export async function confirmReceipt(
       data: { transactionId: transaction.id, status: "CONFIRMED" },
     });
 
+    const priceHistoryIds: string[] = [];
     for (const line of receipt.lines as {
       excluded: boolean;
       catalogItemId: string | null;
       unitPrice: number | null;
     }[]) {
       if (line.excluded || !line.catalogItemId || line.unitPrice === null) continue;
-      await tx.shoppingPriceHistory.create({
+      const priceHistory = await tx.shoppingPriceHistory.create({
         data: {
           userId,
           catalogItemId: line.catalogItemId,
@@ -227,7 +229,19 @@ export async function confirmReceipt(
           source: "RECEIPT",
         },
       });
+      priceHistoryIds.push(priceHistory.id);
     }
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECEIPT_CONFIRMATION",
+      entityId: receiptId,
+      action: "CREATE",
+      source: "RECEIPT",
+      previousValues: { status: "DRAFT_OR_REVIEWED", transactionId: null },
+      newValues: { status: "CONFIRMED", transactionId: transaction.id },
+      relatedRecordIds: [transaction.id, ...priceHistoryIds],
+    });
 
     return { ok: true, transactionId: transaction.id };
   });

@@ -36,6 +36,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       findUnique: vi.fn().mockResolvedValue({ id: "period-1" }),
       create: vi.fn().mockResolvedValue({ id: "period-1" }),
     },
+    auditLog: { create: vi.fn().mockResolvedValue({ id: "audit-1" }) },
     ...overrides,
   };
   prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
@@ -254,6 +255,44 @@ describe("confirmReceipt", () => {
       data: { transactionId: "txn-1", status: "CONFIRMED" },
     });
     expect(prisma.account.update).not.toHaveBeenCalled();
+  });
+
+  it("records an audit entry listing the transaction and every price-history row created", async () => {
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({
+          id: "receipt-1",
+          userId: "user-1",
+          storeId: "store-1",
+          subtotal: 30000,
+          discount: 0,
+          tax: 0,
+          fees: 0,
+          grandTotal: 30000,
+          unitemizedDifference: 0,
+          lines: [{ id: "line-1", lineTotal: 30000, excluded: false, catalogItemId: "cat-item-1", unitPrice: 30000 }],
+        }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+    });
+
+    await confirmReceipt(prisma, "user-1", 1, "receipt-1", {
+      accountId: "acc-1",
+      categoryId: "cat-1",
+      date: new Date(2026, 0, 1),
+    });
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "RECEIPT_CONFIRMATION",
+        entityId: "receipt-1",
+        action: "CREATE",
+        source: "RECEIPT",
+        relatedRecordIds: ["txn-1", "price-1"],
+      }),
+    });
   });
 
   it("excludes excluded lines from price-history writes even if they have a catalog match", async () => {
