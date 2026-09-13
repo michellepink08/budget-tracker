@@ -34,7 +34,7 @@ export function DuePayablesBanner({ payables }: { payables: DuePayable[] }) {
   }
 
   return (
-    <Card variant="highlight" className="flex flex-col gap-3 p-4">
+    <Card variant="warning" className="flex flex-col gap-3 p-4">
       <h2 className="text-sm font-medium">Due this week</h2>
       {payables.map((payable) => (
         <form

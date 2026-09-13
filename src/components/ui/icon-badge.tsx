@@ -12,6 +12,17 @@ const iconBadgeVariants = cva("flex shrink-0 items-center justify-center rounded
       "dusty-rose": "bg-[color-mix(in_oklch,var(--dusty-rose),transparent_80%)] text-[var(--dusty-rose)]",
       plum: "bg-[color-mix(in_oklch,var(--plum),transparent_80%)] text-[var(--plum)]",
       cream: "bg-cream text-foreground",
+      // Plan-38 §5/§6 semantic tones — same account-purpose and status
+      // pairing used by Card's matching variants, for the small icon
+      // badges placed next to a card's label/title.
+      disposable: "bg-disposable-surface text-disposable-accent",
+      savings: "bg-savings-surface text-savings-accent",
+      restricted: "bg-restricted-surface text-restricted-accent",
+      expense: "bg-expense-surface text-expense-accent",
+      completed: "bg-completed-surface text-completed-accent",
+      warning: "bg-warning-background text-warning",
+      danger: "bg-danger-background text-danger",
+      info: "bg-info-background text-info",
     },
     size: {
       sm: "size-7 [&_svg]:size-3.5",

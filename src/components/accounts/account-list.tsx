@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wallet, PiggyBank, Lock, CreditCard, type LucideIcon } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { ReconcileDialog } from "@/components/accounts/reconcile-dialog";
@@ -8,6 +9,27 @@ import { computeSavingsProgress } from "@/lib/savings-goals";
 import type { RestrictedFundGroup } from "@/lib/restricted-funds";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconBadge } from "@/components/ui/icon-badge";
+
+// Plan-38 §5: every purpose section gets a distinct tint + border + icon +
+// label, not color alone — so a Disposable and a Savings card never read as
+// interchangeable even side by side.
+function SectionHeading({
+  icon,
+  tone,
+  children,
+}: {
+  icon: LucideIcon;
+  tone: "disposable" | "savings" | "restricted";
+  children: React.ReactNode;
+}) {
+  return (
+    <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      <IconBadge icon={icon} tone={tone} size="sm" />
+      {children}
+    </h2>
+  );
+}
 
 type AccountRow = {
   id: string;
@@ -81,10 +103,16 @@ export function AccountList({
     <div className="flex flex-col gap-8">
       {disposable.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Disposable</h2>
+          <SectionHeading icon={Wallet} tone="disposable">
+            Disposable
+          </SectionHeading>
           <div className="flex flex-col gap-3">
             {disposable.map((account) => (
-              <Card key={account.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <Card
+                key={account.id}
+                variant="disposable"
+                className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
                   <p className="font-medium">
                     {account.name}
@@ -115,13 +143,15 @@ export function AccountList({
 
       {savings.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Savings &amp; Reserves</h2>
+          <SectionHeading icon={PiggyBank} tone="savings">
+            Savings &amp; Reserves
+          </SectionHeading>
           <div className="flex flex-col gap-3">
             {savings.map((account) => {
               const goal = goalByAccountId.get(account.id) ?? null;
               const progress = goal ? computeSavingsProgress(goal, account.balance) : null;
               return (
-                <Card key={account.id} className="flex flex-col gap-2 p-4">
+                <Card key={account.id} variant="savings" className="flex flex-col gap-2 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{account.name}</p>
                     <p className="font-medium">{formatMoney(account.balance, account.currency)}</p>
@@ -161,12 +191,14 @@ export function AccountList({
 
       {restricted.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Restricted</h2>
+          <SectionHeading icon={Lock} tone="restricted">
+            Restricted
+          </SectionHeading>
           <div className="flex flex-col gap-3">
             {restricted.map((account) => {
               const group = restrictedByAccountId.get(account.id);
               return (
-                <Card key={account.id} className="flex flex-col gap-2 p-4">
+                <Card key={account.id} variant="restricted" className="flex flex-col gap-2 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">{account.name}</p>
                     <p className="font-medium">{formatMoney(account.balance, account.currency)}</p>
@@ -205,7 +237,10 @@ export function AccountList({
 
       {creditDebt.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Credit &amp; Debt</h2>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <IconBadge icon={CreditCard} tone="dusty-rose" size="sm" />
+            Credit &amp; Debt
+          </h2>
           <div className="flex flex-col gap-3">
             {creditDebt.map((account) => (
               <Card key={account.id} className="flex items-center justify-between p-4">

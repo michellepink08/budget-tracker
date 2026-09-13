@@ -11,8 +11,10 @@ import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
+import { Wallet, PiggyBank, Lock } from "lucide-react";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { Card } from "@/components/ui/card";
+import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -115,19 +117,28 @@ export default async function DashboardPage() {
       <h1 className="text-xl font-semibold">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card variant="highlight" className="p-4">
-          <p className="text-sm text-muted-foreground">Disposable Accounts</p>
-          <p className="text-2xl font-semibold">{formatMoney(disposableTotal, user.currency)}</p>
+        <Card variant="disposable" className="p-4">
+          <div className="flex items-center gap-2">
+            <IconBadge icon={Wallet} tone="disposable" size="sm" />
+            <p className="text-sm text-muted-foreground">Disposable Accounts</p>
+          </div>
+          <p className="mt-2 text-2xl font-semibold">{formatMoney(disposableTotal, user.currency)}</p>
           <p className="mt-2 text-sm text-muted-foreground">Safe to spend</p>
           <p className="text-lg font-medium">{formatMoney(safeToSpend, user.currency)}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Savings &amp; Reserves</p>
-          <p className="text-2xl font-semibold">{formatMoney(savingsTotal, user.currency)}</p>
+        <Card variant="savings" className="p-4">
+          <div className="flex items-center gap-2">
+            <IconBadge icon={PiggyBank} tone="savings" size="sm" />
+            <p className="text-sm text-muted-foreground">Savings &amp; Reserves</p>
+          </div>
+          <p className="mt-2 text-2xl font-semibold">{formatMoney(savingsTotal, user.currency)}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Restricted Checking</p>
-          <p className="text-2xl font-semibold">{formatMoney(restrictedTotal, user.currency)}</p>
+        <Card variant="restricted" className="p-4">
+          <div className="flex items-center gap-2">
+            <IconBadge icon={Lock} tone="restricted" size="sm" />
+            <p className="text-sm text-muted-foreground">Restricted Checking</p>
+          </div>
+          <p className="mt-2 text-2xl font-semibold">{formatMoney(restrictedTotal, user.currency)}</p>
         </Card>
       </div>
 
@@ -147,8 +158,8 @@ export default async function DashboardPage() {
 
       {yearPlanSummary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Card className="p-4">
-            <p className="text-sm text-muted-foreground">Expected income</p>
+          <Card variant="info" className="p-4">
+            <p className="text-sm text-muted-foreground">Expected income (forecast)</p>
             {yearPlanSummary.nextForecast ? (
               <>
                 <p className="text-2xl font-semibold">
@@ -198,7 +209,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {upcoming.map((item) => (
-              <Card key={item.id} className="flex items-center justify-between p-3">
+              <Card key={item.id} variant="warning" className="flex items-center justify-between p-3">
                 <p className="font-medium">{item.description}</p>
                 <div className="text-right text-sm text-muted-foreground">
                   <p>{formatMoney(item.amount, user.currency)}</p>
@@ -215,7 +226,7 @@ export default async function DashboardPage() {
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Restricted funds</h2>
           <div className="flex flex-col gap-2">
             {restrictedFunds.map((fund) => (
-              <Card key={fund.accountId} className="p-3">
+              <Card key={fund.accountId} variant="restricted" className="p-3">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">{fund.accountName}</p>
                   <p className="font-medium">{formatMoney(fund.balance, user.currency)}</p>

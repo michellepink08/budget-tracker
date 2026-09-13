@@ -1,5 +1,7 @@
+import { ArrowRightLeft } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import { Card } from "@/components/ui/card";
+import { IconBadge } from "@/components/ui/icon-badge";
 
 type Recommendation = {
   fromAccountName: string;
@@ -24,8 +26,9 @@ export function FundingRecommendationBanner({
   if (!recommendation) return null;
 
   return (
-    <Card className="border-dashed p-4 text-sm">
-      <p>
+    <Card variant="info" className="border-dashed p-4 text-sm">
+      <p className="mb-1 flex items-center gap-2">
+        <IconBadge icon={ArrowRightLeft} tone="info" size="sm" />
         <span className="font-medium">Funding suggestion: </span>
         move {formatMoney(recommendation.amount, recommendation.currency)} from{" "}
         <span className="font-medium">{recommendation.fromAccountName}</span> to{" "}

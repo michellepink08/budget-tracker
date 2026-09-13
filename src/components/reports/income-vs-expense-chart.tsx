@@ -34,8 +34,11 @@ export function IncomeVsExpenseChart({
             contentStyle={{ backgroundColor: "var(--card)", borderColor: "var(--border)" }}
           />
           <Legend />
-          <Bar dataKey="income" name="Income" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="expense" name="Expense" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+          {/* Plan-38 §6: income is always blue/indigo, expense is always
+              coral/warm red — applied consistently across every chart,
+              legend, tooltip, and summary card in the app. */}
+          <Bar dataKey="income" name="Income" fill="var(--info)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="expense" name="Expense" fill="var(--danger)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

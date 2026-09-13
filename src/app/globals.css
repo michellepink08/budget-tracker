@@ -18,8 +18,11 @@
   --color-success: var(--success);
   --color-success-background: var(--success-background);
   --color-warning: var(--warning);
+  --color-warning-background: var(--warning-background);
   --color-danger: var(--danger);
+  --color-danger-background: var(--danger-background);
   --color-info: var(--info);
+  --color-info-background: var(--info-background);
   /* Plan-38 §4/§5 — semantic account-purpose and status tokens. Every
      card/badge that represents a disposable, restricted, savings, or
      expense/urgent amount (or a completed/paid state) should use one of
@@ -116,8 +119,11 @@
   --success: #28784C;
   --success-background: #E0F3E8;
   --warning: #98701C;
+  --warning-background: #FFF0CA;
   --danger: #B94F54;
+  --danger-background: #FFE2DF;
   --info: #315CA8;
+  --info-background: #E2EBFF;
   --chart-1: #721D42; /* brand wine */
   --chart-2: #B94F54; /* expense */
   --chart-3: #315CA8; /* disposable / informational */
@@ -182,8 +188,11 @@
   --success: #71D39A;
   --success-background: #1F4935;
   --warning: #E7BD63;
+  --warning-background: #4C391E;
   --danger: #EF8C90;
+  --danger-background: #512824;
   --info: #8FB0EF;
+  --info-background: #203252;
   --chart-1: #C65B89; /* brand wine */
   --chart-2: #EF8C90; /* expense */
   --chart-3: #8FB0EF; /* disposable / informational */
