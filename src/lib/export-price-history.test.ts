@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildPriceHistoryExportRows, PRICE_HISTORY_EXPORT_COLUMNS } from "@/lib/export-price-history";
+import { buildPriceHistoryExportRows } from "@/lib/export-price-history";
 
 function makeFakePrisma(rows: unknown[]) {
   return {

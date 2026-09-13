@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildYearPlanPhaseExportRows, YEAR_PLAN_PHASE_EXPORT_COLUMNS } from "@/lib/export-year-plan-phases";
+import { buildYearPlanPhaseExportRows } from "@/lib/export-year-plan-phases";
 
 function makeFakePrisma(phases: unknown[]) {
   return {

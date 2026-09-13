@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildIncomeForecastExportRows, INCOME_FORECAST_EXPORT_COLUMNS } from "@/lib/export-income-forecasts";
+import { buildIncomeForecastExportRows } from "@/lib/export-income-forecasts";
 
 function makeFakePrisma(forecasts: unknown[]) {
   return {

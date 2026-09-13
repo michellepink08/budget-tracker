@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildShoppingExportRows, SHOPPING_LIST_EXPORT_COLUMNS } from "@/lib/export-shopping-lists";
+import { buildShoppingExportRows } from "@/lib/export-shopping-lists";
 
 function makeFakePrisma(items: unknown[]) {
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildPurchaseExportRows, RECEIPT_EXPORT_COLUMNS } from "@/lib/export-receipts";
+import { buildPurchaseExportRows } from "@/lib/export-receipts";
 
 function makeFakePrisma(lines: unknown[]) {
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildCatalogExportRows, SHOPPING_CATALOG_EXPORT_COLUMNS } from "@/lib/export-shopping-catalog";
+import { buildCatalogExportRows } from "@/lib/export-shopping-catalog";
 
 function makeFakePrisma(items: unknown[]) {
   return {

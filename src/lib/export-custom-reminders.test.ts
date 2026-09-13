@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildCustomReminderExportRows, CUSTOM_REMINDER_EXPORT_COLUMNS } from "@/lib/export-custom-reminders";
+import { buildCustomReminderExportRows } from "@/lib/export-custom-reminders";
 
 function makeFakePrisma(reminders: unknown[]) {
   return {
