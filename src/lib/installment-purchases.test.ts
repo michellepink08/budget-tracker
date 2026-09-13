@@ -50,6 +50,9 @@ function makeFakePrisma(options: { payment?: unknown; purchase?: unknown } = {})
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
   };
   return prisma as any;
@@ -219,5 +222,22 @@ describe("payInstallmentTerm", () => {
 
     expect(result).toEqual({ ok: false, error: "Installment payment not found" });
     expect(prisma.transaction.create).not.toHaveBeenCalled();
+  });
+
+  it("records an audit entry for the payment", async () => {
+    const prisma = makeFakePrisma();
+
+    await payInstallmentTerm(prisma, "user-1", 25, "payment-1", { accountId: "acc-checking" });
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "INSTALLMENT_PAYMENT",
+        entityId: "payment-1",
+        action: "CREATE",
+        source: "FORM",
+        relatedRecordIds: ["txn-1"],
+      }),
+    });
   });
 });

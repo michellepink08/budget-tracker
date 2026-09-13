@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { advanceNextDate } from "@/lib/recurring-schedule";
 import { createExpenseLikeTransaction } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 
 export type InstallmentPurchaseInput = {
   name: string;
@@ -92,7 +93,7 @@ export type PayInstallmentTermInput = { accountId: string; amount?: number; date
 export async function payInstallmentTerm(
   prisma: Pick<
     PrismaClient,
-    "installmentPurchase" | "installmentPayment" | "transaction" | "budgetPeriod" | "$transaction"
+    "installmentPurchase" | "installmentPayment" | "transaction" | "budgetPeriod" | "auditLog" | "$transaction"
   >,
   userId: string,
   cycleStartDay: number,
@@ -125,6 +126,17 @@ export async function payInstallmentTerm(
     await tx.installmentPayment.update({
       where: { id: paymentId },
       data: { status: "PAID", paidTransactionId: transaction.id },
+    });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "INSTALLMENT_PAYMENT",
+      entityId: paymentId,
+      action: "CREATE",
+      source: "FORM",
+      previousValues: { status: "PENDING", paidTransactionId: null },
+      newValues: { status: "PAID", paidTransactionId: transaction.id },
+      relatedRecordIds: [transaction.id],
     });
 
     return { ok: true };
