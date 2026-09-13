@@ -11,6 +11,7 @@ import { computeCategoryActual } from "@/lib/category-actual";
 import { spendingByCategory } from "@/lib/reports";
 import { listPayables, listDuePayables } from "@/lib/payables";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
+import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
 import type { QuestionDraft } from "@/lib/quick-capture/types";
 
 export type QuestionAnswer =
@@ -21,7 +22,19 @@ export type QuestionAnswer =
 
 type AnswerPrisma = Pick<
   PrismaClient,
-  "account" | "transaction" | "budgetPeriod" | "budgetAllocation" | "category" | "payable" | "creditCard" | "savingsGoal"
+  | "account"
+  | "transaction"
+  | "budgetPeriod"
+  | "budgetAllocation"
+  | "category"
+  | "payable"
+  | "creditCard"
+  | "savingsGoal"
+  | "shoppingList"
+  | "shoppingListItem"
+  | "yearPlan"
+  | "yearPlanPhase"
+  | "incomeForecast"
 >;
 
 async function totalExpenseForPeriod(
@@ -227,5 +240,11 @@ export async function answerQuestion(
 
     case "expected_income":
       return { kind: "unavailable", message: "Expected income isn't available yet" };
+
+    case "shopping_selected_total": {
+      const summary = await getShoppingDashboardSummary(prisma, userId, cycleStartDay, now);
+      if (!summary) return { kind: "unavailable", message: "No current shopping list yet" };
+      return { kind: "amount", label: "Selected shopping list total", amountMinorUnits: summary.estimatedTotal };
+    }
   }
 }

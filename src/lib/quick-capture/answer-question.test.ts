@@ -353,3 +353,31 @@ describe("answerQuestion", () => {
     expect(result).toEqual({ kind: "unavailable", message: "You don't have any restricted funds set up." });
   });
 });
+
+describe("shopping_selected_total", () => {
+  it("returns the current list's estimated total for selected items", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue({ id: "list-1", budgetCategoryId: null }) },
+      shoppingListItem: {
+        findMany: vi.fn().mockResolvedValue([
+          { isSelected: true, quantity: 2, estimatedUnitPrice: 5500 },
+        ]),
+      },
+    });
+
+    const answer = await answerQuestion(prisma, "user-1", 25, question({ questionType: "shopping_selected_total" }));
+
+    expect(answer).toEqual({ kind: "amount", label: "Selected shopping list total", amountMinorUnits: 11000 });
+  });
+
+  it("reports unavailable when there's no current list or nothing selected", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: { findFirst: vi.fn().mockResolvedValue(null) },
+      shoppingListItem: { findMany: vi.fn() },
+    });
+
+    const answer = await answerQuestion(prisma, "user-1", 25, question({ questionType: "shopping_selected_total" }));
+
+    expect(answer).toEqual({ kind: "unavailable", message: "No current shopping list yet" });
+  });
+});

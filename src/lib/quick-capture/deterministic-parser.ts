@@ -145,6 +145,7 @@ const QUESTION_PATTERNS: { test: RegExp; questionType: QuestionType }[] = [
   { test: /\benough\b.*\bcover\b|\bcover\b.*\benough\b/, questionType: "restricted_fund_coverage" },
   { test: /\bspen(d|t|ding)\b.*\b(this cutoff|current cutoff)\b/, questionType: "spending_current_cutoff" },
   { test: /\bspen(d|t|ding)\b.*\b(last cutoff|previous cutoff)\b/, questionType: "spending_previous_cutoff" },
+  { test: /\bshopping list\b/, questionType: "shopping_selected_total" },
   { test: /\bspen(d|t|ding)\b.*\bon\b/, questionType: "spending_by_category" },
   { test: /\bexpected income\b/, questionType: "expected_income" },
 ];
@@ -371,7 +372,10 @@ const clauseParsers: ClauseParser[] = [
   // item keeps the "add ... to" framing; later items still match here
   // via the bare "X to my shopping list" fallback below).
   {
-    test: (lower) => /\bshopping list\b/.test(lower),
+    // Excludes a question-phrased clause ("How much is my shopping
+    // list?") — that falls through to the read-only question parser
+    // below instead, which checks for a trailing "?" first.
+    test: (lower) => /\bshopping list\b/.test(lower) && !lower.trim().endsWith("?"),
     parse: async (prisma, ctx, clause) => {
       const nameMatch = clause.match(/^(?:add\s+)?(.+?)\s+to\s+(?:my\s+)?shopping list/i);
       const itemNameRaw = (nameMatch?.[1] ?? clause).trim();

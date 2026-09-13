@@ -332,3 +332,17 @@ describe("shopping_list_select", () => {
     }
   });
 });
+
+describe("shopping_selected_total question", () => {
+  it("parses 'How much is my selected shopping list?' as shopping_selected_total", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "How much is my selected shopping list?");
+
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.questionType).toBe("shopping_selected_total");
+    }
+  });
+});
