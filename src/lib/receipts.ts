@@ -159,7 +159,7 @@ export async function runOcrExtraction(
 
 type ConfirmPrisma = Pick<
   PrismaClient,
-  "receipt" | "transaction" | "budgetPeriod" | "shoppingPriceHistory"
+  "receipt" | "transaction" | "budgetPeriod" | "shoppingPriceHistory" | "$transaction"
 >;
 
 // The one function in this module that touches a balance. Every other
@@ -192,36 +192,43 @@ export async function confirmReceipt(
   });
   if (!reconciled) return { ok: false, error: "Receipt does not reconcile yet" };
 
-  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "EXPENSE",
-    amount: receipt.grandTotal ?? 0,
-    date: input.date,
-    accountId: input.accountId,
-    categoryId: input.categoryId,
-    description: "Receipt purchase",
-  });
-
-  await prisma.receipt.update({
-    where: { id: receiptId },
-    data: { transactionId: transaction.id, status: "CONFIRMED" },
-  });
-
-  for (const line of receipt.lines as {
-    excluded: boolean;
-    catalogItemId: string | null;
-    unitPrice: number | null;
-  }[]) {
-    if (line.excluded || !line.catalogItemId || line.unitPrice === null) continue;
-    await prisma.shoppingPriceHistory.create({
-      data: {
-        userId,
-        catalogItemId: line.catalogItemId,
-        storeId: receipt.storeId,
-        unitPrice: line.unitPrice,
-        source: "RECEIPT",
-      },
+  // The transaction, the receipt status update, and every price-history
+  // row happen atomically — a partial failure here must never leave a
+  // posted expense with the receipt still DRAFT (which would let it be
+  // confirmed a second time and double-post), or a CONFIRMED receipt with
+  // no transaction behind it.
+  return prisma.$transaction(async (tx) => {
+    const transaction = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: "EXPENSE",
+      amount: receipt.grandTotal ?? 0,
+      date: input.date,
+      accountId: input.accountId,
+      categoryId: input.categoryId,
+      description: "Receipt purchase",
     });
-  }
 
-  return { ok: true, transactionId: transaction.id };
+    await tx.receipt.update({
+      where: { id: receiptId },
+      data: { transactionId: transaction.id, status: "CONFIRMED" },
+    });
+
+    for (const line of receipt.lines as {
+      excluded: boolean;
+      catalogItemId: string | null;
+      unitPrice: number | null;
+    }[]) {
+      if (line.excluded || !line.catalogItemId || line.unitPrice === null) continue;
+      await tx.shoppingPriceHistory.create({
+        data: {
+          userId,
+          catalogItemId: line.catalogItemId,
+          storeId: receipt.storeId,
+          unitPrice: line.unitPrice,
+          source: "RECEIPT",
+        },
+      });
+    }
+
+    return { ok: true, transactionId: transaction.id };
+  });
 }

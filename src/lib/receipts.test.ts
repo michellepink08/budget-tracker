@@ -12,7 +12,7 @@ import {
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
-  return {
+  const prisma: any = {
     receipt: {
       create: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
       findFirst: vi.fn().mockResolvedValue(null),
@@ -37,7 +37,9 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       create: vi.fn().mockResolvedValue({ id: "period-1" }),
     },
     ...overrides,
-  } as any;
+  };
+  prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+  return prisma;
 }
 
 describe("createDraftReceipt", () => {
