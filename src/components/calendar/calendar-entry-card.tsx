@@ -128,35 +128,43 @@ export function CalendarEntryCard({
           </>
         )}
 
-        {entry.sourceType === "CUSTOM_REMINDER" && entry.state === "UPCOMING" && (
+        {entry.sourceType === "CUSTOM_REMINDER" && (
           <>
-            {accounts.length > 0 && (
-              <select
-                className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
-                value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-              >
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+            {entry.state === "UPCOMING" && (
+              <>
+                {accounts.length > 0 && (
+                  <select
+                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                  >
+                    {accounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <Button
+                  size="sm"
+                  disabled={isPending || !accountId}
+                  onClick={() => {
+                    const formData = new FormData();
+                    formData.set("accountId", accountId);
+                    return run(() => markReminderPaidAction(entry.sourceId, formData));
+                  }}
+                >
+                  Mark paid
+                </Button>
+                <Button size="sm" variant="outline" disabled={isPending} onClick={() => run(() => skipReminderAction(entry.sourceId))}>
+                  Skip
+                </Button>
+              </>
             )}
-            <Button
-              size="sm"
-              disabled={isPending || !accountId}
-              onClick={() => {
-                const formData = new FormData();
-                formData.set("accountId", accountId);
-                return run(() => markReminderPaidAction(entry.sourceId, formData));
-              }}
-            >
-              Mark paid
-            </Button>
-            <Button size="sm" variant="outline" disabled={isPending} onClick={() => run(() => skipReminderAction(entry.sourceId))}>
-              Skip
-            </Button>
+            {/* Delete is always available, regardless of state — deleting
+                a reminder never touches its linked transaction, so a
+                paid/skipped reminder isn't "locked" the way a paid Payable
+                is. */}
             <Button size="sm" variant="ghost" disabled={isPending} onClick={() => run(() => deleteReminderAction(entry.sourceId))}>
               Delete
             </Button>
