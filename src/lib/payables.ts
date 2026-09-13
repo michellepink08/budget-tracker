@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { createExpenseLikeTransaction } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 
 export type PayableInput = {
   name: string;
@@ -67,7 +68,7 @@ export async function listDuePayables(
 export type MarkPaidOverrides = { amount?: number; date?: Date };
 
 export async function markPayablePaid(
-  prisma: Pick<PrismaClient, "payable" | "transaction" | "budgetPeriod" | "$transaction">,
+  prisma: Pick<PrismaClient, "payable" | "transaction" | "budgetPeriod" | "auditLog" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   payableId: string,
@@ -98,6 +99,17 @@ export async function markPayablePaid(
     await tx.payable.update({
       where: { id: payableId },
       data: { status: "PAID", paidTransactionId: transaction.id },
+    });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "PAYABLE_PAYMENT",
+      entityId: payableId,
+      action: "CREATE",
+      source: "FORM",
+      previousValues: { status: "PENDING", paidTransactionId: null },
+      newValues: { status: "PAID", paidTransactionId: transaction.id },
+      relatedRecordIds: [transaction.id],
     });
 
     return { ok: true };

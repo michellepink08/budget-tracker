@@ -36,6 +36,9 @@ function makeFakePrisma(payable: unknown = SAMPLE_PAYABLE) {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
   };
   return prisma as any;
@@ -191,5 +194,22 @@ describe("markPayablePaid", () => {
 
     expect(result).toEqual({ ok: false, error: "Payable not found" });
     expect(prisma.transaction.create).not.toHaveBeenCalled();
+  });
+
+  it("records an audit entry for the payment", async () => {
+    const prisma = makeFakePrisma();
+
+    await markPayablePaid(prisma, "user-1", 25, "payable-1", {});
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "PAYABLE_PAYMENT",
+        entityId: "payable-1",
+        action: "CREATE",
+        source: "FORM",
+        relatedRecordIds: ["txn-1"],
+      }),
+    });
   });
 });
