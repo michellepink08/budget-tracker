@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:demo-user": "node scripts/create-demo-user.mjs",
-    "db:seed-demo": "node scripts/seed-demo-data.mjs"
+    "db:seed-demo": "node scripts/seed-demo-data.mjs",
+    "db:backfill-account-purpose": "node scripts/backfill-account-purpose.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
