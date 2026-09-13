@@ -15,6 +15,7 @@ Forecast income and cash flow across a multi-cutoff "year" that includes a home 
 3. **The Quick Capture "show the conservative Year Plan" command is deferred to Plan 27** (Cross-feature commands), which is designed to add conversational commands across every feature in one pass.
 4. **Desktop table layout:** a grouped table (Cutoff | Income | Expenses | Reserve | Closing balance | Status) rather than one raw column per field — each cell can carry a small sub-label (e.g. "₱35,000 (reliable)"). Falls back to stacked cards on mobile, per the original roadmap.
 5. **Chart style:** a line tracking projected closing balance per cutoff, with the area below `minCashBuffer` shaded (danger-toned) wherever the projection dips under it, rather than a plain dashed reference line — the risky stretch of the plan is visible at a glance.
+6. **Planned expenses per cutoff** (a gap the master design doc's worked example assumed but never modeled): `YearPlanPhase` gets an `estimatedExpensesPerCutoff` field (minor units), entered once when the phase is created — every cutoff within that phase uses this single flat estimate. This single figure stands in for "essential expenses, payables/debt, other spending" combined (matching the approved table layout's single "Expenses" column), rather than three separately-tracked figures.
 
 ## Schema
 
@@ -38,13 +39,14 @@ model YearPlan {
 }
 
 model YearPlanPhase {
-  id         String   @id @default(cuid())
-  userId     String
-  yearPlanId String
-  phaseType  String   // FULL_ONBOARD | PARTIAL_ONBOARD | TRANSITION_HOME | HOME_SALARY_ONLY | EXPECTED_RETURN | PARTIAL_RETURN | CUSTOM
-  startDate  DateTime
-  endDate    DateTime
-  label      String?
+  id                        String   @id @default(cuid())
+  userId                    String
+  yearPlanId                String
+  phaseType                 String   // FULL_ONBOARD | PARTIAL_ONBOARD | TRANSITION_HOME | HOME_SALARY_ONLY | EXPECTED_RETURN | PARTIAL_RETURN | CUSTOM
+  startDate                 DateTime
+  endDate                   DateTime
+  label                     String?
+  estimatedExpensesPerCutoff Int     @default(0) // minor units — Decision 6
 
   user     User     @relation(fields: [userId], references: [id])
   yearPlan YearPlan @relation(fields: [yearPlanId], references: [id])
@@ -93,6 +95,8 @@ A `YearPlan`/`YearPlanPhase`/`IncomeForecast` are all `userId`-scoped per the ap
 **Recommended saving per full-income cutoff:** `remainingReserve ÷ remainingFullIncomeCutoffs`, where the denominator counts only `IncomeForecast` rows on `FULL_ONBOARD`-phase cutoffs that haven't passed yet — a `PARTIAL_ONBOARD` cutoff is explicitly excluded (never treated as a full saving opportunity). If `remainingFullIncomeCutoffs` is 0, the recommendation is `null` (not divide-by-zero, not the full `remainingReserve` dumped on one cutoff) — the page shows "no more full-income cutoffs to save from" in that case.
 
 All four are pure functions over plain inputs (phases + forecasts + a reserve snapshot), mirroring `computeSafeToSpend`'s "pure calculation, trivially testable" pattern — no Prisma client threaded through them.
+
+**Per-cutoff row projection (`projectYearPlanCutoffs`):** for the table/chart, one more pure function walks the plan's cutoffs (grouped by distinct `cutoffLabel`, ordered by date) and returns, per cutoff: reliable income total, `estimatedExpensesPerCutoff` from its phase, a `reserveDelta` (a home/transition-phase cutoff's delta is its cash flow, typically negative; a full-income-phase cutoff's delta is the plan's flat `recommendedSavingPerCutoff`, a contribution), a running `closingBalance` (starting from the reserve's current `assignedAmount`), and a `status` of `"ok"` (closingBalance ≥ minCashBuffer), `"near"` (within 10% of minCashBuffer above it), or `"below"` (closingBalance < minCashBuffer) — the same three-tier signal the chart's shading and the table's status column both read from.
 
 ## Year Plan page (`src/app/(app)/year-plan/page.tsx`)
 
