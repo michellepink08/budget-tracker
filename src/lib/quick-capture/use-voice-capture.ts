@@ -12,6 +12,7 @@ export type VoiceCapture = {
   error: VoiceCaptureErrorCode | null;
   start: () => void;
   stop: () => void;
+  beginPhase: () => void;
 };
 
 // One controller per hook instance, created lazily via useState's
@@ -29,5 +30,6 @@ export function useVoiceCapture(onTranscript: (text: string) => void): VoiceCapt
     error: state.error,
     start: controller.start,
     stop: controller.stop,
+    beginPhase: controller.beginPhase,
   };
 }
