@@ -9,7 +9,11 @@ export function ExportSettings({
   categories: CategoryOption[];
 }) {
   return (
-    <form method="get" action="/api/export/transactions" className="flex flex-col gap-3 rounded-lg border p-4">
+    <form
+      method="get"
+      action="/api/export/transactions"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-[0_2px_8px_rgba(84,19,43,0.07),0_1px_2px_rgba(44,23,32,0.05)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.28)]"
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="export-format" className="text-sm">
