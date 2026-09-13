@@ -131,33 +131,30 @@ describe("updateTransaction — amount/date/account", () => {
 });
 
 describe("deleteTransaction", () => {
-  it("deletes a single (non-transfer) row scoped to the user", async () => {
+  it("deletes a single (non-transfer) row scoped to the user, and returns it", async () => {
     const prisma = makeFakePrisma();
-    prisma.transaction.findFirst.mockResolvedValue({
-      id: "txn-1",
-      userId: "user-1",
-      linkedTransactionId: null,
-    });
+    const row = { id: "txn-1", userId: "user-1", linkedTransactionId: null, amount: -5000, type: "EXPENSE" };
+    prisma.transaction.findFirst.mockResolvedValue(row);
 
     const result = await deleteTransaction(prisma, "user-1", "txn-1");
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, deletedRows: [row] });
     expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({
       where: { id: { in: ["txn-1"] }, userId: "user-1" },
     });
   });
 
-  it("deletes both linked rows for a transfer", async () => {
+  it("deletes and returns both linked rows for a transfer", async () => {
     const prisma = makeFakePrisma();
-    prisma.transaction.findFirst.mockResolvedValue({
-      id: "txn-1",
-      userId: "user-1",
-      linkedTransactionId: "txn-2",
-    });
+    const outgoing = { id: "txn-1", userId: "user-1", linkedTransactionId: "txn-2", amount: -5000, type: "TRANSFER" };
+    const incoming = { id: "txn-2", userId: "user-1", linkedTransactionId: "txn-1", amount: 5000, type: "TRANSFER" };
+    prisma.transaction.findFirst = vi.fn((args: any) =>
+      Promise.resolve(args.where.id === "txn-1" ? outgoing : incoming),
+    );
 
     const result = await deleteTransaction(prisma, "user-1", "txn-1");
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, deletedRows: [outgoing, incoming] });
     expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({
       where: { id: { in: ["txn-1", "txn-2"] }, userId: "user-1" },
     });

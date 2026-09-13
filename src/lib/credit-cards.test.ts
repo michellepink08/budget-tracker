@@ -96,7 +96,7 @@ describe("makeCreditCardPayment", () => {
       date: new Date(2026, 8, 12),
     });
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, transactionId: "txn-1" });
     const txnArgs = prisma.transaction.create.mock.calls[0][0].data;
     expect(txnArgs.type).toBe("CREDIT_CARD_PAYMENT");
     expect(txnArgs.amount).toBe(-300000);

@@ -121,11 +121,15 @@ export async function updateTransaction(
   return { ok: true };
 }
 
+export type DeleteTransactionResult =
+  | { ok: true; deletedRows: Record<string, unknown>[] }
+  | { ok: false; error: string };
+
 export async function deleteTransaction(
   prisma: Pick<PrismaClient, "transaction">,
   userId: string,
   transactionId: string,
-): Promise<TransactionMutationResult> {
+): Promise<DeleteTransactionResult> {
   const existing = await prisma.transaction.findFirst({
     where: { id: transactionId, userId },
   });
@@ -133,15 +137,17 @@ export async function deleteTransaction(
     return { ok: false, error: "Transaction not found" };
   }
 
-  const idsToDelete = existing.linkedTransactionId
-    ? [existing.id, existing.linkedTransactionId]
-    : [existing.id];
+  const linked = existing.linkedTransactionId
+    ? await prisma.transaction.findFirst({ where: { id: existing.linkedTransactionId, userId } })
+    : null;
+
+  const idsToDelete = linked ? [existing.id, linked.id] : [existing.id];
 
   await prisma.transaction.deleteMany({
     where: { id: { in: idsToDelete }, userId },
   });
 
-  return { ok: true };
+  return { ok: true, deletedRows: linked ? [existing, linked] : [existing] };
 }
 
 export type TransactionFilters = {

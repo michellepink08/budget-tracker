@@ -41,6 +41,10 @@ export async function listCreditCards(prisma: Pick<PrismaClient, "creditCard">, 
 
 export type CreditCardPaymentInput = { accountId: string; amount: number; date: Date };
 
+export type MakeCreditCardPaymentResult =
+  | { ok: true; transactionId: string }
+  | { ok: false; error: string };
+
 // No stored balance to update — the card's Account already reflects
 // purchases and payments via computeAccountBalance (Plan 2A). This just
 // logs the normal CREDIT_CARD_PAYMENT transaction against the paying
@@ -51,13 +55,13 @@ export async function makeCreditCardPayment(
   cycleStartDay: number,
   creditCardId: string,
   input: CreditCardPaymentInput,
-): Promise<CreditCardMutationResult> {
+): Promise<MakeCreditCardPaymentResult> {
   const card = await prisma.creditCard.findFirst({ where: { id: creditCardId, userId } });
   if (!card) {
     return { ok: false, error: "Credit card not found" };
   }
 
-  await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
+  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
     type: "CREDIT_CARD_PAYMENT",
     amount: input.amount,
     date: input.date,
@@ -65,5 +69,5 @@ export async function makeCreditCardPayment(
     description: "Credit card payment",
   });
 
-  return { ok: true };
+  return { ok: true, transactionId: transaction.id };
 }
