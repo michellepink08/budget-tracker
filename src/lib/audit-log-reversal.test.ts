@@ -10,6 +10,7 @@ import {
   reverseRecurringOccurrence,
   reverseRecurringPayableOccurrence,
   reverseReminderPayment,
+  undoAuditLogEntry,
 } from "@/lib/audit-log-reversal";
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
@@ -318,5 +319,44 @@ describe("reverseReminderPayment", () => {
       where: { id: "reminder-1" },
       data: { state: "UPCOMING", linkedTransactionId: null },
     });
+  });
+});
+
+describe("undoAuditLogEntry", () => {
+  function makeDispatchPrisma(entry: any) {
+    return makeFakePrisma({
+      auditLog: {
+        findFirst: vi.fn().mockResolvedValue(entry),
+        create: vi.fn().mockResolvedValue({ id: "audit-reverse-1" }),
+      },
+    });
+  }
+
+  it("refuses when the entry doesn't exist or doesn't belong to the user", async () => {
+    const prisma = makeDispatchPrisma(null);
+
+    const result = await undoAuditLogEntry(prisma, "user-1", "audit-1");
+
+    expect(result).toEqual({ ok: false, error: "Audit entry not found" });
+  });
+
+  it("refuses to reverse a REVERSE entry", async () => {
+    const prisma = makeDispatchPrisma({ id: "audit-1", userId: "user-1", action: "REVERSE", entityType: "TRANSACTION" });
+
+    const result = await undoAuditLogEntry(prisma, "user-1", "audit-1");
+
+    expect(result).toEqual({ ok: false, error: "This is already an undo — it can't be undone again" });
+  });
+
+  it("dispatches CREDIT_CARD_PAYMENT to reverseCreditCardPayment", async () => {
+    const prisma = makeDispatchPrisma({
+      id: "audit-1", userId: "user-1", entityType: "CREDIT_CARD_PAYMENT", entityId: "txn-1",
+      action: "CREATE", source: "FORM", previousValuesJson: null, newValuesJson: null, relatedRecordIds: [],
+    });
+
+    const result = await undoAuditLogEntry(prisma, "user-1", "audit-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["txn-1"] }, userId: "user-1" } });
   });
 });

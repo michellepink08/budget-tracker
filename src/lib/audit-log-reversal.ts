@@ -1,14 +1,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recordAudit } from "@/lib/audit-log";
-import type { AuditSource } from "@/lib/audit-log";
+import type { AuditEntityType, AuditSource } from "@/lib/audit-log";
 
 export type AuditLogRow = {
   id: string;
   userId: string;
-  entityType: string;
+  entityType: AuditEntityType;
   entityId: string;
   action: string;
-  source: string;
+  source: AuditSource;
   previousValuesJson: string | null;
   newValuesJson: string | null;
   relatedRecordIds: string[];
@@ -310,4 +310,56 @@ export async function reverseReminderPayment(
 
     return { ok: true };
   });
+}
+
+export type UndoPrisma = Pick<
+  PrismaClient,
+  | "auditLog"
+  | "transaction"
+  | "payable"
+  | "receipt"
+  | "shoppingPriceHistory"
+  | "recurringRule"
+  | "recurringPayable"
+  | "installmentPayment"
+  | "customReminder"
+  | "$transaction"
+>;
+
+export async function undoAuditLogEntry(
+  prisma: UndoPrisma,
+  userId: string,
+  auditLogId: string,
+): Promise<ReversalResult> {
+  const entry = await prisma.auditLog.findFirst({ where: { id: auditLogId, userId } });
+  if (!entry) return { ok: false, error: "Audit entry not found" };
+  if (entry.action === "REVERSE") {
+    return { ok: false, error: "This is already an undo — it can't be undone again" };
+  }
+
+  const row = entry as unknown as AuditLogRow;
+  switch (row.entityType) {
+    case "TRANSACTION":
+      return reverseTransaction(prisma, userId, row);
+    case "TRANSFER":
+      return reverseTransfer(prisma, userId, row);
+    case "PAYABLE_PAYMENT":
+      return reversePayablePayment(prisma, userId, row);
+    case "RECEIPT_CONFIRMATION":
+      return reverseReceiptConfirmation(prisma, userId, row);
+    case "RECURRING_OCCURRENCE":
+      return reverseRecurringOccurrence(prisma, userId, row);
+    case "RECURRING_PAYABLE_OCCURRENCE":
+      return reverseRecurringPayableOccurrence(prisma, userId, row);
+    case "INSTALLMENT_PAYMENT":
+      return reverseInstallmentPayment(prisma, userId, row);
+    case "CREDIT_CARD_PAYMENT":
+      return reverseCreditCardPayment(prisma, userId, row);
+    case "REMINDER_PAYMENT":
+      return reverseReminderPayment(prisma, userId, row);
+    case "RECONCILIATION":
+      return reverseReconciliation(prisma, userId, row);
+    default:
+      return { ok: false, error: "Unrecognized audit entry type" };
+  }
 }
