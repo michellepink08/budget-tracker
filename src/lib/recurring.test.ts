@@ -39,6 +39,9 @@ function makeFakePrisma(rule: unknown = SAMPLE_RULE) {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
   };
   return prisma as any;
@@ -168,6 +171,25 @@ describe("confirmRecurringOccurrence", () => {
 
     expect(result).toEqual({ ok: false, error: "Recurring rule not found" });
     expect(prisma.transaction.create).not.toHaveBeenCalled();
+  });
+
+  it("records an audit entry capturing the nextDate change and the created transaction", async () => {
+    const prisma = makeFakePrisma();
+
+    await confirmRecurringOccurrence(prisma, "user-1", 25, "rule-1", {});
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "RECURRING_OCCURRENCE",
+        entityId: "rule-1",
+        action: "CREATE",
+        source: "RECURRING_RULE",
+        previousValuesJson: JSON.stringify({ nextDate: new Date(2026, 8, 25) }),
+        newValuesJson: JSON.stringify({ nextDate: new Date(2026, 9, 25) }),
+        relatedRecordIds: ["txn-1"],
+      }),
+    });
   });
 });
 

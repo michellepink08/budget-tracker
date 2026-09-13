@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { advanceNextDate } from "@/lib/recurring-schedule";
 import { createExpenseLikeTransaction } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 import type { SignableTransactionType } from "@/lib/transaction-rules";
 import type { RecurringFrequency } from "@/lib/constants/financial";
 
@@ -70,7 +71,7 @@ export async function listDueRecurringRules(
 export type ConfirmOverrides = { amount?: number; date?: Date };
 
 export async function confirmRecurringOccurrence(
-  prisma: Pick<PrismaClient, "recurringRule" | "transaction" | "budgetPeriod" | "$transaction">,
+  prisma: Pick<PrismaClient, "recurringRule" | "transaction" | "budgetPeriod" | "auditLog" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   ruleId: string,
@@ -86,7 +87,7 @@ export async function confirmRecurringOccurrence(
       return { ok: false, error: "Recurring rule not found" };
     }
 
-    await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+    const transaction = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
       type: rule.transactionType as SignableTransactionType,
       amount: overrides.amount ?? rule.amount,
       date: overrides.date ?? rule.nextDate,
@@ -102,6 +103,17 @@ export async function confirmRecurringOccurrence(
       rule.intervalDays ?? undefined,
     );
     await tx.recurringRule.update({ where: { id: ruleId }, data: { nextDate } });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECURRING_OCCURRENCE",
+      entityId: ruleId,
+      action: "CREATE",
+      source: "RECURRING_RULE",
+      previousValues: { nextDate: rule.nextDate },
+      newValues: { nextDate },
+      relatedRecordIds: [transaction.id],
+    });
 
     return { ok: true };
   });
