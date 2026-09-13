@@ -21,7 +21,7 @@ export type QuestionAnswer =
 
 type AnswerPrisma = Pick<
   PrismaClient,
-  "account" | "transaction" | "budgetPeriod" | "budgetAllocation" | "category" | "payable" | "creditCard"
+  "account" | "transaction" | "budgetPeriod" | "budgetAllocation" | "category" | "payable" | "creditCard" | "savingsGoal"
 >;
 
 async function totalExpenseForPeriod(

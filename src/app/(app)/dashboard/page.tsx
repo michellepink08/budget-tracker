@@ -4,7 +4,7 @@ import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { listAllocationsWithActuals } from "@/lib/budget-allocations";
 import { listDuePayables } from "@/lib/payables";
 import { listDueInstallmentPayments } from "@/lib/installment-purchases";
-import { computeLiquidFunds } from "@/lib/liquid-funds";
+import { computeConfirmedReserves, computeDisposableTotal, computeSavingsTotal } from "@/lib/purpose-totals";
 import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { listAccounts } from "@/lib/accounts";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
@@ -24,29 +24,44 @@ export default async function DashboardPage() {
 
   const activePeriod = await resolveBudgetPeriodForDate(prisma, user.id, now, user.cycleStartDay);
 
-  const [liquidFunds, allocations, duePayables, dueInstallments, restrictedFunds, accounts, cutoffDuePayables, recommendation] =
-    await Promise.all([
-      computeLiquidFunds(prisma, user.id),
-      listAllocationsWithActuals(prisma, user.id, activePeriod.id),
-      listDuePayables(prisma, user.id, horizon),
-      listDueInstallmentPayments(prisma, user.id, horizon),
-      listRestrictedFundGroups(prisma, user.id),
-      listAccounts(prisma, user.id),
-      listDuePayables(prisma, user.id, activePeriod.endDate),
-      getRecommendedFundingTransfer(prisma, user.id, now),
-    ]);
+  const [
+    disposableTotal,
+    savingsTotal,
+    confirmedReserves,
+    allocations,
+    duePayables,
+    dueInstallments,
+    restrictedFunds,
+    accounts,
+    cutoffDuePayables,
+    recommendation,
+  ] = await Promise.all([
+    computeDisposableTotal(prisma, user.id),
+    computeSavingsTotal(prisma, user.id),
+    computeConfirmedReserves(prisma, user.id),
+    listAllocationsWithActuals(prisma, user.id, activePeriod.id),
+    listDuePayables(prisma, user.id, horizon),
+    listDueInstallmentPayments(prisma, user.id, horizon),
+    listRestrictedFundGroups(prisma, user.id),
+    listAccounts(prisma, user.id),
+    listDuePayables(prisma, user.id, activePeriod.endDate),
+    getRecommendedFundingTransfer(prisma, user.id, now),
+  ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
   const totalActual = allocations.reduce((sum, a) => sum + a.actual, 0);
   const totalRemaining = totalPlanned - totalActual;
 
   const restrictedAccountIds = new Set(restrictedFunds.map((f) => f.accountId));
+  const restrictedTotal = restrictedFunds.reduce((sum, f) => sum + f.balance, 0);
   const safeToSpend = computeSafeToSpend({
-    liquidFunds,
+    disposableTotal,
     totalRemaining,
     payables: cutoffDuePayables,
     restrictedAccountIds,
     cutoffEnd: activePeriod.endDate,
+    requiredTransfers: recommendation?.amount ?? 0,
+    confirmedReserves,
   });
 
   let recommendationView = null;
@@ -90,15 +105,24 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Dashboard</h1>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Safe to spend</p>
-          <p className="text-2xl font-semibold">{formatMoney(safeToSpend, user.currency)}</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card variant="highlight" className="p-4">
+          <p className="text-sm text-muted-foreground">Disposable Accounts</p>
+          <p className="text-2xl font-semibold">{formatMoney(disposableTotal, user.currency)}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Safe to spend</p>
+          <p className="text-lg font-medium">{formatMoney(safeToSpend, user.currency)}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Liquid funds</p>
-          <p className="text-2xl font-semibold">{formatMoney(liquidFunds, user.currency)}</p>
+          <p className="text-sm text-muted-foreground">Savings &amp; Reserves</p>
+          <p className="text-2xl font-semibold">{formatMoney(savingsTotal, user.currency)}</p>
         </Card>
+        <Card className="p-4">
+          <p className="text-sm text-muted-foreground">Restricted Checking</p>
+          <p className="text-2xl font-semibold">{formatMoney(restrictedTotal, user.currency)}</p>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Budgeted this cycle</p>
           <p className="text-2xl font-semibold">{formatMoney(totalPlanned, user.currency)}</p>
