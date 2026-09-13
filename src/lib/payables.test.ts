@@ -21,7 +21,7 @@ const SAMPLE_PAYABLE = {
 };
 
 function makeFakePrisma(payable: unknown = SAMPLE_PAYABLE) {
-  return {
+  const prisma = {
     payable: {
       create: vi.fn().mockResolvedValue({ id: "payable-new" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -36,7 +36,9 @@ function makeFakePrisma(payable: unknown = SAMPLE_PAYABLE) {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
     },
-  } as any;
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return prisma as any;
 }
 
 describe("createPayable", () => {
@@ -161,6 +163,12 @@ describe("markPayablePaid", () => {
       where: { id: "payable-1" },
       data: { status: "PAID", paidTransactionId: "txn-1" },
     });
+  });
+
+  it("wraps the PENDING check, the transaction, and the status update in a single $transaction (the actual duplicate-payment guard)", async () => {
+    const prisma = makeFakePrisma();
+    await markPayablePaid(prisma, "user-1", 25, "payable-1", {});
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it("applies an amount/date override instead of the payable's defaults", async () => {

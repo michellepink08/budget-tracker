@@ -67,32 +67,39 @@ export async function listDuePayables(
 export type MarkPaidOverrides = { amount?: number; date?: Date };
 
 export async function markPayablePaid(
-  prisma: Pick<PrismaClient, "payable" | "transaction" | "budgetPeriod">,
+  prisma: Pick<PrismaClient, "payable" | "transaction" | "budgetPeriod" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   payableId: string,
   overrides: MarkPaidOverrides,
 ): Promise<PayableMutationResult> {
-  const payable = await prisma.payable.findFirst({
-    where: { id: payableId, userId, status: "PENDING" },
-  });
-  if (!payable) {
-    return { ok: false, error: "Payable not found" };
-  }
+  // Wrapped in one DB transaction: the PENDING check, the expense
+  // transaction, and marking the payable PAID all happen atomically — a
+  // failure partway through must never leave a posted transaction with no
+  // matching status change (or vice versa), and this is also the
+  // duplicate-payment guard's actual enforcement point.
+  return prisma.$transaction(async (tx) => {
+    const payable = await tx.payable.findFirst({
+      where: { id: payableId, userId, status: "PENDING" },
+    });
+    if (!payable) {
+      return { ok: false, error: "Payable not found" };
+    }
 
-  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "EXPENSE",
-    amount: overrides.amount ?? payable.amount,
-    date: overrides.date ?? new Date(),
-    accountId: payable.accountId,
-    categoryId: payable.categoryId ?? undefined,
-    description: payable.name,
-  });
+    const transaction = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: "EXPENSE",
+      amount: overrides.amount ?? payable.amount,
+      date: overrides.date ?? new Date(),
+      accountId: payable.accountId,
+      categoryId: payable.categoryId ?? undefined,
+      description: payable.name,
+    });
 
-  await prisma.payable.update({
-    where: { id: payableId },
-    data: { status: "PAID", paidTransactionId: transaction.id },
-  });
+    await tx.payable.update({
+      where: { id: payableId },
+      data: { status: "PAID", paidTransactionId: transaction.id },
+    });
 
-  return { ok: true };
+    return { ok: true };
+  });
 }
