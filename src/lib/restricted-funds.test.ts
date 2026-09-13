@@ -75,6 +75,26 @@ describe("listRestrictedFundGroups", () => {
     expect(group.projectedBalance).toBe(65000);
   });
 
+  // Plan-38 §1: a restricted account's "upcoming obligation" must be the
+  // total of every unpaid payable assigned to it, not just the next one due.
+  it("obligationTotal is the sum of every unpaid payable assigned to the account, not just the next one due", async () => {
+    const prisma = makeFakePrisma({
+      accounts: [{ id: "acc-1", name: "Emergency Fund", openingBalance: 500000 }],
+      payablesByAccount: {
+        "acc-1": [
+          { id: "p1", name: "Insurance", amount: 20000, dueDate: new Date(2026, 9, 5), recurringPayableId: null },
+          { id: "p2", name: "Property tax", amount: 15000, dueDate: new Date(2026, 9, 1), recurringPayableId: null },
+          { id: "p3", name: "HOA dues", amount: 5000, dueDate: new Date(2026, 9, 20), recurringPayableId: null },
+        ],
+      },
+    });
+    const [group] = await listRestrictedFundGroups(prisma, "user-1");
+    // All three unpaid payables must be counted, even though nextPayable
+    // only surfaces the earliest-due one for display.
+    expect(group.obligationTotal).toBe(20000 + 15000 + 5000);
+    expect(group.nextPayable?.name).toBe("Property tax");
+  });
+
   it("keeps only the earliest-due payable within a shared recurringPayableId group", async () => {
     const prisma = makeFakePrisma({
       accounts: [{ id: "acc-1", name: "Emergency Fund", openingBalance: 100000 }],
