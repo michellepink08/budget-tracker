@@ -4,6 +4,7 @@ import {
   computeShoppingAllowance,
   createList,
   deleteItem,
+  deleteList,
   makeListCurrent,
   moveUnpurchasedToNewList,
   toggleSelected,
@@ -18,6 +19,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn(async ({ data }: any) => ({ id: "list-1", ...data })),
       updateMany: vi.fn(async () => ({ count: 0 })),
+      delete: vi.fn(async () => ({ id: "list-1" })),
     },
     shoppingListItem: {
       create: vi.fn(async ({ data }: any) => ({ id: "item-1", ...data })),
@@ -25,6 +27,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       update: vi.fn(async ({ data }: any) => ({ id: "item-1", ...data })),
       updateMany: vi.fn(async () => ({ count: 0 })),
       delete: vi.fn(async () => ({ id: "item-1" })),
+      deleteMany: vi.fn(async () => ({ count: 0 })),
     },
     budgetPeriod: { findUnique: vi.fn(), create: vi.fn() },
     budgetAllocation: { findMany: vi.fn().mockResolvedValue([]) },
@@ -289,5 +292,37 @@ describe("computeShoppingAllowance", () => {
     });
     const allowance = await computeShoppingAllowance(prisma, "user-1", { budgetCategoryId: "cat-1" }, 1);
     expect(allowance).toBeNull();
+  });
+});
+
+describe("deleteList", () => {
+  it("rejects when the list does not belong to the user", async () => {
+    const prisma = makeFakePrisma();
+    const result = await deleteList(prisma, "user-1", "list-1");
+    expect(result.ok).toBe(false);
+  });
+
+  it("deletes the list's items before deleting the list itself", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "list-1", userId: "user-1" }),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        delete: vi.fn(async () => ({ id: "list-1" })),
+      },
+      shoppingListItem: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        delete: vi.fn(),
+        deleteMany: vi.fn(async () => ({ count: 2 })),
+      },
+    });
+    const result = await deleteList(prisma, "user-1", "list-1");
+    expect(result.ok).toBe(true);
+    expect(prisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({ where: { listId: "list-1" } });
+    expect(prisma.shoppingList.delete).toHaveBeenCalledWith({ where: { id: "list-1" } });
   });
 });

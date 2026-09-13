@@ -134,6 +134,23 @@ export async function moveUnpurchasedToNewList(
   return { ok: true, newListId: newList.id };
 }
 
+// Hard-delete, matching the Year Plan convention (a shopping list is
+// disposable planning data, not something with its own history worth
+// keeping once removed) — deletes the list's items first (no cascade in
+// the schema, per this project's standing rule against onDelete: Cascade).
+export async function deleteList(
+  prisma: ListPrisma,
+  userId: string,
+  listId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!(await assertOwnedList(prisma, userId, listId))) {
+    return { ok: false, error: "List not found" };
+  }
+  await prisma.shoppingListItem.deleteMany({ where: { listId } });
+  await prisma.shoppingList.delete({ where: { id: listId } });
+  return { ok: true };
+}
+
 export async function makeListCurrent(
   prisma: Pick<PrismaClient, "shoppingList">,
   userId: string,

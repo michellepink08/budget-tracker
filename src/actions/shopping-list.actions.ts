@@ -8,6 +8,7 @@ import {
   addItem,
   createList,
   deleteItem,
+  deleteList,
   makeListCurrent,
   moveUnpurchasedToNewList,
   toggleSelected,
@@ -135,6 +136,15 @@ export async function moveUnpurchasedToNewListAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await moveUnpurchasedToNewList(prisma, session.user.id, listId, newListName);
+  if (result.ok) revalidatePath("/shopping");
+  return result;
+}
+
+export async function deleteListAction(listId: string): Promise<ShoppingActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const result = await deleteList(prisma, session.user.id, listId);
   if (result.ok) revalidatePath("/shopping");
   return result;
 }

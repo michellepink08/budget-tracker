@@ -5,6 +5,7 @@ import { ListItemFormDialog } from "@/components/shopping/list-item-form-dialog"
 import { DeleteListItemButton } from "@/components/shopping/delete-list-item-button";
 import { ToggleItemCheckbox } from "@/components/shopping/toggle-item-checkbox";
 import { MoveUnpurchasedButton } from "@/components/shopping/move-unpurchased-button";
+import { DeleteListButton } from "@/components/shopping/delete-list-button";
 
 type ListItem = {
   id: string;
@@ -47,7 +48,10 @@ export function CurrentListView({
       <Card variant="highlight" className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{list.name}</p>
-          <ListItemFormDialog listId={list.id} currency={currency} catalogItems={catalogItems} />
+          <div className="flex gap-2">
+            <ListItemFormDialog listId={list.id} currency={currency} catalogItems={catalogItems} />
+            <DeleteListButton listId={list.id} />
+          </div>
         </div>
         <p className="text-2xl font-semibold">{formatMoney(estimatedTotal, currency)}</p>
         {hasMissingPrice && <p className="text-sm text-warning">Some selected items are missing a price.</p>}

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { ListFormDialog } from "@/components/shopping/list-form-dialog";
 import { MakeCurrentButton } from "@/components/shopping/make-current-button";
+import { DeleteListButton } from "@/components/shopping/delete-list-button";
 
 type SavedList = {
   id: string;
@@ -33,7 +34,10 @@ export function SavedListsView({
                   {list.itemCount} item(s){list.plannedDate ? ` · Planned ${list.plannedDate.toLocaleDateString()}` : ""}
                 </p>
               </div>
-              <MakeCurrentButton listId={list.id} />
+              <div className="flex gap-2">
+                <MakeCurrentButton listId={list.id} />
+                <DeleteListButton listId={list.id} />
+              </div>
             </Card>
           ))}
         </div>
