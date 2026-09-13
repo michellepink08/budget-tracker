@@ -1,6 +1,6 @@
 import type { RecurringFrequency } from "@/lib/constants/financial";
 
-function daysInMonth(year: number, monthIndex0: number): number {
+export function daysInMonth(year: number, monthIndex0: number): number {
   return new Date(year, monthIndex0 + 1, 0).getDate();
 }
 
