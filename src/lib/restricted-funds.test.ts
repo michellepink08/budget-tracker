@@ -55,6 +55,7 @@ describe("listRestrictedFundGroups", () => {
       obligationTotal: 0,
       nextPayable: null,
       projectedBalance: 50000,
+      paymentsCovered: 0,
     });
   });
 
@@ -100,5 +101,34 @@ describe("listRestrictedFundGroups", () => {
     });
     const [group] = await listRestrictedFundGroups(prisma, "user-1");
     expect(group.projectedBalance).toBe(-20000);
+  });
+
+  it("counts how many kept payables the current balance can fully cover, in due-date order", async () => {
+    const prisma = makeFakePrisma({
+      accounts: [{ id: "acc-1", name: "Emergency Fund", openingBalance: 50000 }],
+      payablesByAccount: {
+        "acc-1": [
+          { id: "p1", name: "Insurance", amount: 20000, dueDate: new Date(2026, 9, 1), recurringPayableId: null },
+          { id: "p2", name: "Property tax", amount: 15000, dueDate: new Date(2026, 8, 20), recurringPayableId: null },
+          { id: "p3", name: "Big bill", amount: 30000, dueDate: new Date(2026, 9, 10), recurringPayableId: null },
+        ],
+      },
+    });
+    const [group] = await listRestrictedFundGroups(prisma, "user-1");
+    // due-date order: p2 (15000), p1 (20000), p3 (30000) — balance 50000 covers p2+p1 (35000) but not +p3 (65000)
+    expect(group.paymentsCovered).toBe(2);
+  });
+
+  it("reports zero payments covered when the balance can't fully cover even the nearest one", async () => {
+    const prisma = makeFakePrisma({
+      accounts: [{ id: "acc-1", name: "Emergency Fund", openingBalance: 5000 }],
+      payablesByAccount: {
+        "acc-1": [
+          { id: "p1", name: "Insurance", amount: 20000, dueDate: new Date(2026, 9, 1), recurringPayableId: null },
+        ],
+      },
+    });
+    const [group] = await listRestrictedFundGroups(prisma, "user-1");
+    expect(group.paymentsCovered).toBe(0);
   });
 });

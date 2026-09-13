@@ -8,6 +8,7 @@ export type RestrictedFundGroup = {
   obligationTotal: number;
   nextPayable: { name: string; amount: number; dueDate: Date } | null;
   projectedBalance: number;
+  paymentsCovered: number;
 };
 
 type RestrictedFundsPrisma = Pick<PrismaClient, "account" | "transaction" | "payable">;
@@ -27,6 +28,17 @@ function dedupePendingPayables(
     group.reduce((earliest, p) => (p.dueDate < earliest.dueDate ? p : earliest)),
   );
   return [...standalone, ...earliestPerRule].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+}
+
+function countPaymentsCovered(kept: { amount: number }[], balance: number): number {
+  let remaining = balance;
+  let count = 0;
+  for (const p of kept) {
+    if (remaining < p.amount) break;
+    remaining -= p.amount;
+    count++;
+  }
+  return count;
 }
 
 export async function listRestrictedFundGroups(
@@ -53,6 +65,7 @@ export async function listRestrictedFundGroups(
       );
       const obligationTotal = kept.reduce((sum, p) => sum + p.amount, 0);
       const nextPayable = kept[0] ? { name: kept[0].name, amount: kept[0].amount, dueDate: kept[0].dueDate } : null;
+      const paymentsCovered = countPaymentsCovered(kept, balance);
 
       return {
         accountId: account.id,
@@ -61,6 +74,7 @@ export async function listRestrictedFundGroups(
         obligationTotal,
         nextPayable,
         projectedBalance: balance - obligationTotal,
+        paymentsCovered,
       };
     }),
   );
