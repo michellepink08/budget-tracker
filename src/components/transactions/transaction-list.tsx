@@ -35,7 +35,7 @@ export function TransactionList({ transactions }: { transactions: TransactionRow
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={txn.amount < 0 ? "text-destructive" : "text-emerald-600"}>
+            <span className={txn.amount < 0 ? "text-destructive" : "text-foreground"}>
               {formatMoney(txn.amount, txn.account.currency)}
             </span>
             <DeleteTransactionButton transactionId={txn.id} />

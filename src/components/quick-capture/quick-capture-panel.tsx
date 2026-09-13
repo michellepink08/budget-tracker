@@ -214,7 +214,7 @@ export function QuickCapturePanel({
               )}
 
               {entry.draft.clarification && entry.status === "pending" && (
-                <p className="mb-2 text-amber-600">{entry.draft.clarification.question}</p>
+                <p className="mb-2 text-warning">{entry.draft.clarification.question}</p>
               )}
 
               {entry.status === "pending" && !entry.draft.clarification && entry.draft.intent !== "question" && (
@@ -229,7 +229,7 @@ export function QuickCapturePanel({
               )}
 
               {entry.status === "confirmed" && (
-                <div className="flex items-center gap-2 text-emerald-700">
+                <div className="flex items-center gap-2 text-success">
                   <span>Added ✓</span>
                   {entry.draft.intent !== "transaction_delete" && (
                     <button type="button" className="underline" onClick={() => handleUndo(index)}>
