@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { DeleteTransactionButton } from "@/components/transactions/delete-transaction-button";
+import { AuditHistoryLink } from "@/components/audit-log/audit-history-link";
 import { Card } from "@/components/ui/card";
 
 type TransactionRow = {
@@ -39,6 +40,7 @@ export function TransactionList({ transactions }: { transactions: TransactionRow
             <span className={txn.amount < 0 ? "text-destructive" : "text-foreground"}>
               {formatMoney(txn.amount, txn.account.currency)}
             </span>
+            <AuditHistoryLink entityType="TRANSACTION" entityId={txn.id} />
             <DeleteTransactionButton transactionId={txn.id} />
           </div>
         </Card>

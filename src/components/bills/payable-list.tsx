@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { PayableFormDialog } from "@/components/bills/payable-form-dialog";
+import { AuditHistoryLink } from "@/components/audit-log/audit-history-link";
 import { Card } from "@/components/ui/card";
 
 type PayableRow = {
@@ -44,8 +45,10 @@ export function PayableList({
               {payable.dueDate.toLocaleDateString()}
             </p>
           </div>
-          {payable.status === "PENDING" && (
+          {payable.status === "PENDING" ? (
             <PayableFormDialog accounts={accounts} categories={categories} existing={payable} />
+          ) : (
+            <AuditHistoryLink entityType="PAYABLE_PAYMENT" entityId={payable.id} />
           )}
         </Card>
       ))}

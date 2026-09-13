@@ -14,6 +14,7 @@ import { deleteReminderAction, markReminderPaidAction, skipReminderAction } from
 import { formatMoney } from "@/lib/money";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AuditHistoryLink } from "@/components/audit-log/audit-history-link";
 import type { CalendarEntry } from "@/lib/calendar/aggregate";
 
 const SOURCE_PAGE: Partial<Record<CalendarEntry["sourceType"], string>> = {
@@ -173,6 +174,9 @@ export function CalendarEntryCard({
                   Skip
                 </Button>
               </>
+            )}
+            {entry.state === "PAID" && (
+              <AuditHistoryLink entityType="REMINDER_PAYMENT" entityId={entry.sourceId} />
             )}
             {/* Delete is always available, regardless of state — deleting
                 a reminder never touches its linked transaction, so a
