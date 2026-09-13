@@ -17,7 +17,7 @@ export interface OcrAdapter {
 // adapter): it's the same form either way, just starting from different
 // default values.
 export class StubOcrAdapter implements OcrAdapter {
-  async extract(): Promise<OcrResult> {
+  async extract(_imageBuffer: Buffer): Promise<OcrResult> {
     return { lines: [] };
   }
 }
