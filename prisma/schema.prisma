@@ -33,6 +33,9 @@ model User {
   aliases              Alias[]
   quickCaptureLogs     QuickCaptureLog[]
   savingsGoals         SavingsGoal[]
+  yearPlans            YearPlan[]
+  yearPlanPhases       YearPlanPhase[]
+  incomeForecasts      IncomeForecast[]
 }
 
 model Account {
@@ -73,6 +76,61 @@ model SavingsGoal {
 
   user    User    @relation(fields: [userId], references: [id])
   account Account @relation(fields: [accountId], references: [id])
+  yearPlans YearPlan[]
+}
+
+model YearPlan {
+  id                    String   @id @default(cuid())
+  userId                String
+  name                  String
+  startDate             DateTime
+  endDate               DateTime
+  minCashBuffer         Int      @default(0)
+  scenario              String   @default("EXPECTED")
+  vacationReserveGoalId String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                User             @relation(fields: [userId], references: [id])
+  vacationReserveGoal SavingsGoal?     @relation(fields: [vacationReserveGoalId], references: [id])
+  phases              YearPlanPhase[]
+  forecasts           IncomeForecast[]
+}
+
+model YearPlanPhase {
+  id                         String   @id @default(cuid())
+  userId                     String
+  yearPlanId                 String
+  phaseType                  String
+  startDate                  DateTime
+  endDate                    DateTime
+  label                      String?
+  estimatedExpensesPerCutoff Int      @default(0)
+
+  user      User             @relation(fields: [userId], references: [id])
+  yearPlan  YearPlan         @relation(fields: [yearPlanId], references: [id])
+  forecasts IncomeForecast[]
+}
+
+model IncomeForecast {
+  id                  String   @id @default(cuid())
+  userId              String
+  yearPlanId          String
+  phaseId             String?
+  source              String
+  expectedDate        DateTime
+  expectedAmount      Int
+  cutoffLabel         String
+  status              String   @default("EXPECTED")
+  actualTransactionId String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User           @relation(fields: [userId], references: [id])
+  yearPlan          YearPlan       @relation(fields: [yearPlanId], references: [id])
+  phase             YearPlanPhase? @relation(fields: [phaseId], references: [id])
+  actualTransaction Transaction?   @relation(fields: [actualTransactionId], references: [id])
 }
 
 model Category {
@@ -170,6 +228,7 @@ model Transaction {
   category           Category?     @relation(fields: [categoryId], references: [id])
   subcategory        Subcategory?  @relation(fields: [subcategoryId], references: [id])
   budgetPeriod       BudgetPeriod? @relation(fields: [budgetPeriodId], references: [id])
+  incomeForecasts    IncomeForecast[]
 }
 
 model RecurringRule {
