@@ -209,3 +209,105 @@ export async function reverseReconciliation(
     return { ok: true };
   });
 }
+
+export async function reverseRecurringOccurrence(
+  prisma: Pick<PrismaClient, "transaction" | "recurringRule" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    const rule = await tx.recurringRule.findFirst({ where: { id: entry.entityId, userId } });
+    if (!rule) return { ok: false, error: "Recurring rule not found" };
+
+    const newValues = parseJson<{ nextDate: string }>(entry.newValuesJson);
+    if (newValues && new Date(rule.nextDate).getTime() !== new Date(newValues.nextDate).getTime()) {
+      return { ok: false, error: "A later occurrence has already been confirmed" };
+    }
+
+    const previous = parseJson<{ nextDate: string }>(entry.previousValuesJson);
+    if (previous) {
+      await tx.recurringRule.update({ where: { id: entry.entityId }, data: { nextDate: new Date(previous.nextDate) } });
+    }
+    await tx.transaction.deleteMany({ where: { id: { in: entry.relatedRecordIds }, userId } });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECURRING_OCCURRENCE",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reverseRecurringPayableOccurrence(
+  prisma: Pick<PrismaClient, "recurringPayable" | "payable" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    const rule = await tx.recurringPayable.findFirst({ where: { id: entry.entityId, userId } });
+    if (!rule) return { ok: false, error: "Recurring payable not found" };
+
+    const newValues = parseJson<{ nextDueDate: string }>(entry.newValuesJson);
+    if (newValues && new Date(rule.nextDueDate).getTime() !== new Date(newValues.nextDueDate).getTime()) {
+      return { ok: false, error: "A later occurrence has already been confirmed" };
+    }
+
+    const [payableId] = entry.relatedRecordIds;
+    const payable = payableId ? await tx.payable.findFirst({ where: { id: payableId, userId } }) : null;
+    if (payable && payable.status !== "PENDING") {
+      return { ok: false, error: "This bill has already been paid — unpay it first" };
+    }
+
+    if (payableId) {
+      await tx.payable.deleteMany({ where: { id: { in: [payableId] }, userId } });
+    }
+    const previous = parseJson<{ nextDueDate: string }>(entry.previousValuesJson);
+    if (previous) {
+      await tx.recurringPayable.update({
+        where: { id: entry.entityId },
+        data: { nextDueDate: new Date(previous.nextDueDate) },
+      });
+    }
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECURRING_PAYABLE_OCCURRENCE",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reverseReminderPayment(
+  prisma: Pick<PrismaClient, "transaction" | "customReminder" | "auditLog" | "$transaction">,
+  userId: string,
+  entry: AuditLogRow,
+): Promise<ReversalResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.transaction.deleteMany({ where: { id: { in: entry.relatedRecordIds }, userId } });
+    await tx.customReminder.update({
+      where: { id: entry.entityId },
+      data: { state: "UPCOMING", linkedTransactionId: null },
+    });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "REMINDER_PAYMENT",
+      entityId: entry.entityId,
+      action: "REVERSE",
+      source: entry.source as AuditSource,
+      reversalOfId: entry.id,
+    });
+
+    return { ok: true };
+  });
+}

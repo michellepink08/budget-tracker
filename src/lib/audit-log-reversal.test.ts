@@ -7,15 +7,21 @@ import {
   reverseInstallmentPayment,
   reverseCreditCardPayment,
   reverseReconciliation,
+  reverseRecurringOccurrence,
+  reverseRecurringPayableOccurrence,
+  reverseReminderPayment,
 } from "@/lib/audit-log-reversal";
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
   const prisma: any = {
     transaction: { create: vi.fn(), deleteMany: vi.fn(), update: vi.fn() },
-    payable: { update: vi.fn() },
+    payable: { update: vi.fn(), findFirst: vi.fn(), deleteMany: vi.fn() },
     receipt: { update: vi.fn() },
     shoppingPriceHistory: { deleteMany: vi.fn() },
     installmentPayment: { update: vi.fn() },
+    recurringRule: { findFirst: vi.fn(), update: vi.fn() },
+    recurringPayable: { findFirst: vi.fn(), update: vi.fn() },
+    customReminder: { update: vi.fn() },
     auditLog: { create: vi.fn(async ({ data }: any) => ({ id: "audit-reverse-1", ...data })) },
     ...overrides,
   };
@@ -218,5 +224,99 @@ describe("reverseReconciliation", () => {
 
     expect(result).toEqual({ ok: true });
     expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["txn-1"] }, userId: "user-1" } });
+  });
+});
+
+describe("reverseRecurringOccurrence", () => {
+  const entry = {
+    id: "audit-1", userId: "user-1", entityType: "RECURRING_OCCURRENCE", entityId: "rule-1",
+    action: "CREATE", source: "RECURRING_RULE",
+    previousValuesJson: JSON.stringify({ nextDate: new Date(2026, 8, 25) }),
+    newValuesJson: JSON.stringify({ nextDate: new Date(2026, 9, 25) }),
+    relatedRecordIds: ["txn-1"],
+  };
+
+  it("restores nextDate and deletes the transaction when nothing has advanced since", async () => {
+    const prisma = makeFakePrisma({
+      recurringRule: { findFirst: vi.fn().mockResolvedValue({ id: "rule-1", nextDate: new Date(2026, 9, 25) }), update: vi.fn() },
+    });
+
+    const result = await reverseRecurringOccurrence(prisma, "user-1", entry as any);
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.recurringRule.update).toHaveBeenCalledWith({
+      where: { id: "rule-1" },
+      data: { nextDate: new Date(2026, 8, 25) },
+    });
+    expect(prisma.transaction.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["txn-1"] }, userId: "user-1" } });
+  });
+
+  it("refuses when nextDate has already moved past this confirm", async () => {
+    const prisma = makeFakePrisma({
+      recurringRule: { findFirst: vi.fn().mockResolvedValue({ id: "rule-1", nextDate: new Date(2026, 10, 25) }), update: vi.fn() },
+    });
+
+    const result = await reverseRecurringOccurrence(prisma, "user-1", entry as any);
+
+    expect(result).toEqual({ ok: false, error: "A later occurrence has already been confirmed" });
+    expect(prisma.recurringRule.update).not.toHaveBeenCalled();
+    expect(prisma.transaction.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("reverseRecurringPayableOccurrence", () => {
+  const entry = {
+    id: "audit-1", userId: "user-1", entityType: "RECURRING_PAYABLE_OCCURRENCE", entityId: "rule-1",
+    action: "CREATE", source: "RECURRING_RULE",
+    previousValuesJson: JSON.stringify({ nextDueDate: new Date(2026, 8, 25) }),
+    newValuesJson: JSON.stringify({ nextDueDate: new Date(2026, 9, 25) }),
+    relatedRecordIds: ["payable-1"],
+  };
+
+  it("restores nextDueDate and deletes the created payable when it's still PENDING", async () => {
+    const prisma = makeFakePrisma({
+      recurringPayable: { findFirst: vi.fn().mockResolvedValue({ id: "rule-1", nextDueDate: new Date(2026, 9, 25) }), update: vi.fn() },
+      payable: { findFirst: vi.fn().mockResolvedValue({ id: "payable-1", status: "PENDING" }), deleteMany: vi.fn(), update: vi.fn() },
+    });
+
+    const result = await reverseRecurringPayableOccurrence(prisma, "user-1", entry as any);
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.payable.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["payable-1"] }, userId: "user-1" } });
+    expect(prisma.recurringPayable.update).toHaveBeenCalledWith({
+      where: { id: "rule-1" },
+      data: { nextDueDate: new Date(2026, 8, 25) },
+    });
+  });
+
+  it("refuses when the created payable has already been paid", async () => {
+    const prisma = makeFakePrisma({
+      recurringPayable: { findFirst: vi.fn().mockResolvedValue({ id: "rule-1", nextDueDate: new Date(2026, 9, 25) }), update: vi.fn() },
+      payable: { findFirst: vi.fn().mockResolvedValue({ id: "payable-1", status: "PAID" }), deleteMany: vi.fn(), update: vi.fn() },
+    });
+
+    const result = await reverseRecurringPayableOccurrence(prisma, "user-1", entry as any);
+
+    expect(result).toEqual({ ok: false, error: "This bill has already been paid — unpay it first" });
+    expect(prisma.payable.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("reverseReminderPayment", () => {
+  it("deletes the transaction and reverts the reminder to UPCOMING", async () => {
+    const prisma = makeFakePrisma();
+    const entry = {
+      id: "audit-1", userId: "user-1", entityType: "REMINDER_PAYMENT", entityId: "reminder-1",
+      action: "CREATE", source: "FORM", previousValuesJson: null, newValuesJson: null,
+      relatedRecordIds: ["txn-1"],
+    };
+
+    const result = await reverseReminderPayment(prisma, "user-1", entry as any);
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.customReminder.update).toHaveBeenCalledWith({
+      where: { id: "reminder-1" },
+      data: { state: "UPCOMING", linkedTransactionId: null },
+    });
   });
 });
