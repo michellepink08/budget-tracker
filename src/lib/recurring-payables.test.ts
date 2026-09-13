@@ -33,6 +33,9 @@ function makeFakePrisma(rule: unknown = SAMPLE_RULE) {
     payable: {
       create: vi.fn().mockResolvedValue({ id: "payable-new" }),
     },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
   };
   return prisma as any;
@@ -147,6 +150,23 @@ describe("confirmRecurringPayableOccurrence", () => {
 
     expect(result).toEqual({ ok: false, error: "Recurring payable not found" });
     expect(prisma.payable.create).not.toHaveBeenCalled();
+  });
+
+  it("records an audit entry capturing the nextDueDate change and the created payable", async () => {
+    const prisma = makeFakePrisma();
+
+    await confirmRecurringPayableOccurrence(prisma, "user-1", "rp-1", {});
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "RECURRING_PAYABLE_OCCURRENCE",
+        entityId: "rp-1",
+        action: "CREATE",
+        source: "RECURRING_RULE",
+        relatedRecordIds: ["payable-new"],
+      }),
+    });
   });
 });
 

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { advanceNextDate } from "@/lib/recurring-schedule";
+import { recordAudit } from "@/lib/audit-log";
 import type { RecurringFrequency } from "@/lib/constants/financial";
 
 export type RecurringPayableInput = {
@@ -69,7 +70,7 @@ export type ConfirmPayableOverrides = { amount?: number; dueDate?: Date };
 // recurring payable's occurrence becomes a new Payable — the bill still
 // has to be marked paid separately (src/lib/payables.ts).
 export async function confirmRecurringPayableOccurrence(
-  prisma: Pick<PrismaClient, "recurringPayable" | "payable" | "$transaction">,
+  prisma: Pick<PrismaClient, "recurringPayable" | "payable" | "auditLog" | "$transaction">,
   userId: string,
   ruleId: string,
   overrides: ConfirmPayableOverrides,
@@ -84,7 +85,7 @@ export async function confirmRecurringPayableOccurrence(
       return { ok: false, error: "Recurring payable not found" };
     }
 
-    await tx.payable.create({
+    const payable = await tx.payable.create({
       data: {
         userId,
         name: rule.name,
@@ -102,6 +103,17 @@ export async function confirmRecurringPayableOccurrence(
       rule.intervalDays ?? undefined,
     );
     await tx.recurringPayable.update({ where: { id: ruleId }, data: { nextDueDate } });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "RECURRING_PAYABLE_OCCURRENCE",
+      entityId: ruleId,
+      action: "CREATE",
+      source: "RECURRING_RULE",
+      previousValues: { nextDueDate: rule.nextDueDate },
+      newValues: { nextDueDate },
+      relatedRecordIds: [payable.id],
+    });
 
     return { ok: true };
   });
