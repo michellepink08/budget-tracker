@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { parseAmountMajorUnits } from "@/lib/quick-capture/parse-amount";
 import { parseRelativeOrExplicitDate, type DateParseResult } from "@/lib/quick-capture/parse-date";
-import { resolveAlias, type ResolveCandidate, type ResolveResult } from "@/lib/quick-capture/aliases";
+import { resolveAlias, type ResolveCandidate, type ResolveResult } from "@/lib/aliases";
 import { resolveRecentTransactionRef } from "@/lib/quick-capture/record-refs";
 import { toMinorUnits } from "@/lib/money";
 import { HOME_PHASE_TYPES } from "@/lib/constants/financial";

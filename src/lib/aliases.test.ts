@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAlias, resolveAlias } from "@/lib/quick-capture/aliases";
+import { createAlias, resolveAlias } from "@/lib/aliases";
 
 function makeFakePrisma(aliasRow: unknown = null) {
   return {
