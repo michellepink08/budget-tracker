@@ -10,6 +10,13 @@
   --font-sans: var(--font-manrope);
   --font-heading: var(--font-manrope);
   --color-accent-tint: var(--accent-tint);
+  --color-card-secondary: var(--card-secondary);
+  --color-panel-soft: var(--panel-soft);
+  --color-success: var(--success);
+  --color-success-background: var(--success-background);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,162 +53,114 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --text-2xs: 0.75rem;   /* 12px */
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.8125rem;  /* 13px */
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;   /* 14px */
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;     /* 16px — mobile input floor */
+  --text-base--line-height: 1.5rem;
+  --text-md: 0.9375rem;  /* 15px — card titles, between sm and lg */
+  --text-md--line-height: 1.375rem;
+  --text-lg: 1.125rem;   /* 18px — section headers */
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.5rem;     /* 24px — page titles */
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.75rem;   /* 28px — major financial totals */
+  --text-2xl--line-height: 2.125rem;
 }
 
 :root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --primary: #059669;
-  --primary-foreground: #0a0a0a; /* white failed WCAG AA here (3.77:1) — dark text clears it (5.25:1) */
-  --secondary: #f0f0f0;
-  --secondary-foreground: #262626;
-  --muted: #f0f0f0;
-  --muted-foreground: #737373;
-  --accent: #e5e5e5;
-  --accent-foreground: #0a0a0a;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #059669;
-  --chart-1: #be123c;
-  --chart-2: #059669;
-  --chart-3: #b45309;
-  --chart-4: #3730a3;
-  --chart-5: #0d9488;
+  --background: #FFF7F8;
+  --foreground: #2C1720;
+  --card: #FFFFFF;
+  --card-foreground: #2C1720;
+  --card-secondary: #FFFDFE;
+  --panel-soft: #FBEAF0;
+  --popover: #FFFFFF;
+  --popover-foreground: #2C1720;
+  --primary: #6F1D3A;
+  --primary-foreground: #FFFFFF; /* 8.9:1 against #6F1D3A */
+  --secondary: #FBEAF0;
+  --secondary-foreground: #2C1720;
+  --muted: #FBEAF0;
+  --muted-foreground: #78636C;
+  --accent: #F2C7D4;
+  --accent-foreground: #2C1720;
+  --destructive: #B42335;
+  --border: #E8D3DB;
+  --input: #E8D3DB;
+  --ring: #6F1D3A;
+  --success: #2F7D5B;
+  --success-background: #E5F4EC;
+  --warning: #B86A2D;
+  --danger: #B42335;
+  --info: #657188;
+  --chart-1: #963956; /* berry */
+  --chart-2: #C94F70; /* rose-red */
+  --chart-3: #B86A2D; /* warm amber-neutral, not green */
+  --chart-4: #657188; /* informational slate */
+  --chart-5: #54132B; /* dark wine */
   --radius: 0.625rem;
-  --sidebar: #f0f0f0;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #059669;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #e5e5e5;
-  --sidebar-accent-foreground: #0a0a0a;
-  --sidebar-border: #e5e5e5;
-  --sidebar-ring: #059669;
+  --sidebar: #54132B;
+  --sidebar-foreground: #FFF7F8;
+  --sidebar-primary: #6F1D3A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #963956;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #E8D3DB;
+  --sidebar-ring: #6F1D3A;
 
-  /* Nav bar and progress-bar track background — both now derive from the
-     user's chosen accent (dark and light tonal shades respectively). These
-     are the accent-less defaults (Emerald), overridden per accent below. */
-  --nav-background: #065f46;
-  --nav-foreground: #fafafa;
-  --accent-tint: #d1fae5;
+  --nav-background: #54132B;
+  --nav-foreground: #FFF7F8;
+  --accent-tint: #FBEAF0;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --card: #171717;
-  --card-foreground: #fafafa;
-  --popover: #171717;
-  --popover-foreground: #fafafa;
-  --primary: #059669;
-  --primary-foreground: #0a0a0a;
-  --secondary: #262626;
-  --secondary-foreground: #fafafa;
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #fafafa;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #2e2e2e;
-  --input: #2e2e2e;
-  --ring: #059669;
-  --chart-1: #be123c;
-  --chart-2: #059669;
-  --chart-3: #b45309;
-  --chart-4: #3730a3;
-  --chart-5: #0d9488;
-  --sidebar: #171717;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #059669;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #262626;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #2e2e2e;
-  --sidebar-ring: #059669;
+  --background: #150C12;
+  --foreground: #FFF2F6;
+  --card: #24131B;
+  --card-foreground: #FFF2F6;
+  --card-secondary: #301A24;
+  --panel-soft: #3A1D2A;
+  --popover: #24131B;
+  --popover-foreground: #FFF2F6;
+  --primary: #D76A8D;
+  --primary-foreground: #150C12; /* dark text on the lighter dark-mode rose */
+  --secondary: #301A24;
+  --secondary-foreground: #FFF2F6;
+  --muted: #301A24;
+  --muted-foreground: #C6AAB5;
+  --accent: #3A1D2A;
+  --accent-foreground: #FFF2F6;
+  --destructive: #FF6B78;
+  --border: #4C2937;
+  --input: #1E1017;
+  --ring: #D76A8D;
+  --success: #65C99A;
+  --success-background: #173D2E;
+  --warning: #E1A05B;
+  --danger: #FF6B78;
+  --info: #98A5BA;
+  --chart-1: #F08AAA;
+  --chart-2: #D76A8D;
+  --chart-3: #E1A05B;
+  --chart-4: #98A5BA;
+  --chart-5: #963956;
+  --sidebar: #2B101C;
+  --sidebar-foreground: #FFF2F6;
+  --sidebar-primary: #D76A8D;
+  --sidebar-primary-foreground: #150C12;
+  --sidebar-accent: #3A1D2A;
+  --sidebar-accent-foreground: #FFF2F6;
+  --sidebar-border: #4C2937;
+  --sidebar-ring: #D76A8D;
 
-  --nav-background: #065f46;
-  --nav-foreground: #fafafa;
-  --accent-tint: #0f2e22;
+  --nav-background: #2B101C;
+  --nav-foreground: #FFF2F6;
+  --accent-tint: #3A1D2A;
 }
-
-/* Per-user accent — three tonal shades derived from one chosen color:
-   --nav-background/--nav-foreground (dark shade, nav bar), --primary/
-   --primary-foreground/--ring (base shade, buttons/active states/on-track
-   progress fill), --accent-tint (light shade, progress-bar track
-   background). Every --primary-foreground pairing is computed and
-   verified against WCAG AA (4.5:1) — see comments below for any that
-   needed dark text instead of white. */
-[data-accent="emerald"] {
-  --nav-background: #065f46;
-  --nav-foreground: #fafafa;
-  --primary: #059669;
-  --primary-foreground: #0a0a0a; /* white failed AA (3.77:1) — dark text clears it (5.25:1) */
-  --ring: #059669;
-  --accent-tint: #d1fae5;
-}
-[data-accent="teal"] {
-  --nav-background: #134e4a;
-  --nav-foreground: #fafafa;
-  --primary: #0d9488;
-  --primary-foreground: #0a0a0a; /* white failed AA (3.74:1) — dark text clears it (5.29:1) */
-  --ring: #0d9488;
-  --accent-tint: #ccfbf1;
-}
-[data-accent="amber"] {
-  --nav-background: #78350f;
-  --nav-foreground: #fafafa;
-  --primary: #b45309;
-  --primary-foreground: #ffffff; /* 5.02:1 */
-  --ring: #b45309;
-  --accent-tint: #fef3c7;
-}
-[data-accent="indigo"] {
-  --nav-background: #312e81;
-  --nav-foreground: #fafafa;
-  --primary: #3730a3;
-  --primary-foreground: #ffffff; /* 9.93:1 */
-  --ring: #3730a3;
-  --accent-tint: #e0e7ff;
-}
-[data-accent="rose"] {
-  --nav-background: #881337;
-  --nav-foreground: #fafafa;
-  --primary: #be123c;
-  --primary-foreground: #ffffff; /* 6.29:1 */
-  --ring: #be123c;
-  --accent-tint: #ffe4e6;
-}
-[data-accent="stone"] {
-  --nav-background: #292524;
-  --nav-foreground: #fafafa;
-  --primary: #44403c;
-  --primary-foreground: #ffffff; /* 10.27:1 */
-  --ring: #44403c;
-  --accent-tint: #e7e5e4;
-}
-[data-accent="wine"] {
-  --nav-background: #4a0f26;
-  --nav-foreground: #fafafa;
-  --primary: #7c1d3f;
-  --primary-foreground: #ffffff; /* 9.98:1 */
-  --ring: #7c1d3f;
-  --accent-tint: #eed4dc;
-}
-
-/* Dark mode gets its own --accent-tint per accent (a dark-tinted
-   background stays visually recessive against the dark page background;
-   the light-mode tint above would look like a bright highlight instead). */
-.dark[data-accent="emerald"] { --accent-tint: #0f2e22; }
-.dark[data-accent="teal"] { --accent-tint: #0d2e2b; }
-.dark[data-accent="amber"] { --accent-tint: #2e1a06; }
-.dark[data-accent="indigo"] { --accent-tint: #1e1c4a; }
-.dark[data-accent="rose"] { --accent-tint: #3a0a17; }
-.dark[data-accent="stone"] { --accent-tint: #262421; }
-.dark[data-accent="wine"] { --accent-tint: #2e0f18; }
 
 @layer base {
   * {
