@@ -8,7 +8,9 @@ export const catalogItemSchema = z.object({
   unit: z.string().nullable(),
   categoryId: z.string().nullable(),
   defaultQuantity: z.number().positive(),
-  preferredStoreId: z.string().nullable(),
+  // Free text — resolved to a ShoppingStore id via getOrCreateStore in the
+  // action, not a raw id, since there's no dedicated store-management UI.
+  storeName: z.string().nullable(),
   // Comma-separated in the form, split into an array here.
   aliases: z
     .string()
@@ -17,7 +19,7 @@ export const catalogItemSchema = z.object({
 });
 
 export const priceRecordSchema = z.object({
-  storeId: z.string().nullable(),
+  storeName: z.string().nullable(),
   unitPrice: z.number().nonnegative(), // major units; converted by the caller
   source: z.enum(PRICE_SOURCES),
 });
@@ -34,7 +36,7 @@ export const shoppingListItemSchema = z.object({
   quantity: z.number().positive(),
   unit: z.string().nullable(),
   estimatedUnitPrice: z.number().nullable(), // major units; converted by the caller
-  preferredStoreId: z.string().nullable(),
+  storeName: z.string().nullable(),
   categoryId: z.string().nullable(),
   priority: z.enum(SHOPPING_ITEM_PRIORITIES),
   notes: z.string().nullable(),

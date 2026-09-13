@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { catalogItemSchema, priceRecordSchema } from "@/lib/validations/shopping";
 import { archiveCatalogItem, createCatalogItem, recordPrice, updateCatalogItem } from "@/lib/shopping-catalog";
+import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
 
 export type ShoppingActionResult = { ok: true } | { ok: false; error: string };
@@ -17,7 +18,7 @@ function parseCatalogItemForm(formData: FormData) {
     unit: formData.get("unit") || null,
     categoryId: formData.get("categoryId") || null,
     defaultQuantity: Number(formData.get("defaultQuantity")),
-    preferredStoreId: formData.get("preferredStoreId") || null,
+    storeName: formData.get("storeName") || null,
     aliases: formData.get("aliases") ? String(formData.get("aliases")) : null,
   });
 }
@@ -29,7 +30,17 @@ export async function createCatalogItemAction(formData: FormData): Promise<Shopp
   const parsed = parseCatalogItemForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
-  await createCatalogItem(prisma, session.user.id, parsed.data);
+  const preferredStoreId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
+  await createCatalogItem(prisma, session.user.id, {
+    canonicalName: parsed.data.canonicalName,
+    brand: parsed.data.brand,
+    size: parsed.data.size,
+    unit: parsed.data.unit,
+    categoryId: parsed.data.categoryId,
+    defaultQuantity: parsed.data.defaultQuantity,
+    preferredStoreId,
+    aliases: parsed.data.aliases,
+  });
   revalidatePath("/shopping");
   return { ok: true };
 }
@@ -44,6 +55,7 @@ export async function updateCatalogItemAction(
   const parsed = parseCatalogItemForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
+  const preferredStoreId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
   const result = await updateCatalogItem(prisma, session.user.id, catalogItemId, {
     canonicalName: parsed.data.canonicalName,
     brand: parsed.data.brand,
@@ -51,7 +63,7 @@ export async function updateCatalogItemAction(
     unit: parsed.data.unit,
     categoryId: parsed.data.categoryId,
     defaultQuantity: parsed.data.defaultQuantity,
-    preferredStoreId: parsed.data.preferredStoreId,
+    preferredStoreId,
   });
   if (result.ok) revalidatePath("/shopping");
   return result;
@@ -75,15 +87,17 @@ export async function recordPriceAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const parsed = priceRecordSchema.safeParse({
-    storeId: formData.get("storeId") || null,
+    storeName: formData.get("storeName") || null,
     unitPrice: Number(formData.get("unitPrice")),
     source: formData.get("source") || "MANUAL",
   });
   if (!parsed.success) return { ok: false, error: "Please check the price details" };
 
+  const storeId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
   await recordPrice(prisma, session.user.id, catalogItemId, {
-    ...parsed.data,
+    storeId,
     unitPrice: toMinorUnits(parsed.data.unitPrice, currency),
+    source: parsed.data.source,
   });
   revalidatePath("/shopping");
   return { ok: true };

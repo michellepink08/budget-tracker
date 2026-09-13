@@ -14,6 +14,7 @@ import {
   togglePurchased,
   updateItem,
 } from "@/lib/shopping-list";
+import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
 
 export type ShoppingActionResult = { ok: true } | { ok: false; error: string };
@@ -35,7 +36,7 @@ export async function createListAction(formData: FormData): Promise<ShoppingActi
   return { ok: true };
 }
 
-function parseItemForm(formData: FormData, currency: string) {
+async function parseItemForm(formData: FormData, currency: string, userId: string) {
   const rawPrice = formData.get("estimatedUnitPrice");
   const parsed = shoppingListItemSchema.safeParse({
     catalogItemId: formData.get("catalogItemId") || null,
@@ -43,18 +44,26 @@ function parseItemForm(formData: FormData, currency: string) {
     quantity: Number(formData.get("quantity")),
     unit: formData.get("unit") || null,
     estimatedUnitPrice: rawPrice ? Number(rawPrice) : null,
-    preferredStoreId: formData.get("preferredStoreId") || null,
+    storeName: formData.get("storeName") || null,
     categoryId: formData.get("categoryId") || null,
     priority: formData.get("priority") || "NORMAL",
     notes: formData.get("notes") || null,
   });
   if (!parsed.success) return parsed;
+  const preferredStoreId = await getOrCreateStore(prisma, userId, parsed.data.storeName);
   return {
     ...parsed,
     data: {
-      ...parsed.data,
+      catalogItemId: parsed.data.catalogItemId,
+      freeTextName: parsed.data.freeTextName,
+      quantity: parsed.data.quantity,
+      unit: parsed.data.unit,
       estimatedUnitPrice:
         parsed.data.estimatedUnitPrice === null ? null : toMinorUnits(parsed.data.estimatedUnitPrice, currency),
+      preferredStoreId,
+      categoryId: parsed.data.categoryId,
+      priority: parsed.data.priority,
+      notes: parsed.data.notes,
     },
   };
 }
@@ -67,7 +76,7 @@ export async function addItemAction(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
-  const parsed = parseItemForm(formData, currency);
+  const parsed = await parseItemForm(formData, currency, session.user.id);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
   const result = await addItem(prisma, session.user.id, listId, parsed.data);
@@ -83,7 +92,7 @@ export async function updateItemAction(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
-  const parsed = parseItemForm(formData, currency);
+  const parsed = await parseItemForm(formData, currency, session.user.id);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
   const result = await updateItem(prisma, session.user.id, itemId, parsed.data);
