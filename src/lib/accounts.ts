@@ -1,11 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
+import type { AccountPurpose } from "@/lib/constants/financial";
 
 export type AccountInput = {
   name: string;
   accountType: string;
   openingBalance: number; // minor units
   currency: string;
-  includeInLiquidFunds: boolean;
+  purpose: AccountPurpose;
   isPrimaryFundingAccount: boolean;
   color: string;
   icon: string;
@@ -13,12 +14,20 @@ export type AccountInput = {
 
 export type AccountMutationResult = { ok: true } | { ok: false; error: string };
 
+const LIQUID_PURPOSES: AccountPurpose[] = ["DISPOSABLE", "SAVINGS"];
+
+function deriveIncludeInLiquidFunds(purpose: AccountPurpose): boolean {
+  return LIQUID_PURPOSES.includes(purpose);
+}
+
 export async function createAccount(
   prisma: Pick<PrismaClient, "account">,
   userId: string,
   input: AccountInput,
 ) {
-  return prisma.account.create({ data: { userId, ...input } });
+  return prisma.account.create({
+    data: { userId, ...input, includeInLiquidFunds: deriveIncludeInLiquidFunds(input.purpose) },
+  });
 }
 
 export async function updateAccount(
@@ -27,9 +36,13 @@ export async function updateAccount(
   accountId: string,
   input: Partial<AccountInput>,
 ): Promise<AccountMutationResult> {
+  const data: Partial<AccountInput> & { includeInLiquidFunds?: boolean } = { ...input };
+  if (input.purpose !== undefined) {
+    data.includeInLiquidFunds = deriveIncludeInLiquidFunds(input.purpose);
+  }
   const result = await prisma.account.updateMany({
     where: { id: accountId, userId },
-    data: input,
+    data,
   });
   if (result.count === 0) {
     return { ok: false, error: "Account not found" };
