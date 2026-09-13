@@ -146,6 +146,7 @@ const QUESTION_PATTERNS: { test: RegExp; questionType: QuestionType }[] = [
   { test: /\bspen(d|t|ding)\b.*\b(this cutoff|current cutoff)\b/, questionType: "spending_current_cutoff" },
   { test: /\bspen(d|t|ding)\b.*\b(last cutoff|previous cutoff)\b/, questionType: "spending_previous_cutoff" },
   { test: /\bshopping list\b/, questionType: "shopping_selected_total" },
+  { test: /\bhow much\b.*\bsave\b|\bsave\b.*\bcomes? home\b/, questionType: "year_plan_recommended_saving" },
   { test: /\bspen(d|t|ding)\b.*\bon\b/, questionType: "spending_by_category" },
   { test: /\bexpected income\b/, questionType: "expected_income" },
 ];

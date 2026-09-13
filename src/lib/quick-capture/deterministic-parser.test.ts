@@ -346,3 +346,17 @@ describe("shopping_selected_total question", () => {
     }
   });
 });
+
+describe("year_plan_recommended_saving question", () => {
+  it("parses 'How much should we save before he comes home?' as year_plan_recommended_saving", async () => {
+    const prisma = makeFakePrisma();
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "How much should we save before he comes home?");
+
+    expect(draft.intent).toBe("question");
+    if (draft.intent === "question") {
+      expect(draft.questionType).toBe("year_plan_recommended_saving");
+    }
+  });
+});

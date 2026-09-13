@@ -381,3 +381,44 @@ describe("shopping_selected_total", () => {
     expect(answer).toEqual({ kind: "unavailable", message: "No current shopping list yet" });
   });
 });
+
+describe("year_plan_recommended_saving", () => {
+  it("returns the active plan's recommendedSavingPerCutoff", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: { findFirst: vi.fn().mockResolvedValue({ id: "plan-1", minCashBuffer: 0, vacationReserveGoalId: null }) },
+      yearPlanPhase: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "phase-full", phaseType: "FULL_ONBOARD", startDate: new Date(2026, 0, 1), endDate: new Date(2030, 11, 31) },
+        ]),
+      },
+      incomeForecast: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "forecast-1",
+            cutoffLabel: "March 1-15",
+            phaseId: "phase-full",
+            expectedDate: new Date(2030, 2, 15),
+            expectedAmount: 100000,
+            source: "Salary",
+            status: "EXPECTED",
+          },
+        ]),
+      },
+      savingsGoal: { findUnique: vi.fn() },
+    });
+
+    const answer = await answerQuestion(prisma, "user-1", 25, question({ questionType: "year_plan_recommended_saving" }));
+
+    expect(answer.kind).toBe("amount");
+  });
+
+  it("reports unavailable when there's no active Year Plan", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+
+    const answer = await answerQuestion(prisma, "user-1", 25, question({ questionType: "year_plan_recommended_saving" }));
+
+    expect(answer).toEqual({ kind: "unavailable", message: "No active Year Plan yet" });
+  });
+});

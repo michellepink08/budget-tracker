@@ -12,6 +12,7 @@ import { spendingByCategory } from "@/lib/reports";
 import { listPayables, listDuePayables } from "@/lib/payables";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
+import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import type { QuestionDraft } from "@/lib/quick-capture/types";
 
 export type QuestionAnswer =
@@ -245,6 +246,18 @@ export async function answerQuestion(
       const summary = await getShoppingDashboardSummary(prisma, userId, cycleStartDay, now);
       if (!summary) return { kind: "unavailable", message: "No current shopping list yet" };
       return { kind: "amount", label: "Selected shopping list total", amountMinorUnits: summary.estimatedTotal };
+    }
+
+    case "year_plan_recommended_saving": {
+      const summary = await getYearPlanDashboardSummary(prisma, userId, now);
+      if (!summary || summary.recommendedSavingPerCutoff === null) {
+        return { kind: "unavailable", message: "No active Year Plan yet" };
+      }
+      return {
+        kind: "amount",
+        label: "Recommended saving per cutoff",
+        amountMinorUnits: summary.recommendedSavingPerCutoff,
+      };
     }
   }
 }
