@@ -140,18 +140,19 @@ export async function deleteLine(
 // user knows extraction ran (even when — as with the stub — it found
 // nothing and the review screen is 100% manual from here).
 export async function runOcrExtraction(
-  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem">,
+  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem" | "shoppingStore">,
   userId: string,
   receiptId: string,
   imageBuffers: Buffer[],
   adapter: OcrAdapter,
 ): Promise<ReceiptMutationResult> {
-  if (!(await assertOwnedReceipt(prisma, userId, receiptId))) {
-    return { ok: false, error: "Receipt not found" };
-  }
+  const receipt = await prisma.receipt.findFirst({ where: { id: receiptId, userId } });
+  if (!receipt) return { ok: false, error: "Receipt not found" };
 
   const activeCatalogItems = await listActiveCatalogItems(prisma, userId);
   const updateData: Record<string, unknown> = { status: "REVIEWED" };
+  let storeText: string | undefined;
+
   for (const buffer of imageBuffers) {
     const result = await adapter.extract(buffer);
     for (const line of result.lines) {
@@ -178,10 +179,29 @@ export async function runOcrExtraction(
     if (result.subtotal !== undefined) updateData.subtotal = result.subtotal;
     if (result.tax !== undefined) updateData.tax = result.tax;
     if (result.grandTotal !== undefined) updateData.grandTotal = result.grandTotal;
+    // First non-empty store guess wins across multiple images — a later
+    // page's OCR pass overwriting an earlier, possibly-better read isn't
+    // worth the added complexity here.
+    if (storeText === undefined && result.store !== undefined) storeText = result.store;
   }
 
-  const receipt = await prisma.receipt.update({ where: { id: receiptId }, data: updateData });
-  return { ok: true, id: receipt.id };
+  if (storeText !== undefined) {
+    updateData.rawStoreText = storeText;
+    if (!(receipt as { storeId: string | null }).storeId) {
+      const stores = await prisma.shoppingStore.findMany({ where: { userId } });
+      const resolved = await resolveAlias(
+        prisma,
+        userId,
+        "shopping_store",
+        storeText,
+        stores.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })),
+      );
+      if (resolved.status === "resolved") updateData.storeId = resolved.id;
+    }
+  }
+
+  const updated = await prisma.receipt.update({ where: { id: receiptId }, data: updateData });
+  return { ok: true, id: updated.id };
 }
 
 type ConfirmPrisma = Pick<

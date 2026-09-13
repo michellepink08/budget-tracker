@@ -42,6 +42,11 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       upsert: vi.fn().mockResolvedValue({}),
     },
     shoppingCatalogItem: { findMany: vi.fn().mockResolvedValue([]) },
+    shoppingStore: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn(async ({ data }: any) => ({ id: "store-1", ...data })),
+    },
     ...overrides,
   };
   prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
@@ -285,6 +290,45 @@ describe("runOcrExtraction", () => {
     expect(prisma.receiptLine.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ catalogItemId: "catalog-1" }),
     });
+  });
+});
+
+describe("runOcrExtraction — store learning", () => {
+  it("auto-resolves the store from an existing shopping_store alias when none is set", async () => {
+    const fakeAdapter: OcrAdapter = {
+      extract: vi.fn(async () => ({ lines: [], store: "STO ALCPRO MKT" })),
+    };
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1", storeId: null }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+      alias: { findUnique: vi.fn().mockResolvedValue({ targetId: "store-1" }), upsert: vi.fn().mockResolvedValue({}) },
+    });
+    const result = await runOcrExtraction(prisma, "user-1", "receipt-1", [Buffer.from("")], fakeAdapter);
+    expect(result.ok).toBe(true);
+    expect(prisma.receipt.update).toHaveBeenCalledWith({
+      where: { id: "receipt-1" },
+      data: expect.objectContaining({ rawStoreText: "STO ALCPRO MKT", storeId: "store-1" }),
+    });
+  });
+
+  it("never overrides a store the user already set", async () => {
+    const fakeAdapter: OcrAdapter = {
+      extract: vi.fn(async () => ({ lines: [], store: "SOMETHING ELSE" })),
+    };
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1", storeId: "store-existing" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+    });
+    await runOcrExtraction(prisma, "user-1", "receipt-1", [Buffer.from("")], fakeAdapter);
+    const updateCall = (prisma.receipt.update as any).mock.calls[0][0];
+    expect(updateCall.data.rawStoreText).toBe("SOMETHING ELSE");
+    expect(updateCall.data.storeId).toBeUndefined();
   });
 });
 
