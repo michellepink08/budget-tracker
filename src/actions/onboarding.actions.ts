@@ -16,11 +16,10 @@ export async function completeOnboardingAction(formData: FormData): Promise<Onbo
   const parsed = onboardingSchema.safeParse({
     cycleStartDay: Number(formData.get("cycleStartDay")),
     currency: formData.get("currency"),
-    accentColor: formData.get("accentColor"),
   });
 
   if (!parsed.success) {
-    return { ok: false, error: "Enter a valid cycle start day (1-31), currency, and accent color" };
+    return { ok: false, error: "Enter a valid cycle start day (1-31) and currency" };
   }
 
   await completeOnboarding(prisma, session.user.id, parsed.data);

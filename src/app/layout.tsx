@@ -24,14 +24,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const user = session?.user
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { accentColor: true, themeMode: true },
+        select: { themeMode: true },
       })
     : null;
 
   return (
     <html
       lang="en"
-      data-accent={user?.accentColor ?? "wine"}
       suppressHydrationWarning
       className={`${manrope.variable} h-full antialiased`}
     >

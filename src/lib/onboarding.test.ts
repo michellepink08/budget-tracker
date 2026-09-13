@@ -10,13 +10,12 @@ function makeFakePrisma() {
 }
 
 describe("completeOnboarding", () => {
-  it("saves the cycle day, currency, and accent color, and stamps onboardedAt", async () => {
+  it("saves the cycle day and currency, and stamps onboardedAt", async () => {
     const prisma = makeFakePrisma();
 
     await completeOnboarding(prisma, "user-1", {
       cycleStartDay: 25,
       currency: "PHP",
-      accentColor: "wine",
     });
 
     expect(prisma.user.update).toHaveBeenCalledTimes(1);
@@ -24,7 +23,6 @@ describe("completeOnboarding", () => {
     expect(args.where).toEqual({ id: "user-1" });
     expect(args.data.cycleStartDay).toBe(25);
     expect(args.data.currency).toBe("PHP");
-    expect(args.data.accentColor).toBe("wine");
     expect(args.data.onboardedAt).toBeInstanceOf(Date);
   });
 });

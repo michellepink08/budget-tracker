@@ -1,18 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accentColorSchema, themeModeSchema } from "@/lib/validations/settings";
-
-describe("accentColorSchema", () => {
-  it("accepts every known preset", () => {
-    for (const value of ["emerald", "teal", "amber", "indigo", "rose", "stone"]) {
-      expect(accentColorSchema.safeParse({ accentColor: value }).success).toBe(true);
-    }
-  });
-
-  it("rejects an unknown accent color", () => {
-    const result = accentColorSchema.safeParse({ accentColor: "chartreuse" });
-    expect(result.success).toBe(false);
-  });
-});
+import { themeModeSchema } from "@/lib/validations/settings";
 
 describe("themeModeSchema", () => {
   it("accepts light, dark, and system", () => {

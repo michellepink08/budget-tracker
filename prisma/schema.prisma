@@ -12,7 +12,6 @@ model User {
   passwordHash  String
   cycleStartDay Int      @default(1)
   currency      String   @default("PHP")
-  accentColor   String   @default("wine")
   themeMode     String   @default("system")
   createdAt     DateTime @default(now())
   onboardedAt   DateTime?

@@ -22,7 +22,7 @@ export default function OnboardingPage() {
     formState: { errors, isSubmitting },
   } = useForm<OnboardingInput>({
     resolver: zodResolver(onboardingSchema),
-    defaultValues: { cycleStartDay: 1, currency: "PHP", accentColor: "wine" },
+    defaultValues: { cycleStartDay: 1, currency: "PHP" },
   });
 
   async function onSubmit(values: OnboardingInput) {
@@ -30,7 +30,6 @@ export default function OnboardingPage() {
     const formData = new FormData();
     formData.set("cycleStartDay", String(values.cycleStartDay));
     formData.set("currency", values.currency);
-    formData.set("accentColor", values.accentColor);
     const result = await completeOnboardingAction(formData);
     if (!result.ok) {
       setServerError(result.error);

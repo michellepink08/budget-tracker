@@ -2,11 +2,10 @@ import { describe, expect, it } from "vitest";
 import { onboardingSchema } from "@/lib/validations/onboarding";
 
 describe("onboardingSchema", () => {
-  it("accepts a valid cycle start day, currency, and accent color", () => {
+  it("accepts a valid cycle start day and currency", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 25,
       currency: "PHP",
-      accentColor: "wine",
     });
     expect(result.success).toBe(true);
   });
@@ -15,7 +14,6 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 0,
       currency: "PHP",
-      accentColor: "wine",
     });
     expect(result.success).toBe(false);
   });
@@ -24,7 +22,6 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 32,
       currency: "PHP",
-      accentColor: "wine",
     });
     expect(result.success).toBe(false);
   });
@@ -33,7 +30,6 @@ describe("onboardingSchema", () => {
     const result = onboardingSchema.safeParse({
       cycleStartDay: 25,
       currency: "",
-      accentColor: "wine",
     });
     expect(result.success).toBe(false);
   });

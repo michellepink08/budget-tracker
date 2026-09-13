@@ -3,7 +3,6 @@ import type { PrismaClient } from "@prisma/client";
 export type OnboardingInput = {
   cycleStartDay: number;
   currency: string;
-  accentColor: string;
 };
 
 export async function completeOnboarding(
@@ -16,7 +15,6 @@ export async function completeOnboarding(
     data: {
       cycleStartDay: input.cycleStartDay,
       currency: input.currency,
-      accentColor: input.accentColor,
       onboardedAt: new Date(),
     },
   });
