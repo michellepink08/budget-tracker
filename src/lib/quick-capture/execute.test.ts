@@ -11,7 +11,9 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-new" }),
       findMany: vi.fn().mockResolvedValue([]),
-      findFirst: vi.fn().mockResolvedValue({ id: "txn-1", amount: -1000, date: new Date(), description: "old" }),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: "txn-1", type: "EXPENSE", amount: -1000, date: new Date(), description: "old" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       update: vi.fn().mockResolvedValue({}),
@@ -154,6 +156,55 @@ describe("executeDraft", () => {
       expect(result.resultingIds).toEqual(["txn-1"]);
       expect(result.previousValues).toEqual({ amount: -1000, date: expect.any(Date), description: "old" });
     }
+  });
+
+  it("re-signs a corrected amount to match the transaction's existing type, not the raw positive magnitude", async () => {
+    const prisma = makeFakePrisma();
+    const draft: CommandDraft = {
+      intent: "transaction_update",
+      target: ref("txn-1"),
+      amountMinorUnits: 25000,
+      date: null,
+      description: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    await executeDraft(prisma, "user-1", 1, draft);
+    // txn-1's mocked existing row is an EXPENSE (stored negative) — the
+    // corrected amount must stay negative, not become +25000.
+    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+      where: { id: "txn-1", userId: "user-1" },
+      data: { amount: -25000, date: undefined, description: undefined },
+    });
+  });
+
+  it("preserves a transfer row's existing sign direction when its amount is corrected", async () => {
+    const prisma = makeFakePrisma({
+      transaction: {
+        create: vi.fn().mockResolvedValue({ id: "txn-new" }),
+        findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "txn-1", type: "TRANSFER", amount: 5000, date: new Date(), description: "old" }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    });
+    const draft: CommandDraft = {
+      intent: "transaction_update",
+      target: ref("txn-1"),
+      amountMinorUnits: 30000,
+      date: null,
+      description: null,
+      clauseText: "x",
+      clarification: null,
+    };
+    await executeDraft(prisma, "user-1", 1, draft);
+    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+      where: { id: "txn-1", userId: "user-1" },
+      data: { amount: 30000, date: undefined, description: undefined },
+    });
   });
 
   it("deletes a transaction with no undo-able ids", async () => {

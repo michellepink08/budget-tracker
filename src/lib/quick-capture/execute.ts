@@ -4,6 +4,7 @@ import { applyReconciliation } from "@/lib/reconciliation";
 import { createPayable, updatePayable } from "@/lib/payables";
 import { makeCreditCardPayment } from "@/lib/credit-cards";
 import { makeLoanPayment } from "@/lib/loans";
+import { signedAmountForType, type SignableTransactionType } from "@/lib/transaction-rules";
 import type { CommandDraft } from "@/lib/quick-capture/types";
 
 export type ExecuteResult =
@@ -160,8 +161,26 @@ export async function executeDraft(
       const existing = await prisma.transaction.findFirst({ where: { id: draft.target.id, userId } });
       if (!existing) return { ok: false, error: "Transaction not found" };
       const previousValues = { amount: existing.amount, date: existing.date, description: existing.description };
+
+      let amount: number | undefined;
+      if (draft.amountMinorUnits !== null && draft.amountMinorUnits !== undefined) {
+        const magnitude = Math.abs(draft.amountMinorUnits);
+        // A correction's amount always arrives as a non-negative magnitude
+        // from the parser — it must be re-signed the same way the original
+        // amount was, or a correction silently flips an expense into income
+        // (or vice versa). TRANSFER isn't in signedAmountForType's type
+        // union (its sign comes from which leg it is, not the type alone)
+        // — preserve the existing row's own sign direction instead.
+        amount =
+          existing.type === "TRANSFER"
+            ? existing.amount < 0
+              ? -magnitude
+              : magnitude
+            : signedAmountForType(existing.type as SignableTransactionType, magnitude);
+      }
+
       const result = await updateTransaction(prisma, userId, draft.target.id, {
-        amount: draft.amountMinorUnits ?? undefined,
+        amount,
         date: draft.date?.value,
         description: draft.description ?? undefined,
       });
