@@ -20,6 +20,21 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
+  /* Plan-38 §4/§5 — semantic account-purpose and status tokens. Every
+     card/badge that represents a disposable, restricted, savings, or
+     expense/urgent amount (or a completed/paid state) should use one of
+     these pairs instead of a hard-coded color, so the same meaning always
+     renders the same way across the whole app. */
+  --color-disposable-surface: var(--disposable-surface);
+  --color-disposable-accent: var(--disposable-accent);
+  --color-restricted-surface: var(--restricted-surface);
+  --color-restricted-accent: var(--restricted-accent);
+  --color-savings-surface: var(--savings-surface);
+  --color-savings-accent: var(--savings-accent);
+  --color-expense-surface: var(--expense-surface);
+  --color-expense-accent: var(--expense-accent);
+  --color-completed-surface: var(--completed-surface);
+  --color-completed-accent: var(--completed-accent);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -77,104 +92,134 @@
 }
 
 :root {
-  --background: #FFF7F8;
-  --foreground: #2C1720;
-  --card: #FFFFFF;
-  --card-foreground: #2C1720;
-  --card-secondary: #FFFDFE;
-  --panel-soft: #FBEAF0;
-  --popover: #FFFFFF;
-  --popover-foreground: #2C1720;
-  --primary: #6F1D3A;
-  --primary-foreground: #FFFFFF; /* 8.9:1 against #6F1D3A */
-  --secondary: #FBEAF0;
-  --secondary-foreground: #2C1720;
-  --muted: #FBEAF0;
-  --muted-foreground: #78636C;
-  --accent: #F2C7D4;
-  --accent-foreground: #2C1720;
-  --destructive: #B42335;
-  --border: #E8D3DB;
-  --input: #E8D3DB;
-  --ring: #6F1D3A;
-  --success: #2F7D5B;
-  --success-background: #E5F4EC;
-  --warning: #B86A2D;
-  --danger: #B42335;
-  --info: #657188;
-  --chart-1: #963956; /* berry */
-  --chart-2: #C94F70; /* rose-red */
-  --chart-3: #B86A2D; /* warm amber-neutral, not green */
-  --chart-4: #657188; /* informational slate */
-  --chart-5: #54132B; /* dark wine */
-  --chart-6: #C99AA5; /* dusty rose */
-  --chart-7: #6E4C63; /* plum */
-  --dusty-rose: #C99AA5;
-  --plum: #6E4C63;
-  --cream: #F7ECE4;
+  /* Plan-38 §4 approved light-mode palette. */
+  --background: #F8F1F3;
+  --foreground: #291D25;
+  --card: #FFFAFB;
+  --card-foreground: #291D25;
+  --card-secondary: #FFFEFE;
+  --panel-soft: #F4DBE4;
+  --popover: #FFFAFB;
+  --popover-foreground: #291D25;
+  --primary: #721D42;
+  --primary-foreground: #FFFAFB;
+  --secondary: #F4DBE4;
+  --secondary-foreground: #291D25;
+  --muted: #F4DBE4;
+  --muted-foreground: #786671;
+  --accent: #F4DBE4;
+  --accent-foreground: #291D25;
+  --destructive: #B94F54;
+  --border: #EAD9E0;
+  --input: #FFFEFE;
+  --ring: #721D42;
+  --success: #28784C;
+  --success-background: #E0F3E8;
+  --warning: #98701C;
+  --danger: #B94F54;
+  --info: #315CA8;
+  --chart-1: #721D42; /* brand wine */
+  --chart-2: #B94F54; /* expense */
+  --chart-3: #315CA8; /* disposable / informational */
+  --chart-4: #7053A7; /* savings */
+  --chart-5: #98701C; /* restricted */
+  --chart-6: #28784C; /* completed */
+  --chart-7: #4D102D; /* deep wine */
+  --dusty-rose: #F4DBE4;
+  --plum: #7053A7;
+  --cream: #FFF0CA;
   --radius: 0.625rem;
-  --sidebar: #54132B;
+  --sidebar: #2D0D20;
   --sidebar-foreground: #FFF7F8;
-  --sidebar-primary: #6F1D3A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #963956;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #E8D3DB;
-  --sidebar-ring: #6F1D3A;
+  --sidebar-primary: #721D42;
+  --sidebar-primary-foreground: #FFFAFB;
+  --sidebar-accent: #4D102D;
+  --sidebar-accent-foreground: #FFF7F8;
+  --sidebar-border: #4D102D;
+  --sidebar-ring: #721D42;
 
-  --nav-background: #54132B;
+  --nav-background: #2D0D20;
+  --nav-gradient-from: #4D102D;
+  --nav-gradient-to: #2D0D20;
   --nav-foreground: #FFF7F8;
-  --accent-tint: #FBEAF0;
+  --accent-tint: #F4DBE4;
+
+  /* Plan-38 §4/§5 semantic account-purpose + status tokens (light). */
+  --disposable-surface: #E2EBFF;
+  --disposable-accent: #315CA8;
+  --restricted-surface: #FFF0CA;
+  --restricted-accent: #98701C;
+  --savings-surface: #EEE5FB;
+  --savings-accent: #7053A7;
+  --expense-surface: #FFE2DF;
+  --expense-accent: #B94F54;
+  --completed-surface: #E0F3E8;
+  --completed-accent: #28784C;
 }
 
 .dark {
-  --background: #150C12;
-  --foreground: #FFF2F6;
-  --card: #24131B;
-  --card-foreground: #FFF2F6;
-  --card-secondary: #301A24;
-  --panel-soft: #3A1D2A;
-  --popover: #24131B;
-  --popover-foreground: #FFF2F6;
-  --primary: #D76A8D;
-  --primary-foreground: #150C12; /* dark text on the lighter dark-mode rose */
-  --secondary: #301A24;
-  --secondary-foreground: #FFF2F6;
-  --muted: #301A24;
-  --muted-foreground: #C6AAB5;
-  --accent: #3A1D2A;
-  --accent-foreground: #FFF2F6;
-  --destructive: #FF6B78;
-  --border: #4C2937;
-  --input: #1E1017;
-  --ring: #D76A8D;
-  --success: #65C99A;
-  --success-background: #173D2E;
-  --warning: #E1A05B;
-  --danger: #FF6B78;
-  --info: #98A5BA;
-  --chart-1: #F08AAA;
-  --chart-2: #D76A8D;
-  --chart-3: #E1A05B;
-  --chart-4: #98A5BA;
-  --chart-5: #963956;
-  --chart-6: #A97282;
-  --chart-7: #9C7690;
-  --dusty-rose: #A97282;
-  --plum: #9C7690;
-  --cream: #3A2E27;
-  --sidebar: #2B101C;
-  --sidebar-foreground: #FFF2F6;
-  --sidebar-primary: #D76A8D;
-  --sidebar-primary-foreground: #150C12;
-  --sidebar-accent: #3A1D2A;
-  --sidebar-accent-foreground: #FFF2F6;
-  --sidebar-border: #4C2937;
-  --sidebar-ring: #D76A8D;
+  /* Plan-38 §4 approved dark-mode palette. */
+  --background: #160F14;
+  --foreground: #F8EDF3;
+  --card: #21171E;
+  --card-foreground: #F8EDF3;
+  --card-secondary: #362731;
+  --panel-soft: #4C2738;
+  --popover: #21171E;
+  --popover-foreground: #F8EDF3;
+  --primary: #C65B89;
+  --primary-foreground: #160F14; /* dark text on the lighter dark-mode wine */
+  --secondary: #4C2738;
+  --secondary-foreground: #F8EDF3;
+  --muted: #4C2738;
+  --muted-foreground: #C2AEB9;
+  --accent: #4C2738;
+  --accent-foreground: #F8EDF3;
+  --destructive: #EF8C90;
+  --border: #493442;
+  --input: #362731;
+  --ring: #C65B89;
+  --success: #71D39A;
+  --success-background: #1F4935;
+  --warning: #E7BD63;
+  --danger: #EF8C90;
+  --info: #8FB0EF;
+  --chart-1: #C65B89; /* brand wine */
+  --chart-2: #EF8C90; /* expense */
+  --chart-3: #8FB0EF; /* disposable / informational */
+  --chart-4: #BAA0E4; /* savings */
+  --chart-5: #E7BD63; /* restricted */
+  --chart-6: #71D39A; /* completed */
+  --chart-7: #3B1126; /* deep wine */
+  --dusty-rose: #4C2738;
+  --plum: #BAA0E4;
+  --cream: #4C391E;
+  --sidebar: #3B1126;
+  --sidebar-foreground: #F8EDF3;
+  --sidebar-primary: #C65B89;
+  --sidebar-primary-foreground: #160F14;
+  --sidebar-accent: #493442;
+  --sidebar-accent-foreground: #F8EDF3;
+  --sidebar-border: #493442;
+  --sidebar-ring: #C65B89;
 
-  --nav-background: #2B101C;
-  --nav-foreground: #FFF2F6;
-  --accent-tint: #3A1D2A;
+  --nav-background: #3B1126;
+  --nav-gradient-from: #3B1126;
+  --nav-gradient-to: #160F14;
+  --nav-foreground: #F8EDF3;
+  --accent-tint: #4C2738;
+
+  /* Plan-38 §4/§5 semantic account-purpose + status tokens (dark). */
+  --disposable-surface: #203252;
+  --disposable-accent: #8FB0EF;
+  --restricted-surface: #4C391E;
+  --restricted-accent: #E7BD63;
+  --savings-surface: #372B4D;
+  --savings-accent: #BAA0E4;
+  --expense-surface: #512824;
+  --expense-accent: #EF8C90;
+  --completed-surface: #1F4935;
+  --completed-accent: #71D39A;
 }
 
 @layer base {

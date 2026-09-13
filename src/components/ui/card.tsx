@@ -5,14 +5,14 @@ const cardVariants = cva("rounded-lg border bg-card text-card-foreground", {
   variants: {
     variant: {
       default:
-        "border-border shadow-[0_2px_8px_rgba(84,19,43,0.07),0_1px_2px_rgba(44,23,32,0.05)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.28)]",
+        "border-border shadow-[0_2px_8px_rgba(114,29,66,0.07),0_1px_2px_rgba(41,29,37,0.05)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.28)]",
       raised:
-        "border-border shadow-[0_8px_24px_rgba(84,19,43,0.12)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.28)]",
-      highlight: "border-primary/30 bg-panel-soft shadow-[0_2px_8px_rgba(84,19,43,0.07),0_1px_2px_rgba(44,23,32,0.05)]",
+        "border-border shadow-[0_8px_24px_rgba(114,29,66,0.12)] dark:shadow-[0_4px_14px_rgba(0,0,0,0.28)]",
+      highlight: "border-primary/30 bg-panel-soft shadow-[0_2px_8px_rgba(114,29,66,0.07),0_1px_2px_rgba(41,29,37,0.05)]",
       flat: "border-border shadow-none",
     },
     interactive: {
-      true: "cursor-pointer transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(84,19,43,0.12)] active:translate-y-0 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      true: "cursor-pointer transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(114,29,66,0.12)] active:translate-y-0 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       false: "",
     },
   },
