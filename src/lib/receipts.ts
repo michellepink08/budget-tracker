@@ -3,7 +3,8 @@ import { createExpenseLikeTransaction } from "@/lib/transactions";
 import { recordAudit } from "@/lib/audit-log";
 import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
-import { createAlias } from "@/lib/aliases";
+import { createAlias, resolveAlias } from "@/lib/aliases";
+import { listActiveCatalogItems } from "@/lib/shopping-catalog";
 
 export type ReceiptMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -52,7 +53,7 @@ export async function removeImage(
 }
 
 export async function addLine(
-  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias">,
+  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem">,
   userId: string,
   receiptId: string,
   input: {
@@ -69,7 +70,15 @@ export async function addLine(
   if (!(await assertOwnedReceipt(prisma, userId, receiptId))) {
     return { ok: false, error: "Receipt not found" };
   }
-  const line = await prisma.receiptLine.create({ data: { userId, receiptId, ...input } });
+
+  let catalogItemId = input.catalogItemId;
+  if (!catalogItemId && input.name.trim()) {
+    const activeCatalogItems = await listActiveCatalogItems(prisma, userId);
+    const resolved = await resolveAlias(prisma, userId, "shopping_item", input.name, activeCatalogItems);
+    if (resolved.status === "resolved") catalogItemId = resolved.id;
+  }
+
+  const line = await prisma.receiptLine.create({ data: { userId, receiptId, ...input, catalogItemId } });
 
   if (input.catalogItemId && input.name.trim()) {
     await createAlias(prisma, userId, { kind: "shopping_item", alias: input.name, targetId: input.catalogItemId });
