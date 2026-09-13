@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { createYearPlanAction } from "@/actions/year-plan.actions";
+import { createYearPlanAction, updateYearPlanAction } from "@/actions/year-plan.actions";
+import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +18,18 @@ type FormValues = {
   minCashBuffer: number;
 };
 
-// No vacation-reserve-goal picker yet — every plan is created with
-// vacationReserveGoalId: null. A goal picker is a small enough follow-up
-// that it doesn't block shipping the core forecasting tool (see plan-34).
-export function YearPlanFormDialog({ currency }: { currency: string }) {
+type ExistingYearPlan = {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  minCashBuffer: number;
+};
+
+// No vacation-reserve-goal picker yet — every plan is created/edited with
+// vacationReserveGoalId left as-is. A goal picker is a small enough
+// follow-up that it doesn't block shipping the core forecasting tool.
+export function YearPlanFormDialog({ currency, existing }: { currency: string; existing?: ExistingYearPlan }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
@@ -28,14 +37,21 @@ export function YearPlanFormDialog({ currency }: { currency: string }) {
     handleSubmit,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      name: "",
-      startDate: new Date().toISOString().slice(0, 10),
-      endDate: new Date(new Date().getFullYear() + 1, new Date().getMonth(), new Date().getDate())
-        .toISOString()
-        .slice(0, 10),
-      minCashBuffer: 0,
-    },
+    defaultValues: existing
+      ? {
+          name: existing.name,
+          startDate: existing.startDate.toISOString().slice(0, 10),
+          endDate: existing.endDate.toISOString().slice(0, 10),
+          minCashBuffer: toMajorUnits(existing.minCashBuffer, currency),
+        }
+      : {
+          name: "",
+          startDate: new Date().toISOString().slice(0, 10),
+          endDate: new Date(new Date().getFullYear() + 1, new Date().getMonth(), new Date().getDate())
+            .toISOString()
+            .slice(0, 10),
+          minCashBuffer: 0,
+        },
   });
 
   async function onSubmit(values: FormValues) {
@@ -45,22 +61,26 @@ export function YearPlanFormDialog({ currency }: { currency: string }) {
     formData.set("endDate", values.endDate);
     formData.set("minCashBuffer", String(values.minCashBuffer));
 
-    const result = await createYearPlanAction(currency, formData);
+    const result = existing
+      ? await updateYearPlanAction(existing.id, currency, formData)
+      : await createYearPlanAction(currency, formData);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    toast.success("Year Plan created");
+    toast.success(existing ? "Year Plan updated" : "Year Plan created");
     setOpen(false);
     router.refresh();
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>Create Year Plan</DialogTrigger>
+      <DialogTrigger render={<Button variant={existing ? "outline" : "default"} />}>
+        {existing ? "Edit plan" : "Create Year Plan"}
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Year Plan</DialogTitle>
+          <DialogTitle>{existing ? "Edit Year Plan" : "Create Year Plan"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -89,7 +109,7 @@ export function YearPlanFormDialog({ currency }: { currency: string }) {
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create"}
+              {isSubmitting ? "Saving..." : existing ? "Save" : "Create"}
             </Button>
           </DialogFooter>
         </form>

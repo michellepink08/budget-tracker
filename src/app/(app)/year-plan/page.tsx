@@ -11,6 +11,9 @@ import { HOME_PHASE_TYPES } from "@/lib/constants/financial";
 import { YearPlanFormDialog } from "@/components/year-plan/year-plan-form-dialog";
 import { PhaseFormDialog } from "@/components/year-plan/phase-form-dialog";
 import { ForecastFormDialog } from "@/components/year-plan/forecast-form-dialog";
+import { DeleteYearPlanButton } from "@/components/year-plan/delete-year-plan-button";
+import { DeletePhaseButton } from "@/components/year-plan/delete-phase-button";
+import { DeleteForecastButton } from "@/components/year-plan/delete-forecast-button";
 import { CutoffTable } from "@/components/year-plan/cutoff-table";
 import { ReserveChart } from "@/components/year-plan/reserve-chart";
 import { Card } from "@/components/ui/card";
@@ -99,7 +102,22 @@ export default async function YearPlanPage() {
       </div>
 
       <Card variant="highlight" className="p-4">
-        <p className="text-sm text-muted-foreground">{plan.name}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{plan.name}</p>
+          <div className="flex gap-2">
+            <YearPlanFormDialog
+              currency={user.currency}
+              existing={{
+                id: plan.id,
+                name: plan.name,
+                startDate: plan.startDate,
+                endDate: plan.endDate,
+                minCashBuffer: plan.minCashBuffer,
+              }}
+            />
+            <DeleteYearPlanButton yearPlanId={plan.id} />
+          </div>
+        </div>
         <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <p className="text-sm text-muted-foreground">Required reserve</p>
@@ -120,6 +138,55 @@ export default async function YearPlanPage() {
 
       <CutoffTable rows={rows} currency={user.currency} />
       <ReserveChart rows={rows} minCashBuffer={plan.minCashBuffer} currency={user.currency} />
+
+      {phases.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Phases</h2>
+          <div className="flex flex-col gap-2">
+            {phases.map((phase) => (
+              <Card key={phase.id} className="flex items-center justify-between p-3">
+                <div>
+                  <p className="font-medium">{phase.label ?? phase.phaseType}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {phase.phaseType} · {phase.startDate.toLocaleDateString()}–{phase.endDate.toLocaleDateString()} ·{" "}
+                    {formatMoney(phase.estimatedExpensesPerCutoff, user.currency)}/cutoff
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <PhaseFormDialog yearPlanId={plan.id} currency={user.currency} existing={phase} />
+                  <DeletePhaseButton phaseId={phase.id} />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {forecasts.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Income forecasts</h2>
+          <div className="flex flex-col gap-2">
+            {forecasts.map((forecast) => (
+              <Card key={forecast.id} className="flex items-center justify-between p-3">
+                <div>
+                  <p className="font-medium">
+                    {forecast.cutoffLabel} · {forecast.source}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatMoney(forecast.expectedAmount, user.currency)} · {forecast.expectedDate.toLocaleDateString()} ·{" "}
+                    {forecast.status}
+                    {forecast.actualTransactionId ? " · Confirmed — received" : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <ForecastFormDialog yearPlanId={plan.id} phases={phases} currency={user.currency} existing={forecast} />
+                  <DeleteForecastButton forecastId={forecast.id} />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

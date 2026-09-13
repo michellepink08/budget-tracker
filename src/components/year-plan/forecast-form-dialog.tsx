@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { addIncomeForecastAction } from "@/actions/year-plan.actions";
+import { addIncomeForecastAction, updateIncomeForecastAction } from "@/actions/year-plan.actions";
 import { INCOME_FORECAST_SOURCES, INCOME_FORECAST_STATUSES } from "@/lib/constants/financial";
+import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +24,27 @@ type FormValues = {
   notes: string;
 };
 
+type ExistingForecast = {
+  id: string;
+  phaseId: string | null;
+  source: string;
+  expectedDate: Date;
+  expectedAmount: number;
+  cutoffLabel: string;
+  status: string;
+  notes: string | null;
+};
+
 export function ForecastFormDialog({
   yearPlanId,
   phases,
   currency,
+  existing,
 }: {
   yearPlanId: string;
   phases: PhaseOption[];
   currency: string;
+  existing?: ExistingForecast;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -39,15 +53,25 @@ export function ForecastFormDialog({
     handleSubmit,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      phaseId: "",
-      source: "MY_SALARY",
-      expectedDate: new Date().toISOString().slice(0, 10),
-      expectedAmount: 0,
-      cutoffLabel: "",
-      status: "EXPECTED",
-      notes: "",
-    },
+    defaultValues: existing
+      ? {
+          phaseId: existing.phaseId ?? "",
+          source: existing.source,
+          expectedDate: existing.expectedDate.toISOString().slice(0, 10),
+          expectedAmount: toMajorUnits(existing.expectedAmount, currency),
+          cutoffLabel: existing.cutoffLabel,
+          status: existing.status,
+          notes: existing.notes ?? "",
+        }
+      : {
+          phaseId: "",
+          source: "MY_SALARY",
+          expectedDate: new Date().toISOString().slice(0, 10),
+          expectedAmount: 0,
+          cutoffLabel: "",
+          status: "EXPECTED",
+          notes: "",
+        },
   });
 
   async function onSubmit(values: FormValues) {
@@ -60,22 +84,26 @@ export function ForecastFormDialog({
     formData.set("status", values.status);
     formData.set("notes", values.notes);
 
-    const result = await addIncomeForecastAction(yearPlanId, currency, formData);
+    const result = existing
+      ? await updateIncomeForecastAction(existing.id, currency, formData)
+      : await addIncomeForecastAction(yearPlanId, currency, formData);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    toast.success("Forecast added");
+    toast.success(existing ? "Forecast updated" : "Forecast added");
     setOpen(false);
     router.refresh();
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" />}>Add income forecast</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" size={existing ? "sm" : undefined} />}>
+        {existing ? "Edit" : "Add income forecast"}
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add income forecast</DialogTitle>
+          <DialogTitle>{existing ? "Edit income forecast" : "Add income forecast"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">

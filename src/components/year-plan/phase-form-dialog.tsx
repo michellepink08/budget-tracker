@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { addPhaseAction } from "@/actions/year-plan.actions";
+import { addPhaseAction, updatePhaseAction } from "@/actions/year-plan.actions";
 import { YEAR_PLAN_PHASE_TYPES } from "@/lib/constants/financial";
+import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +20,24 @@ type FormValues = {
   estimatedExpensesPerCutoff: number;
 };
 
-export function PhaseFormDialog({ yearPlanId, currency }: { yearPlanId: string; currency: string }) {
+type ExistingPhase = {
+  id: string;
+  phaseType: string;
+  startDate: Date;
+  endDate: Date;
+  label: string | null;
+  estimatedExpensesPerCutoff: number;
+};
+
+export function PhaseFormDialog({
+  yearPlanId,
+  currency,
+  existing,
+}: {
+  yearPlanId: string;
+  currency: string;
+  existing?: ExistingPhase;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
@@ -27,13 +45,21 @@ export function PhaseFormDialog({ yearPlanId, currency }: { yearPlanId: string; 
     handleSubmit,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: {
-      phaseType: "HOME_SALARY_ONLY",
-      startDate: new Date().toISOString().slice(0, 10),
-      endDate: new Date().toISOString().slice(0, 10),
-      label: "",
-      estimatedExpensesPerCutoff: 0,
-    },
+    defaultValues: existing
+      ? {
+          phaseType: existing.phaseType,
+          startDate: existing.startDate.toISOString().slice(0, 10),
+          endDate: existing.endDate.toISOString().slice(0, 10),
+          label: existing.label ?? "",
+          estimatedExpensesPerCutoff: toMajorUnits(existing.estimatedExpensesPerCutoff, currency),
+        }
+      : {
+          phaseType: "HOME_SALARY_ONLY",
+          startDate: new Date().toISOString().slice(0, 10),
+          endDate: new Date().toISOString().slice(0, 10),
+          label: "",
+          estimatedExpensesPerCutoff: 0,
+        },
   });
 
   async function onSubmit(values: FormValues) {
@@ -44,22 +70,26 @@ export function PhaseFormDialog({ yearPlanId, currency }: { yearPlanId: string; 
     formData.set("label", values.label);
     formData.set("estimatedExpensesPerCutoff", String(values.estimatedExpensesPerCutoff));
 
-    const result = await addPhaseAction(yearPlanId, currency, formData);
+    const result = existing
+      ? await updatePhaseAction(existing.id, currency, formData)
+      : await addPhaseAction(yearPlanId, currency, formData);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    toast.success("Phase added");
+    toast.success(existing ? "Phase updated" : "Phase added");
     setOpen(false);
     router.refresh();
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" />}>Add phase</DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" size={existing ? "sm" : undefined} />}>
+        {existing ? "Edit" : "Add phase"}
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add phase</DialogTitle>
+          <DialogTitle>{existing ? "Edit phase" : "Add phase"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
