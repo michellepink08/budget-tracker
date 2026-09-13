@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { reconciliationSchema } from "@/lib/validations/reconciliation";
 import { applyReconciliation, previewReconciliation } from "@/lib/reconciliation";
+import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 
 export type ReconciliationPreviewResult =
@@ -54,13 +55,27 @@ export async function applyReconciliationAction(
   const account = await prisma.account.findFirst({ where: { id: accountId, userId: user.id } });
   if (!account) return { ok: false, error: "Account not found" };
 
-  const result = await applyReconciliation(
-    prisma,
-    user.id,
-    user.cycleStartDay,
-    accountId,
-    toMinorUnits(parsed.data.actualBalance, account.currency),
-  );
+  const result = await prisma.$transaction(async (tx) => {
+    const reconcileResult = await applyReconciliation(
+      tx,
+      user.id,
+      user.cycleStartDay,
+      accountId,
+      toMinorUnits(parsed.data.actualBalance, account.currency),
+    );
+    if (!reconcileResult.ok || reconcileResult.alreadyBalanced || !reconcileResult.transactionId) {
+      return reconcileResult;
+    }
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "RECONCILIATION",
+      entityId: reconcileResult.transactionId,
+      action: "CREATE",
+      source: "SYSTEM",
+      newValues: { accountId, actualBalance: toMinorUnits(parsed.data.actualBalance, account.currency) },
+    });
+    return reconcileResult;
+  });
 
   if (result.ok) {
     revalidatePath("/accounts");

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { creditCardSchema } from "@/lib/validations/credit-card";
 import { createCreditCard, makeCreditCardPayment, updateCreditCard } from "@/lib/credit-cards";
+import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 
 export type CreditCardActionResult = { ok: true } | { ok: false; error: string };
@@ -72,10 +73,22 @@ export async function makeCreditCardPaymentAction(
   const amount = toMinorUnits(Number(formData.get("amount")), account.currency);
   const date = new Date(String(formData.get("date")));
 
-  const result = await makeCreditCardPayment(prisma, user.id, user.cycleStartDay, creditCardId, {
-    accountId,
-    amount,
-    date,
+  const result = await prisma.$transaction(async (tx) => {
+    const paymentResult = await makeCreditCardPayment(tx, user.id, user.cycleStartDay, creditCardId, {
+      accountId,
+      amount,
+      date,
+    });
+    if (!paymentResult.ok) return paymentResult;
+    await recordAudit(tx, {
+      userId: user.id,
+      entityType: "CREDIT_CARD_PAYMENT",
+      entityId: paymentResult.transactionId,
+      action: "CREATE",
+      source: "FORM",
+      newValues: { creditCardId, accountId, amount, date },
+    });
+    return paymentResult;
   });
 
   if (result.ok) {
