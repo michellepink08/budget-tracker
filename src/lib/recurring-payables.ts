@@ -69,36 +69,42 @@ export type ConfirmPayableOverrides = { amount?: number; dueDate?: Date };
 // recurring payable's occurrence becomes a new Payable — the bill still
 // has to be marked paid separately (src/lib/payables.ts).
 export async function confirmRecurringPayableOccurrence(
-  prisma: Pick<PrismaClient, "recurringPayable" | "payable">,
+  prisma: Pick<PrismaClient, "recurringPayable" | "payable" | "$transaction">,
   userId: string,
   ruleId: string,
   overrides: ConfirmPayableOverrides,
 ): Promise<RecurringPayableMutationResult> {
-  const rule = await prisma.recurringPayable.findFirst({ where: { id: ruleId, userId } });
-  if (!rule) {
-    return { ok: false, error: "Recurring payable not found" };
-  }
+  // Creating the new Payable and advancing nextDueDate happen atomically —
+  // otherwise a failure partway through could create an occurrence without
+  // advancing the schedule (letting the same occurrence be confirmed
+  // twice) or advance the schedule with no Payable ever created for it.
+  return prisma.$transaction(async (tx) => {
+    const rule = await tx.recurringPayable.findFirst({ where: { id: ruleId, userId } });
+    if (!rule) {
+      return { ok: false, error: "Recurring payable not found" };
+    }
 
-  await prisma.payable.create({
-    data: {
-      userId,
-      name: rule.name,
-      amount: overrides.amount ?? rule.amount,
-      dueDate: overrides.dueDate ?? rule.nextDueDate,
-      accountId: rule.accountId,
-      categoryId: rule.categoryId ?? undefined,
-      recurringPayableId: rule.id,
-    },
+    await tx.payable.create({
+      data: {
+        userId,
+        name: rule.name,
+        amount: overrides.amount ?? rule.amount,
+        dueDate: overrides.dueDate ?? rule.nextDueDate,
+        accountId: rule.accountId,
+        categoryId: rule.categoryId ?? undefined,
+        recurringPayableId: rule.id,
+      },
+    });
+
+    const nextDueDate = advanceNextDate(
+      rule.nextDueDate,
+      rule.frequency as RecurringFrequency,
+      rule.intervalDays ?? undefined,
+    );
+    await tx.recurringPayable.update({ where: { id: ruleId }, data: { nextDueDate } });
+
+    return { ok: true };
   });
-
-  const nextDueDate = advanceNextDate(
-    rule.nextDueDate,
-    rule.frequency as RecurringFrequency,
-    rule.intervalDays ?? undefined,
-  );
-  await prisma.recurringPayable.update({ where: { id: ruleId }, data: { nextDueDate } });
-
-  return { ok: true };
 }
 
 export async function skipRecurringPayableOccurrence(
