@@ -8,6 +8,7 @@ import {
   BarChart3,
   Settings,
   CalendarRange,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const navLinks: NavLink[] = [
   { href: "/bills", label: "Bills", icon: Receipt },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/year-plan", label: "Year Plan", icon: CalendarRange },
+  { href: "/shopping", label: "Shopping", icon: ShoppingCart },
   { href: "/loans-cards", label: "Loans & Cards", icon: CreditCard },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
