@@ -49,3 +49,41 @@ export type RecurringFrequency = (typeof RECURRING_FREQUENCIES)[number];
 
 export const PAYABLE_STATUSES = ["PENDING", "PAID"] as const;
 export type PayableStatus = (typeof PAYABLE_STATUSES)[number];
+
+export const YEAR_PLAN_PHASE_TYPES = [
+  "FULL_ONBOARD",
+  "PARTIAL_ONBOARD",
+  "TRANSITION_HOME",
+  "HOME_SALARY_ONLY",
+  "EXPECTED_RETURN",
+  "PARTIAL_RETURN",
+  "CUSTOM",
+] as const;
+export type YearPlanPhaseType = (typeof YEAR_PLAN_PHASE_TYPES)[number];
+
+// Phases whose cutoffs are "home" cutoffs for reserve-math purposes (Decision:
+// only these two count toward computeRequiredReserve's cumulative walk).
+export const HOME_PHASE_TYPES: readonly YearPlanPhaseType[] = ["HOME_SALARY_ONLY", "TRANSITION_HOME"];
+
+export const INCOME_FORECAST_SOURCES = [
+  "MY_SALARY",
+  "MY_BONUS",
+  "HUSBAND_SALARY",
+  "ALLOTMENT",
+  "PARTIAL_SALARY",
+  "FINAL_SALARY",
+  "CASH_BOND",
+  "OTHER",
+] as const;
+export type IncomeForecastSource = (typeof INCOME_FORECAST_SOURCES)[number];
+
+// Sources counted as "reliable income" in the reserve math (design doc:
+// MY_SALARY + ALLOTMENT only).
+export const RELIABLE_INCOME_SOURCES: readonly IncomeForecastSource[] = ["MY_SALARY", "ALLOTMENT"];
+
+export const INCOME_FORECAST_STATUSES = ["CONFIRMED", "EXPECTED", "ESTIMATED", "UNCERTAIN"] as const;
+export type IncomeForecastStatus = (typeof INCOME_FORECAST_STATUSES)[number];
+
+// Statuses counted as "reliable" (design doc: CONFIRMED/EXPECTED only —
+// ESTIMATED/UNCERTAIN lines are shown but excluded from reliable income).
+export const RELIABLE_INCOME_STATUSES: readonly IncomeForecastStatus[] = ["CONFIRMED", "EXPECTED"];
