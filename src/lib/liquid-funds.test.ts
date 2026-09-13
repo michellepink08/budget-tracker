@@ -42,8 +42,7 @@ describe("computeLiquidFunds", () => {
       where: {
         userId: "user-1",
         archivedAt: null,
-        includeInLiquidFunds: true,
-        accountType: { notIn: ["CREDIT_CARD", "LOAN"] },
+        purpose: { in: ["DISPOSABLE", "SAVINGS"] },
       },
     });
   });
