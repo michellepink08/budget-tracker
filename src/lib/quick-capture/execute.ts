@@ -13,7 +13,7 @@ export type ExecuteResult =
 
 type ExecutePrisma = Pick<
   PrismaClient,
-  "transaction" | "budgetPeriod" | "account" | "payable" | "creditCard" | "loan"
+  "transaction" | "budgetPeriod" | "account" | "payable" | "creditCard" | "loan" | "$transaction"
 >;
 
 // Dispatches one confirmed draft to the existing domain function for its

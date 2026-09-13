@@ -71,7 +71,7 @@ export type TransferInput = {
 };
 
 export async function createTransferTransaction(
-  prisma: Pick<PrismaClient, "transaction" | "budgetPeriod">,
+  prisma: Pick<PrismaClient, "transaction" | "budgetPeriod" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   input: TransferInput,

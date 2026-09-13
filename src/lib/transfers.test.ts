@@ -3,14 +3,20 @@ import { createTransfer } from "@/lib/transfers";
 
 function makeFakePrisma() {
   let nextId = 1;
-  return {
+  const prisma = {
     transaction: {
       create: vi.fn().mockImplementation(({ data }) =>
         Promise.resolve({ id: `txn-${nextId++}`, ...data }),
       ),
       update: vi.fn().mockResolvedValue({}),
     },
-  } as any;
+    // Passthrough — calls the callback with this same mock object, so
+    // every write inside createTransfer still goes through the spies
+    // above. Proves createTransfer wraps its writes in $transaction
+    // without needing a real, isolated transactional client in tests.
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return prisma as any;
 }
 
 describe("createTransfer", () => {
@@ -45,6 +51,19 @@ describe("createTransfer", () => {
       where: { id: result.outgoingTransactionId },
       data: { linkedTransactionId: result.incomingTransactionId },
     });
+  });
+
+  it("wraps all three writes in a single $transaction call (atomicity — a failure partway through must not leave one side of the transfer written without the other)", async () => {
+    const prisma = makeFakePrisma();
+    await createTransfer(prisma, {
+      userId: "user-1",
+      date: new Date(2026, 8, 15),
+      amount: 5000,
+      sourceAccountId: "acc-checking",
+      destinationAccountId: "acc-savings",
+      description: "Move to savings",
+    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a negative amount", async () => {

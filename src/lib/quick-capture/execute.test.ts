@@ -7,7 +7,7 @@ function ref(id: string | null, raw = "x") {
 }
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
-  return {
+  const prisma: any = {
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-new" }),
       findMany: vi.fn().mockResolvedValue([]),
@@ -34,7 +34,9 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     creditCard: { findFirst: vi.fn().mockResolvedValue({ id: "cc-1" }) },
     loan: { findFirst: vi.fn().mockResolvedValue({ id: "loan-1", remainingBalance: 5000, name: "Car loan" }) },
     ...overrides,
-  } as any;
+  };
+  prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+  return prisma;
 }
 
 const now = new Date(2026, 8, 13);

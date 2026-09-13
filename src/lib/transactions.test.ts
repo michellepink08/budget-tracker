@@ -8,7 +8,7 @@ import {
 } from "@/lib/transactions";
 
 function makeFakePrisma() {
-  return {
+  const prisma = {
     budgetPeriod: {
       findUnique: vi.fn().mockResolvedValue({ id: "period-1" }),
       create: vi.fn(),
@@ -21,7 +21,9 @@ function makeFakePrisma() {
       findFirst: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
     },
-  } as any;
+    $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
+  };
+  return prisma as any;
 }
 
 describe("createExpenseLikeTransaction", () => {

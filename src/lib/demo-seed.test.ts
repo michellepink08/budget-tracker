@@ -3,7 +3,7 @@ import { seedDemoData } from "@/lib/demo-seed";
 
 function makeFakePrisma() {
   const deleteManyMock = vi.fn().mockResolvedValue({ count: 0 });
-  return {
+  const prisma = {
     installmentPayment: { deleteMany: deleteManyMock },
     installmentPurchase: { deleteMany: deleteManyMock },
     payable: { deleteMany: deleteManyMock },
@@ -31,7 +31,9 @@ function makeFakePrisma() {
       deleteMany: deleteManyMock,
       create: vi.fn().mockImplementation(({ data }) => Promise.resolve({ id: `acc-${data.name}`, ...data })),
     },
-  } as any;
+  };
+  (prisma as any).$transaction = vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+  return prisma as any;
 }
 
 describe("seedDemoData", () => {

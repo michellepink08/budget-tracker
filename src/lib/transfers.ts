@@ -24,7 +24,7 @@ export type TransferResult = {
  * the only part of a transfer that counts as an expense.
  */
 export async function createTransfer(
-  prisma: Pick<PrismaClient, "transaction">,
+  prisma: Pick<PrismaClient, "transaction" | "$transaction">,
   input: CreateTransferInput,
 ): Promise<TransferResult> {
   if (input.amount < 0) {
@@ -34,37 +34,42 @@ export async function createTransfer(
     throw new Error("sourceAccountId and destinationAccountId must differ");
   }
 
-  const outgoing = await prisma.transaction.create({
-    data: {
-      userId: input.userId,
-      date: input.date,
-      type: "TRANSFER",
-      amount: -input.amount,
-      accountId: input.sourceAccountId,
-      destinationAccountId: input.destinationAccountId,
-      description: input.description,
-      budgetPeriodId: input.budgetPeriodId,
-    },
-  });
+  // All three writes (both sides of the transfer, plus linking them back
+  // together) happen in one DB transaction — a failure partway through
+  // must never leave one side of the transfer written without the other.
+  return prisma.$transaction(async (tx) => {
+    const outgoing = await tx.transaction.create({
+      data: {
+        userId: input.userId,
+        date: input.date,
+        type: "TRANSFER",
+        amount: -input.amount,
+        accountId: input.sourceAccountId,
+        destinationAccountId: input.destinationAccountId,
+        description: input.description,
+        budgetPeriodId: input.budgetPeriodId,
+      },
+    });
 
-  const incoming = await prisma.transaction.create({
-    data: {
-      userId: input.userId,
-      date: input.date,
-      type: "TRANSFER",
-      amount: input.amount,
-      accountId: input.destinationAccountId,
-      destinationAccountId: input.sourceAccountId,
-      description: input.description,
-      budgetPeriodId: input.budgetPeriodId,
-      linkedTransactionId: outgoing.id,
-    },
-  });
+    const incoming = await tx.transaction.create({
+      data: {
+        userId: input.userId,
+        date: input.date,
+        type: "TRANSFER",
+        amount: input.amount,
+        accountId: input.destinationAccountId,
+        destinationAccountId: input.sourceAccountId,
+        description: input.description,
+        budgetPeriodId: input.budgetPeriodId,
+        linkedTransactionId: outgoing.id,
+      },
+    });
 
-  await prisma.transaction.update({
-    where: { id: outgoing.id },
-    data: { linkedTransactionId: incoming.id },
-  });
+    await tx.transaction.update({
+      where: { id: outgoing.id },
+      data: { linkedTransactionId: incoming.id },
+    });
 
-  return { outgoingTransactionId: outgoing.id, incomingTransactionId: incoming.id };
+    return { outgoingTransactionId: outgoing.id, incomingTransactionId: incoming.id };
+  });
 }
