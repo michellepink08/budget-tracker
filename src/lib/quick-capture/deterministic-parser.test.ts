@@ -24,10 +24,11 @@ function makeContext(overrides: Partial<ParserContext> = {}): ParserContext {
   };
 }
 
-function makeFakePrisma(transactions: unknown[] = []) {
+function makeFakePrisma(transactions: unknown[] = [], overrides: Record<string, any> = {}) {
   return {
     alias: { findUnique: vi.fn().mockResolvedValue(null) },
     transaction: { findMany: vi.fn().mockResolvedValue(transactions) },
+    ...overrides,
   } as any;
 }
 
@@ -358,5 +359,36 @@ describe("year_plan_recommended_saving question", () => {
     if (draft.intent === "question") {
       expect(draft.questionType).toBe("year_plan_recommended_saving");
     }
+  });
+});
+
+describe("year_plan_update_assumption", () => {
+  it("parses 'Papa will probably be home by December' and resolves the active non-home phase", async () => {
+    const prisma = makeFakePrisma([], {
+      yearPlan: { findFirst: vi.fn().mockResolvedValue({ id: "plan-1" }) },
+      yearPlanPhase: {
+        findFirst: vi.fn().mockResolvedValue({ id: "phase-1", phaseType: "SOLO_FIELD" }),
+      },
+    });
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "Papa will probably be home by December");
+
+    expect(draft.intent).toBe("year_plan_update_assumption");
+    if (draft.intent === "year_plan_update_assumption") {
+      expect(draft.phase.id).toBe("phase-1");
+    }
+  });
+
+  it("asks a clarification when there's no active non-home phase to update", async () => {
+    const prisma = makeFakePrisma([], {
+      yearPlan: { findFirst: vi.fn().mockResolvedValue({ id: "plan-1" }) },
+      yearPlanPhase: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const ctx = makeContext();
+
+    const [draft] = await parseCommand(prisma, ctx, "Papa will probably be home by December");
+
+    expect(draft.clarification).not.toBeNull();
   });
 });

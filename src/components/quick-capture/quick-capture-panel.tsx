@@ -63,6 +63,8 @@ function summarize(draft: CommandDraft): string {
       return `add ${draft.itemNameRaw} to shopping list`;
     case "shopping_list_select":
       return `mark ${draft.item.raw} for the next trip`;
+    case "year_plan_update_assumption":
+      return `update Year Plan phase end date to ${draft.newEndDate.value.toLocaleDateString()}`;
     case "question": {
       const answer = draft.answer;
       if (!answer) return "question";

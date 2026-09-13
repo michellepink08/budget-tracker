@@ -517,3 +517,70 @@ describe("undoExecution — shopping_list_select", () => {
     });
   });
 });
+
+describe("year_plan_update_assumption", () => {
+  it("updates the phase's endDate", async () => {
+    const prisma = makeFakePrisma({
+      yearPlanPhase: {
+        findFirst: vi.fn().mockResolvedValue({ id: "phase-1", userId: "user-1", endDate: new Date(2026, 10, 1) }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "year_plan_update_assumption",
+      phase: { raw: "Papa will probably be home by December", id: "phase-1", candidateIds: [] },
+      newEndDate: { value: new Date(2026, 11, 1), confirmed: true },
+      clauseText: "Papa will probably be home by December",
+      clarification: null,
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      resultingIds: ["phase-1"],
+      previousValues: { endDate: new Date(2026, 10, 1) },
+    });
+    expect(prisma.yearPlanPhase.update).toHaveBeenCalledWith({
+      where: { id: "phase-1" },
+      data: { endDate: new Date(2026, 11, 1) },
+    });
+  });
+
+  it("reports not found when the phase couldn't be resolved", async () => {
+    const prisma = makeFakePrisma({
+      yearPlanPhase: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
+    });
+
+    const result = await executeDraft(prisma, "user-1", 25, {
+      intent: "year_plan_update_assumption",
+      phase: { raw: "...", id: null, candidateIds: [] },
+      newEndDate: { value: new Date(2026, 11, 1), confirmed: true },
+      clauseText: "Papa will probably be home by December",
+      clarification: null,
+    });
+
+    expect(result).toEqual({ ok: false, error: "Couldn't identify which Year Plan phase to update" });
+  });
+});
+
+describe("undoExecution — year_plan_update_assumption", () => {
+  it("restores the phase's previous endDate", async () => {
+    const prisma = makeFakePrisma({
+      yearPlanPhase: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    });
+
+    const result = await undoExecution(
+      prisma,
+      "user-1",
+      "year_plan_update_assumption",
+      ["phase-1"],
+      { endDate: new Date(2026, 10, 1) },
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(prisma.yearPlanPhase.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["phase-1"] }, userId: "user-1" },
+      data: { endDate: new Date(2026, 10, 1) },
+    });
+  });
+});

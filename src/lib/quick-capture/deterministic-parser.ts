@@ -4,6 +4,7 @@ import { parseRelativeOrExplicitDate, type DateParseResult } from "@/lib/quick-c
 import { resolveAlias, type ResolveCandidate, type ResolveResult } from "@/lib/quick-capture/aliases";
 import { resolveRecentTransactionRef } from "@/lib/quick-capture/record-refs";
 import { toMinorUnits } from "@/lib/money";
+import { HOME_PHASE_TYPES } from "@/lib/constants/financial";
 import type { CommandDraft, ResolvedRef, DateField, QuestionType } from "@/lib/quick-capture/types";
 
 export type ParserContext = {
@@ -125,7 +126,7 @@ export function splitClauses(text: string): string[] {
 type ClauseParser = {
   test: (lower: string) => boolean;
   parse: (
-    prisma: Pick<PrismaClient, "alias" | "transaction">,
+    prisma: Pick<PrismaClient, "alias" | "transaction" | "yearPlan" | "yearPlanPhase">,
     ctx: ParserContext,
     clause: string,
   ) => Promise<CommandDraft>;
@@ -346,6 +347,45 @@ const clauseParsers: ClauseParser[] = [
       };
     },
   },
+  // Year Plan assumption update — "Papa will probably be home by
+  // December". Resolves to whichever phase on the active plan is not a
+  // HOME_PHASE_TYPES phase and covers today — the one the statement is
+  // implicitly about. A phrasing like "we have three full salary cutoffs
+  // left" (a count, not a date) has no single field to update and is out
+  // of scope for this pass.
+  {
+    test: (lower) => /\b(will be home|home by|coming home)\b/.test(lower),
+    parse: async (prisma, ctx, clause) => {
+      const dateMatch = clause.match(/\b(?:by|before)\s+(.+?)(?:\.|$)/i);
+      const newEndDate = toDateField(
+        parseRelativeOrExplicitDate(dateMatch?.[1] ?? clause, ctx.now, "future"),
+      );
+
+      const plan = await prisma.yearPlan.findFirst({ where: { userId: ctx.userId, scenario: "EXPECTED" } });
+      const phase = plan
+        ? await prisma.yearPlanPhase.findFirst({
+            where: {
+              yearPlanId: plan.id,
+              phaseType: { notIn: HOME_PHASE_TYPES as unknown as string[] },
+              startDate: { lte: ctx.now },
+              endDate: { gte: ctx.now },
+            },
+          })
+        : null;
+
+      return {
+        intent: "year_plan_update_assumption",
+        phase: phase
+          ? { raw: clause, id: phase.id, candidateIds: [] }
+          : { raw: clause, id: null, candidateIds: [] },
+        newEndDate,
+        clauseText: clause,
+        clarification: phase
+          ? null
+          : { field: "phase", question: "I couldn't find an active Year Plan phase to update." },
+      };
+    },
+  },
   // Shopping list item selection — "Mark rice and chicken for the next
   // trip". Resolution against the CURRENT list's own items (not the full
   // catalog) can't happen here — the parser only has the full catalog
@@ -480,7 +520,7 @@ const clauseParsers: ClauseParser[] = [
 ];
 
 export async function parseCommand(
-  prisma: Pick<PrismaClient, "alias" | "transaction">,
+  prisma: Pick<PrismaClient, "alias" | "transaction" | "yearPlan" | "yearPlanPhase">,
   ctx: ParserContext,
   text: string,
 ): Promise<CommandDraft[]> {

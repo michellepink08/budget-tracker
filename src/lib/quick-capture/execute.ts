@@ -278,6 +278,15 @@ export async function executeDraft(
       return { ok: true, resultingIds: [match.id], previousValues };
     }
 
+    case "year_plan_update_assumption": {
+      if (!draft.phase.id) return { ok: false, error: "Couldn't identify which Year Plan phase to update" };
+      const existing = await prisma.yearPlanPhase.findFirst({ where: { id: draft.phase.id, userId } });
+      if (!existing) return { ok: false, error: "Couldn't identify which Year Plan phase to update" };
+      const previousValues = { endDate: existing.endDate };
+      await prisma.yearPlanPhase.update({ where: { id: draft.phase.id }, data: { endDate: draft.newEndDate.value } });
+      return { ok: true, resultingIds: [draft.phase.id], previousValues };
+    }
+
     case "question":
       return { ok: false, error: "Answering questions isn't available yet" };
   }
@@ -320,6 +329,14 @@ export async function undoExecution(
 
   if (intent === "shopping_list_select" && previousValues) {
     await prisma.shoppingListItem.updateMany({
+      where: { id: { in: resultingIds }, userId },
+      data: previousValues,
+    });
+    return { ok: true };
+  }
+
+  if (intent === "year_plan_update_assumption" && previousValues) {
+    await prisma.yearPlanPhase.updateMany({
       where: { id: { in: resultingIds }, userId },
       data: previousValues,
     });
