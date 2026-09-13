@@ -1,6 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeAccountBalance } from "@/lib/account-balance";
-import { EXCLUDED_FROM_LIQUID_FUNDS } from "@/lib/liquid-funds";
 
 export type RestrictedFundGroup = {
   accountId: string;
@@ -38,8 +37,7 @@ export async function listRestrictedFundGroups(
     where: {
       userId,
       archivedAt: null,
-      includeInLiquidFunds: false,
-      accountType: { notIn: EXCLUDED_FROM_LIQUID_FUNDS },
+      purpose: "RESTRICTED",
     },
   });
 

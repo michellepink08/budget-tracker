@@ -38,8 +38,7 @@ describe("listRestrictedFundGroups", () => {
       where: {
         userId: "user-1",
         archivedAt: null,
-        includeInLiquidFunds: false,
-        accountType: { notIn: ["CREDIT_CARD", "LOAN"] },
+        purpose: "RESTRICTED",
       },
     });
   });
