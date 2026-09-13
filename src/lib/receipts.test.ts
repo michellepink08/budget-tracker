@@ -57,7 +57,12 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
 describe("createDraftReceipt", () => {
   it("creates a receipt scoped to the user with status DRAFT", async () => {
     const prisma = makeFakePrisma();
-    const receipt = await createDraftReceipt(prisma, "user-1", { storeId: null, purchaseDate: null, receiptNumber: null });
+    const receipt = await createDraftReceipt(prisma, "user-1", {
+      storeId: null,
+      purchaseDate: null,
+      receiptNumber: null,
+      rawStoreText: null,
+    });
     expect(receipt.id).toBe("receipt-1");
     expect(prisma.receipt.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: "user-1", status: "DRAFT" }),

@@ -7,6 +7,7 @@ import {
   confirmReceiptSchema,
   draftReceiptSchema,
   receiptLineSchema,
+  receiptStoreSchema,
   receiptTotalsSchema,
 } from "@/lib/validations/receipts";
 import {
@@ -17,6 +18,7 @@ import {
   deleteLine,
   removeImage,
   runOcrExtraction,
+  setReceiptStore,
   updateLine,
 } from "@/lib/receipts";
 import { StubOcrAdapter } from "@/lib/receipts/ocr-adapter";
@@ -43,6 +45,7 @@ export async function createDraftReceiptAction(formData: FormData): Promise<Rece
     storeId,
     purchaseDate: parsed.data.purchaseDate,
     receiptNumber: parsed.data.receiptNumber,
+    rawStoreText: parsed.data.storeName,
   });
   revalidatePath("/shopping");
   return { ok: true, id: receipt.id };
@@ -166,6 +169,21 @@ export async function deleteLineAction(lineId: string): Promise<ReceiptVoidActio
   const result = await deleteLine(prisma, session.user.id, lineId);
   if (result.ok) revalidatePath("/shopping");
   return result;
+}
+
+export async function updateReceiptStoreAction(
+  receiptId: string,
+  formData: FormData,
+): Promise<ReceiptVoidActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const parsed = receiptStoreSchema.safeParse({ storeName: formData.get("storeName") ?? "" });
+  if (!parsed.success) return { ok: false, error: "Please check the store name" };
+
+  const result = await setReceiptStore(prisma, session.user.id, receiptId, parsed.data.storeName);
+  if (result.ok) revalidatePath("/shopping");
+  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 export async function updateReceiptTotalsAction(

@@ -12,7 +12,12 @@ export type ReceiptMutationResult = { ok: true; id: string } | { ok: false; erro
 export async function createDraftReceipt(
   prisma: Pick<PrismaClient, "receipt">,
   userId: string,
-  input: { storeId: string | null; purchaseDate: Date | null; receiptNumber: string | null },
+  input: {
+    storeId: string | null;
+    purchaseDate: Date | null;
+    receiptNumber: string | null;
+    rawStoreText: string | null;
+  },
 ) {
   return prisma.receipt.create({ data: { userId, status: "DRAFT", ...input } });
 }
