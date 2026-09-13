@@ -25,6 +25,18 @@ export type TransactionExportRow = {
   notes: string | null;
 };
 
+export const TRANSACTION_EXPORT_COLUMNS: (keyof TransactionExportRow)[] = [
+  "date",
+  "type",
+  "amountMajorUnits",
+  "currency",
+  "account",
+  "destinationAccount",
+  "category",
+  "description",
+  "notes",
+];
+
 export async function buildTransactionExportRows(
   prisma: Pick<PrismaClient, "transaction">,
   userId: string,

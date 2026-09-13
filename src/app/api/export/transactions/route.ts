@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { buildTransactionExportRows } from "@/lib/export-transactions";
+import { buildTransactionExportRows, TRANSACTION_EXPORT_COLUMNS } from "@/lib/export-transactions";
 import { toCsv, toJson, toXlsx } from "@/lib/export-format";
 import type { TransactionFilters } from "@/lib/transactions";
 
@@ -40,7 +40,11 @@ export async function GET(request: NextRequest) {
   const rows = await buildTransactionExportRows(prisma, session.user.id, filters);
 
   const body: BodyInit =
-    format === "csv" ? toCsv(rows) : format === "json" ? toJson(rows) : new Uint8Array(await toXlsx(rows));
+    format === "csv"
+      ? toCsv(TRANSACTION_EXPORT_COLUMNS, rows)
+      : format === "json"
+        ? toJson(rows)
+        : new Uint8Array(await toXlsx("Transactions", TRANSACTION_EXPORT_COLUMNS, rows));
 
   return new NextResponse(body, {
     headers: {
