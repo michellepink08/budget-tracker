@@ -17,7 +17,7 @@ describe("toMajorUnits", () => {
 
 describe("formatMoney", () => {
   it("formats a positive PHP amount with the peso sign", () => {
-    expect(formatMoney(150000, "PHP")).toBe("₱1500.00");
+    expect(formatMoney(150000, "PHP")).toBe("₱1,500.00");
   });
 
   it("formats a positive USD amount with the dollar sign", () => {
@@ -26,5 +26,13 @@ describe("formatMoney", () => {
 
   it("formats a negative amount with a leading minus sign before the currency symbol", () => {
     expect(formatMoney(-500, "USD")).toBe("-$5.00");
+  });
+
+  it("adds thousands separators for amounts of 1,000 or more", () => {
+    expect(formatMoney(178100_00, "PHP")).toBe("₱178,100.00");
+  });
+
+  it("adds thousands separators to a negative amount too", () => {
+    expect(formatMoney(-178100_00, "PHP")).toBe("-₱178,100.00");
   });
 });

@@ -21,6 +21,6 @@ export function formatMoney(minorUnits: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency] ?? `${currency} `;
   const major = toMajorUnits(minorUnits, currency);
   const sign = major < 0 ? "-" : "";
-  const abs = Math.abs(major).toFixed(2);
+  const abs = Math.abs(major).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return `${sign}${symbol}${abs}`;
 }
