@@ -13,6 +13,7 @@ model User {
   cycleStartDay Int      @default(1)
   currency      String   @default("PHP")
   themeMode     String   @default("system")
+  receiptAutoDeleteImages Boolean @default(false)
   createdAt     DateTime @default(now())
   onboardedAt   DateTime?
 
@@ -41,6 +42,9 @@ model User {
   shoppingPriceHistory ShoppingPriceHistory[]
   shoppingLists        ShoppingList[]
   shoppingListItems    ShoppingListItem[]
+  receipts             Receipt[]
+  receiptLines         ReceiptLine[]
+  receiptImages        ReceiptImage[]
 }
 
 model Account {
@@ -153,11 +157,12 @@ model ShoppingCatalogItem {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  user      User                   @relation(fields: [userId], references: [id])
-  category  Category?              @relation(fields: [categoryId], references: [id])
-  store     ShoppingStore?         @relation(fields: [preferredStoreId], references: [id], name: "CatalogPreferredStore")
-  prices    ShoppingPriceHistory[]
-  listItems ShoppingListItem[]
+  user         User                   @relation(fields: [userId], references: [id])
+  category     Category?              @relation(fields: [categoryId], references: [id])
+  store        ShoppingStore?         @relation(fields: [preferredStoreId], references: [id], name: "CatalogPreferredStore")
+  prices       ShoppingPriceHistory[]
+  listItems    ShoppingListItem[]
+  receiptLines ReceiptLine[]
 }
 
 model ShoppingStore {
@@ -169,6 +174,7 @@ model ShoppingStore {
   catalogItems ShoppingCatalogItem[]  @relation("CatalogPreferredStore")
   listItems    ShoppingListItem[]     @relation("ListItemPreferredStore")
   prices       ShoppingPriceHistory[]
+  receipts     Receipt[]
 }
 
 model ShoppingPriceHistory {
@@ -223,6 +229,59 @@ model ShoppingListItem {
   category    Category?            @relation(fields: [categoryId], references: [id])
 }
 
+model Receipt {
+  id                   String    @id @default(cuid())
+  userId               String
+  transactionId        String?
+  storeId              String?
+  purchaseDate         DateTime?
+  receiptNumber        String?
+  subtotal             Int?
+  discount             Int?      @default(0)
+  tax                  Int?      @default(0)
+  fees                 Int?      @default(0)
+  grandTotal           Int?
+  unitemizedDifference Int?      @default(0)
+  status               String    @default("DRAFT")
+  createdAt            DateTime  @default(now())
+
+  user        User           @relation(fields: [userId], references: [id])
+  store       ShoppingStore? @relation(fields: [storeId], references: [id])
+  transaction Transaction?   @relation(fields: [transactionId], references: [id])
+  lines       ReceiptLine[]
+  images      ReceiptImage[]
+}
+
+model ReceiptLine {
+  id            String  @id @default(cuid())
+  userId        String
+  receiptId     String
+  catalogItemId String?
+  rawText       String?
+  name          String
+  quantity      Float   @default(1)
+  unitPrice     Int?
+  lineTotal     Int
+  categoryId    String?
+  excluded      Boolean @default(false)
+
+  user        User                 @relation(fields: [userId], references: [id])
+  receipt     Receipt              @relation(fields: [receiptId], references: [id])
+  catalogItem ShoppingCatalogItem? @relation(fields: [catalogItemId], references: [id])
+  category    Category?            @relation(fields: [categoryId], references: [id])
+}
+
+model ReceiptImage {
+  id        String   @id @default(cuid())
+  userId    String
+  receiptId String
+  objectKey String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  receipt Receipt @relation(fields: [receiptId], references: [id])
+}
+
 model Category {
   id         String    @id @default(cuid())
   userId     String
@@ -246,6 +305,7 @@ model Category {
   shoppingCatalogItems ShoppingCatalogItem[]
   shoppingLists        ShoppingList[]
   shoppingListItems    ShoppingListItem[]
+  receiptLines         ReceiptLine[]
 }
 
 model Subcategory {
@@ -322,6 +382,7 @@ model Transaction {
   subcategory        Subcategory?  @relation(fields: [subcategoryId], references: [id])
   budgetPeriod       BudgetPeriod? @relation(fields: [budgetPeriodId], references: [id])
   incomeForecasts    IncomeForecast[]
+  receipts           Receipt[]
 }
 
 model RecurringRule {
