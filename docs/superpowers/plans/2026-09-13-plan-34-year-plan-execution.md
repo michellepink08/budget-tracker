@@ -570,12 +570,15 @@ export function computeRequiredReserve(params: {
   currentReserveAmount: number;
   minCashBuffer: number;
 }): number {
+  // `worst` tracks only cumulative points *after* an actual home cutoff —
+  // the pre-walk starting point never counts as a "shortage" on its own.
   let cumulative = params.currentReserveAmount;
-  let worst = params.currentReserveAmount;
+  let worst = Infinity;
   for (const flow of params.cashFlows) {
     cumulative += flow;
     if (cumulative < worst) worst = cumulative;
   }
+  if (worst === Infinity) return 0;
   const shortfallBelowBuffer = params.minCashBuffer - worst;
   return shortfallBelowBuffer > 0 ? shortfallBelowBuffer : 0;
 }
