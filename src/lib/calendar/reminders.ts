@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { createExpenseLikeTransaction } from "@/lib/transactions";
+import { recordAudit } from "@/lib/audit-log";
 
 export type ReminderMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -24,7 +25,7 @@ async function assertOwnedReminder(
 // this module (create/skip/linkTransaction/delete) only ever writes
 // CustomReminder rows.
 export async function markPaid(
-  prisma: Pick<PrismaClient, "customReminder" | "transaction" | "budgetPeriod" | "$transaction">,
+  prisma: Pick<PrismaClient, "customReminder" | "transaction" | "budgetPeriod" | "auditLog" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   reminderId: string,
@@ -47,6 +48,18 @@ export async function markPaid(
       where: { id: reminderId },
       data: { linkedTransactionId: transaction.id, state: "PAID" },
     });
+
+    await recordAudit(tx, {
+      userId,
+      entityType: "REMINDER_PAYMENT",
+      entityId: reminderId,
+      action: "CREATE",
+      source: "FORM",
+      previousValues: { state: "UPCOMING", linkedTransactionId: null },
+      newValues: { state: "PAID", linkedTransactionId: transaction.id },
+      relatedRecordIds: [transaction.id],
+    });
+
     return { ok: true, id: reminderId };
   });
 }

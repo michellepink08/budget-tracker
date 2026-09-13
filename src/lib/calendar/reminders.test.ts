@@ -14,6 +14,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       findUnique: vi.fn().mockResolvedValue({ id: "period-1" }),
       create: vi.fn().mockResolvedValue({ id: "period-1" }),
     },
+    auditLog: { create: vi.fn().mockResolvedValue({ id: "audit-1" }) },
     ...overrides,
   };
   prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
@@ -54,6 +55,30 @@ describe("markPaid", () => {
     expect(prisma.customReminder.update).toHaveBeenCalledWith({
       where: { id: "reminder-1" },
       data: { linkedTransactionId: "txn-1", state: "PAID" },
+    });
+  });
+
+  it("records an audit entry for the payment", async () => {
+    const prisma = makeFakePrisma({
+      customReminder: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "reminder-1", userId: "user-1", label: "Passport renewal", amount: 500000 }),
+        update: vi.fn(async ({ data }: any) => ({ id: "reminder-1", ...data })),
+        delete: vi.fn(),
+      },
+    });
+
+    await markPaid(prisma, "user-1", 1, "reminder-1", { accountId: "acc-1", categoryId: "cat-1" });
+
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        entityType: "REMINDER_PAYMENT",
+        entityId: "reminder-1",
+        action: "CREATE",
+        source: "FORM",
+        relatedRecordIds: ["txn-1"],
+      }),
     });
   });
 });
