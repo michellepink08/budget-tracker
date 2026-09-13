@@ -4,6 +4,7 @@ import {
   createCatalogItem,
   getLatestPrice,
   getPriceHistory,
+  listActiveCatalogItems,
   recordPrice,
   updateCatalogItem,
 } from "@/lib/shopping-catalog";
@@ -188,6 +189,30 @@ describe("getLatestPrice", () => {
     const prisma = makeFakePrisma();
     const price = await getLatestPrice(prisma, "user-1", "item-1");
     expect(price).toBeNull();
+  });
+});
+
+describe("listActiveCatalogItems", () => {
+  it("returns id/canonicalName pairs for non-archived items, scoped to the user", async () => {
+    const prisma = {
+      shoppingCatalogItem: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "cat-1", canonicalName: "Nestle Chocolate Milk" },
+          { id: "cat-2", canonicalName: "Rice" },
+        ]),
+      },
+    } as any;
+
+    const items = await listActiveCatalogItems(prisma, "user-1");
+
+    expect(items).toEqual([
+      { id: "cat-1", name: "Nestle Chocolate Milk" },
+      { id: "cat-2", name: "Rice" },
+    ]);
+    expect(prisma.shoppingCatalogItem.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", archivedAt: null },
+      select: { id: true, canonicalName: true },
+    });
   });
 });
 

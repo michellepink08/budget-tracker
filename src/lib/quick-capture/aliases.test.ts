@@ -22,6 +22,22 @@ describe("createAlias", () => {
   });
 });
 
+describe("createAlias — shopping_item kind", () => {
+  it("upserts a shopping_item alias the same way as account/category", async () => {
+    const prisma = {
+      alias: { upsert: vi.fn().mockResolvedValue({ id: "alias-1" }) },
+    } as any;
+
+    await createAlias(prisma, "user-1", { kind: "shopping_item", alias: "coke", targetId: "catalog-1" });
+
+    expect(prisma.alias.upsert).toHaveBeenCalledWith({
+      where: { userId_kind_alias: { userId: "user-1", kind: "shopping_item", alias: "coke" } },
+      update: { targetId: "catalog-1" },
+      create: { userId: "user-1", kind: "shopping_item", alias: "coke", targetId: "catalog-1" },
+    });
+  });
+});
+
 describe("resolveAlias", () => {
   it("resolves via a stored alias row first", async () => {
     const prisma = makeFakePrisma({ targetId: "acc-1" });

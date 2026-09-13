@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-export type AliasKind = "account" | "category";
+export type AliasKind = "account" | "category" | "shopping_item";
 
 export type AliasInput = { kind: AliasKind; alias: string; targetId: string };
 

@@ -115,3 +115,17 @@ export async function getPriceHistory(
     orderBy: { confirmedAt: "desc" },
   });
 }
+
+// Feeds Quick Capture's shopping-item resolution the same
+// {id, name}[] candidate shape listAccounts/listCategories already
+// provide for account/category resolution.
+export async function listActiveCatalogItems(
+  prisma: Pick<PrismaClient, "shoppingCatalogItem">,
+  userId: string,
+): Promise<{ id: string; name: string }[]> {
+  const items = await prisma.shoppingCatalogItem.findMany({
+    where: { userId, archivedAt: null },
+    select: { id: true, canonicalName: true },
+  });
+  return items.map((item: { id: string; canonicalName: string }) => ({ id: item.id, name: item.canonicalName }));
+}
