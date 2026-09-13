@@ -129,9 +129,14 @@ export function SideNav({
         })}
       </nav>
 
-      <div className="flex flex-col gap-2 border-t border-white/10 p-3">
-        <AddTransactionButton accounts={accounts} categories={categories} />
-        <SignOutButton />
+      <div
+        className={
+          (collapsed ? "items-center" : "items-stretch") +
+          " flex flex-col gap-2 border-t border-white/10 p-3"
+        }
+      >
+        <AddTransactionButton accounts={accounts} categories={categories} collapsed={collapsed} />
+        <SignOutButton collapsed={collapsed} />
       </div>
       <QuickCapturePanel open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} />
     </aside>

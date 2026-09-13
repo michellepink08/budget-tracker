@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { NavDrawer } from "@/components/nav/nav-drawer";
 import { QuickCapturePanel } from "@/components/quick-capture/quick-capture-panel";
+import { SignOutButton } from "@/components/nav/sign-out-button";
 import { navLinks } from "@/components/nav/nav-links";
 import { APP_NAME } from "@/lib/config";
 
@@ -37,14 +38,20 @@ export function TopNav({
           <Menu className="h-5 w-5" />
         </button>
         <span className="font-semibold">{currentTitle}</span>
-        <button
-          type="button"
-          onClick={() => setQuickCaptureOpen(true)}
-          aria-label="Quick Capture"
-          className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
-        >
-          <span className="text-sm">⌘K</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setQuickCaptureOpen(true)}
+            aria-label="Quick Capture"
+            className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+          >
+            <span className="text-sm">⌘K</span>
+          </button>
+          {/* Reachable without opening the drawer — the panel (drawer) can
+              be fully hidden on mobile, and Sign Out must never become
+              unreachable when it is (plan-38 §8). */}
+          <SignOutButton collapsed />
+        </div>
       </div>
       <NavDrawer open={drawerOpen} onOpenChange={setDrawerOpen} accounts={accounts} categories={categories} />
       <QuickCapturePanel open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} />
