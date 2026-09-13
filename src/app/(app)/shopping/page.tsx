@@ -164,6 +164,7 @@ async function ScanReceiptTab({
   const activeReceipt = await prisma.receipt.findFirst({
     where: { userId, status: { in: ["DRAFT", "REVIEWED"] } },
     orderBy: { createdAt: "desc" },
+    include: { store: true },
   });
 
   if (!activeReceipt) {
@@ -191,6 +192,8 @@ async function ScanReceiptTab({
       catalogItems={catalogItems.map((c) => ({ id: c.id, canonicalName: c.canonicalName }))}
       accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
       categories={categories}
+      storeName={activeReceipt.store?.name ?? null}
+      rawStoreText={activeReceipt.rawStoreText}
     />
   );
 }
