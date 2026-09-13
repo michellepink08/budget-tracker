@@ -29,6 +29,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     category: { findMany: vi.fn().mockResolvedValue([]) },
     payable: { findMany: vi.fn().mockResolvedValue([]) },
     creditCard: { findFirst: vi.fn().mockResolvedValue(null), findMany: vi.fn().mockResolvedValue([]) },
+    savingsGoal: { findMany: vi.fn().mockResolvedValue([]) },
     ...overrides,
   } as any;
 }
@@ -119,11 +120,11 @@ describe("answerQuestion", () => {
     expect(result.kind).toBe("unavailable");
   });
 
-  it("answers safe_to_spend using liquid funds, remaining budget, and upcoming obligations", async () => {
+  it("answers safe_to_spend using disposable total, remaining budget, and upcoming obligations", async () => {
     const prisma = makeFakePrisma({
       account: {
-        // Two different queries share this one mock (computeLiquidFunds's
-        // purpose:{in:[...]} and listRestrictedFundGroups's purpose:"RESTRICTED")
+        // Two different queries share this one mock (computeDisposableTotal's
+        // purpose:"DISPOSABLE" and listRestrictedFundGroups's purpose:"RESTRICTED")
         // — branch on the filter shape so each gets the right accounts back.
         findMany: vi.fn((args: { where: { purpose?: unknown } }) =>
           Promise.resolve(args.where.purpose === "RESTRICTED" ? [] : [{ id: "acc-1" }]),
@@ -159,8 +160,59 @@ describe("answerQuestion", () => {
     expect(result.kind).toBe("amount");
     if (result.kind === "amount") {
       expect(result.label).toBe("Safe to spend");
-      // liquidFunds 100000 - obligations 15000 - totalRemaining (20000 planned - 0 actual) = 65000
+      // disposableTotal 100000 - obligations 15000 - totalRemaining (20000 planned - 0 actual)
+      // - requiredTransfers 0 (no primary funding account) - confirmedReserves 0 (no goals) = 65000
       expect(result.amountMinorUnits).toBe(65000);
+    }
+  });
+
+  it("subtracts a required funding transfer from safe_to_spend when one is recommended", async () => {
+    const prisma = makeFakePrisma({
+      account: {
+        findMany: vi.fn((args: { where: { purpose?: unknown } }) => {
+          if (args.where.purpose === "RESTRICTED") return Promise.resolve([]);
+          if (args.where.purpose === "DISPOSABLE") return Promise.resolve([{ id: "acc-1" }]);
+          // getRecommendedFundingTransfer's otherAccounts query: purpose: { in: [...] }
+          return Promise.resolve([{ id: "acc-source", purpose: "SAVINGS" }]);
+        }),
+        // The primary funding account, distinct from "acc-1" above.
+        findFirst: vi.fn().mockResolvedValue({ id: "acc-fund", isPrimaryFundingAccount: true }),
+        findUniqueOrThrow: vi.fn((args: { where: { id: string } }) =>
+          Promise.resolve(
+            {
+              "acc-1": { id: "acc-1", openingBalance: 100000 },
+              "acc-fund": { id: "acc-fund", openingBalance: 5000 },
+              "acc-source": { id: "acc-source", openingBalance: 50000 },
+            }[args.where.id],
+          ),
+        ),
+      },
+      transaction: { findMany: vi.fn().mockResolvedValue([]) },
+      budgetPeriod: {
+        findUnique: vi.fn().mockResolvedValue({ id: "period-1", endDate: new Date(2026, 8, 30) }),
+        create: vi.fn(),
+      },
+      budgetAllocation: { findMany: vi.fn().mockResolvedValue([]) },
+      payable: {
+        // getRecommendedFundingTransfer queries by accountId: fundingAccount.id
+        // (the shortfall calc); listDuePayables queries by userId/dueDate only
+        // (computeSafeToSpend's own obligations term) — branch so the funding
+        // account's payable only feeds the shortfall, not double-counted as
+        // an obligation too.
+        findMany: vi.fn((args: { where: { accountId?: string } }) =>
+          Promise.resolve(
+            args.where.accountId === "acc-fund"
+              ? [{ accountId: "acc-fund", amount: 15000, dueDate: new Date(2026, 8, 20) }]
+              : [],
+          ),
+        ),
+      },
+    });
+    const result = await answerQuestion(prisma, "user-1", 1, question({ questionType: "safe_to_spend" }));
+    expect(result.kind).toBe("amount");
+    if (result.kind === "amount") {
+      // disposableTotal 100000, requiredTransfers = min(shortfall 10000, source balance 50000) = 10000
+      expect(result.amountMinorUnits).toBe(90000);
     }
   });
 

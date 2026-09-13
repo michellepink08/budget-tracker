@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeLiquidFunds } from "@/lib/liquid-funds";
+import { computeConfirmedReserves, computeDisposableTotal } from "@/lib/purpose-totals";
 import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { listAllocationsWithActuals } from "@/lib/budget-allocations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
@@ -169,21 +170,25 @@ export async function answerQuestion(
     }
 
     case "safe_to_spend": {
-      const [liquidFunds, period, restrictedGroups] = await Promise.all([
-        computeLiquidFunds(prisma, userId),
+      const [disposableTotal, period, restrictedGroups, confirmedReserves, recommendation] = await Promise.all([
+        computeDisposableTotal(prisma, userId),
         resolveBudgetPeriodForDate(prisma, userId, now, cycleStartDay),
         listRestrictedFundGroups(prisma, userId),
+        computeConfirmedReserves(prisma, userId),
+        getRecommendedFundingTransfer(prisma, userId, now),
       ]);
       const allocations = await listAllocationsWithActuals(prisma, userId, period.id);
       const totalRemaining = allocations.reduce((sum, a) => sum + (a.effectivePlanned - a.actual), 0);
       const payables = await listDuePayables(prisma, userId, period.endDate);
       const restrictedAccountIds = new Set(restrictedGroups.map((g) => g.accountId));
       const safeToSpend = computeSafeToSpend({
-        liquidFunds,
+        disposableTotal,
         totalRemaining,
         payables: payables as { accountId: string; amount: number; dueDate: Date }[],
         restrictedAccountIds,
         cutoffEnd: period.endDate,
+        requiredTransfers: recommendation?.amount ?? 0,
+        confirmedReserves,
       });
       return { kind: "amount", label: "Safe to spend", amountMinorUnits: safeToSpend };
     }
