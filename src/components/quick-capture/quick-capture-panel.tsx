@@ -187,7 +187,7 @@ export function QuickCapturePanel({
                 <button
                   key={example}
                   type="button"
-                  className="text-left underline"
+                  className="rounded-sm text-left underline hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={() => setText(example)}
                 >
                   {example}
@@ -233,13 +233,17 @@ export function QuickCapturePanel({
                 <div className="flex items-center gap-2 text-success">
                   <span>Added ✓</span>
                   {entry.draft.intent !== "transaction_delete" && (
-                    <button type="button" className="underline" onClick={() => handleUndo(index)}>
+                    <button
+                      type="button"
+                      className="rounded-sm underline hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onClick={() => handleUndo(index)}
+                    >
                       Undo
                     </button>
                   )}
                   <button
                     type="button"
-                    className="underline"
+                    className="rounded-sm underline hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => {
                       handleOpenChange(false);
                       router.push("/transactions");
