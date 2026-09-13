@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, MicOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import {
   undoQuickCaptureAction,
 } from "@/actions/quick-capture.actions";
 import { useVoiceCapture } from "@/lib/quick-capture/use-voice-capture";
+import { matchApprovalCommand } from "@/lib/quick-capture/match-approval-command";
 import type { CommandDraft } from "@/lib/quick-capture/types";
 
 type DraftState = {
@@ -27,6 +28,10 @@ const EXAMPLES = [
   "Transferred 1,000 from BPI to GCash",
   "Received 5,000 from Rei in BPI Savings",
 ];
+
+// How long to wait after the last recognized speech before auto-parsing
+// in hands-free mode. A fixed constant for now — easy to retune later.
+const VOICE_PAUSE_MS = 1500;
 
 function summarize(draft: CommandDraft): string {
   switch (draft.intent) {
@@ -90,7 +95,125 @@ export function QuickCapturePanel({
   const [drafts, setDrafts] = useState<DraftState[] | null>(null);
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
-  const voice = useVoiceCapture(setText);
+  const [voiceMode, setVoiceMode] = useState<"dictating" | "approving">("dictating");
+
+  // useVoiceCapture's onTranscript callback is captured once at mount
+  // (see that hook's own comment) — so handleVoiceTranscript below, and
+  // everything it calls, must only ever touch refs and stable functions
+  // (state setters, router.push, the imported server actions), never the
+  // per-render handleParse/handleConfirm/etc. defined further down, which
+  // would go stale forever. modeRef/draftsRef mirror state into refs for
+  // exactly that reason; onOpenChange is safe to use directly because
+  // both call sites (top-nav.tsx, side-nav.tsx) pass a raw useState
+  // setter, which is itself stable across renders.
+  const modeRef = useRef(voiceMode);
+  useEffect(() => {
+    modeRef.current = voiceMode;
+  }, [voiceMode]);
+  const draftsRef = useRef(drafts);
+  useEffect(() => {
+    draftsRef.current = drafts;
+  }, [drafts]);
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function runParse(currentText: string) {
+    setParsing(true);
+    setParseError(null);
+    const result = await parseQuickCaptureAction(currentText);
+    setParsing(false);
+    if (!result.ok || result.drafts.length === 0) {
+      if (!result.ok) setParseError(result.error);
+      setVoiceMode("dictating");
+      modeRef.current = "dictating";
+      setText("");
+      voice.beginPhase();
+      return;
+    }
+    const newDrafts = result.drafts.map((draft) => ({ draft, status: "pending" as const }));
+    setDrafts(newDrafts);
+    draftsRef.current = newDrafts;
+    setVoiceMode("approving");
+    modeRef.current = "approving";
+    setText("");
+    voice.beginPhase();
+  }
+
+  async function confirmAllPending() {
+    const current = draftsRef.current ?? [];
+    for (let i = 0; i < current.length; i++) {
+      const entry = current[i];
+      if (entry.status !== "pending" || entry.draft.clarification) continue;
+      if (entry.draft.intent === "question") continue;
+      if (entry.draft.intent === "navigate") {
+        handleOpenChange(false);
+        router.push(entry.draft.route);
+        return;
+      }
+      const result = await confirmQuickCaptureDraftAction(entry.draft);
+      setDrafts((prev) =>
+        prev!.map((d, idx) =>
+          idx === i
+            ? result.ok
+              ? { ...d, status: "confirmed" as const, logId: result.logId }
+              : { ...d, status: "error" as const, error: result.error }
+            : d,
+        ),
+      );
+    }
+    setVoiceMode("dictating");
+    modeRef.current = "dictating";
+    setText("");
+    voice.beginPhase();
+  }
+
+  function cancelAllPending() {
+    setDrafts((prev) =>
+      prev
+        ? prev.filter((d) => d.status !== "pending" || d.draft.clarification || d.draft.intent === "question")
+        : prev,
+    );
+    setVoiceMode("dictating");
+    modeRef.current = "dictating";
+    setText("");
+    voice.beginPhase();
+  }
+
+  async function undoAllConfirmed() {
+    const current = draftsRef.current ?? [];
+    for (let i = 0; i < current.length; i++) {
+      const entry = current[i];
+      if (entry.status !== "confirmed" || entry.draft.intent === "transaction_delete" || !entry.logId) continue;
+      await undoQuickCaptureAction(entry.logId);
+      setDrafts((prev) =>
+        prev!.map((d, idx) => (idx === i ? { ...d, status: "pending" as const, logId: undefined } : d)),
+      );
+    }
+    setVoiceMode("dictating");
+    modeRef.current = "dictating";
+    setText("");
+    voice.beginPhase();
+  }
+
+  function handleVoiceTranscript(transcript: string) {
+    if (modeRef.current === "dictating") {
+      setText(transcript);
+      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = setTimeout(() => {
+        runParse(transcript);
+      }, VOICE_PAUSE_MS);
+      return;
+    }
+    const command = matchApprovalCommand(transcript);
+    if (command === "confirm") {
+      confirmAllPending();
+    } else if (command === "cancel") {
+      cancelAllPending();
+    } else if (command === "undo") {
+      undoAllConfirmed();
+    }
+  }
+
+  const voice = useVoiceCapture(handleVoiceTranscript);
 
   // Reset local state on close via the dialog's own open-change callback
   // (not an effect watching `open`) — resetting state directly inside an
@@ -100,6 +223,8 @@ export function QuickCapturePanel({
       setText("");
       setDrafts(null);
       setParseError(null);
+      setVoiceMode("dictating");
+      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
       voice.stop();
     }
     onOpenChange(next);
