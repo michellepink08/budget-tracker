@@ -24,29 +24,31 @@ async function assertOwnedReminder(
 // this module (create/skip/linkTransaction/delete) only ever writes
 // CustomReminder rows.
 export async function markPaid(
-  prisma: Pick<PrismaClient, "customReminder" | "transaction" | "budgetPeriod">,
+  prisma: Pick<PrismaClient, "customReminder" | "transaction" | "budgetPeriod" | "$transaction">,
   userId: string,
   cycleStartDay: number,
   reminderId: string,
   input: { accountId: string; categoryId: string | undefined },
 ): Promise<ReminderMutationResult> {
-  const reminder = await prisma.customReminder.findFirst({ where: { id: reminderId, userId } });
-  if (!reminder) return { ok: false, error: "Reminder not found" };
+  return prisma.$transaction(async (tx) => {
+    const reminder = await tx.customReminder.findFirst({ where: { id: reminderId, userId } });
+    if (!reminder) return { ok: false, error: "Reminder not found" };
 
-  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "EXPENSE",
-    amount: reminder.amount ?? 0,
-    date: new Date(),
-    accountId: input.accountId,
-    categoryId: input.categoryId,
-    description: reminder.label,
-  });
+    const transaction = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: "EXPENSE",
+      amount: reminder.amount ?? 0,
+      date: new Date(),
+      accountId: input.accountId,
+      categoryId: input.categoryId,
+      description: reminder.label,
+    });
 
-  await prisma.customReminder.update({
-    where: { id: reminderId },
-    data: { linkedTransactionId: transaction.id, state: "PAID" },
+    await tx.customReminder.update({
+      where: { id: reminderId },
+      data: { linkedTransactionId: transaction.id, state: "PAID" },
+    });
+    return { ok: true, id: reminderId };
   });
-  return { ok: true, id: reminderId };
 }
 
 export async function skip(

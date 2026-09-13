@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createReminder, deleteReminder, linkTransaction, markPaid, skip } from "@/lib/calendar/reminders";
 
 function makeFakePrisma(overrides: Record<string, any> = {}) {
-  return {
+  const prisma: any = {
     customReminder: {
       create: vi.fn(async ({ data }: any) => ({ id: "reminder-1", ...data })),
       findFirst: vi.fn().mockResolvedValue(null),
@@ -15,7 +15,9 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       create: vi.fn().mockResolvedValue({ id: "period-1" }),
     },
     ...overrides,
-  } as any;
+  };
+  prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+  return prisma;
 }
 
 describe("createReminder", () => {
