@@ -12,6 +12,9 @@
   --color-accent-tint: var(--accent-tint);
   --color-card-secondary: var(--card-secondary);
   --color-panel-soft: var(--panel-soft);
+  --color-dusty-rose: var(--dusty-rose);
+  --color-plum: var(--plum);
+  --color-cream: var(--cream);
   --color-success: var(--success);
   --color-success-background: var(--success-background);
   --color-warning: var(--warning);
@@ -25,6 +28,8 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-chart-7: var(--chart-7);
+  --color-chart-6: var(--chart-6);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -102,6 +107,11 @@
   --chart-3: #B86A2D; /* warm amber-neutral, not green */
   --chart-4: #657188; /* informational slate */
   --chart-5: #54132B; /* dark wine */
+  --chart-6: #C99AA5; /* dusty rose */
+  --chart-7: #6E4C63; /* plum */
+  --dusty-rose: #C99AA5;
+  --plum: #6E4C63;
+  --cream: #F7ECE4;
   --radius: 0.625rem;
   --sidebar: #54132B;
   --sidebar-foreground: #FFF7F8;
@@ -148,6 +158,11 @@
   --chart-3: #E1A05B;
   --chart-4: #98A5BA;
   --chart-5: #963956;
+  --chart-6: #A97282;
+  --chart-7: #9C7690;
+  --dusty-rose: #A97282;
+  --plum: #9C7690;
+  --cream: #3A2E27;
   --sidebar: #2B101C;
   --sidebar-foreground: #FFF2F6;
   --sidebar-primary: #D76A8D;

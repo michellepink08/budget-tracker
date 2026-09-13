@@ -9,6 +9,9 @@ const iconBadgeVariants = cva("flex shrink-0 items-center justify-center rounded
       berry: "bg-[color-mix(in_oklch,var(--chart-1),transparent_85%)] text-[var(--chart-1)]",
       blush: "bg-accent text-accent-foreground",
       success: "bg-success-background text-success",
+      "dusty-rose": "bg-[color-mix(in_oklch,var(--dusty-rose),transparent_80%)] text-[var(--dusty-rose)]",
+      plum: "bg-[color-mix(in_oklch,var(--plum),transparent_80%)] text-[var(--plum)]",
+      cream: "bg-cream text-foreground",
     },
     size: {
       sm: "size-7 [&_svg]:size-3.5",
