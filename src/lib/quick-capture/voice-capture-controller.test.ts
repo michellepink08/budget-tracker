@@ -126,6 +126,27 @@ describe("createVoiceCaptureController", () => {
     expect(() => controller.stop()).not.toThrow();
   });
 
+  it("beginPhase() scopes future onresult calls to speech recognized from that point forward", () => {
+    const instances = installFakeRecognition();
+    const onTranscript = vi.fn();
+    const controller = createVoiceCaptureController(onTranscript);
+    controller.start();
+    instances[0].onresult?.({ results: [{ 0: { transcript: "paid 180 for food" } }] });
+    expect(onTranscript).toHaveBeenLastCalledWith("paid 180 for food");
+
+    controller.beginPhase();
+    instances[0].onresult?.({
+      results: [{ 0: { transcript: "paid 180 for food" } }, { 0: { transcript: "confirm" } }],
+    });
+    expect(onTranscript).toHaveBeenLastCalledWith("confirm");
+  });
+
+  it("beginPhase() before any onresult does not throw", () => {
+    installFakeRecognition();
+    const controller = createVoiceCaptureController(() => {});
+    expect(() => controller.beginPhase()).not.toThrow();
+  });
+
   it("subscribe notifies listeners on state changes and returns an unsubscribe function", () => {
     const instances = installFakeRecognition();
     const controller = createVoiceCaptureController(() => {});

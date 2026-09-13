@@ -12,6 +12,7 @@ export type VoiceCaptureController = {
   subscribe(listener: (state: VoiceCaptureState) => void): () => void;
   start(): void;
   stop(): void;
+  beginPhase(): void;
 };
 
 const SERVER_STATE: VoiceCaptureState = { listening: false, error: null };
@@ -30,6 +31,13 @@ export function createVoiceCaptureController(onTranscript: (text: string) => voi
   let recognition: InstanceType<NonNullable<ReturnType<typeof getRecognitionCtor>>> | null = null;
   let state: VoiceCaptureState = { listening: false, error: null };
   const listeners = new Set<(state: VoiceCaptureState) => void>();
+  // Every onresult call replays ALL results since the recognizer started,
+  // not just what's new. phaseStartIndex lets beginPhase() mark "only sum
+  // from here on" so each turn of the hands-free loop (dictate, then
+  // listen for an approval word) gets its own clean transcript instead of
+  // replaying the previous turn's words too.
+  let phaseStartIndex = 0;
+  let lastResultsLength = 0;
 
   function setState(next: VoiceCaptureState) {
     state = next;
@@ -45,8 +53,9 @@ export function createVoiceCaptureController(onTranscript: (text: string) => voi
     instance.interimResults = true;
     instance.lang = "en-US";
     instance.onresult = (event) => {
+      lastResultsLength = event.results.length;
       let fullText = "";
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = phaseStartIndex; i < event.results.length; i++) {
         fullText += event.results[i][0].transcript;
       }
       onTranscript(fullText);
@@ -84,6 +93,9 @@ export function createVoiceCaptureController(onTranscript: (text: string) => voi
     },
     stop() {
       recognition?.stop();
+    },
+    beginPhase() {
+      phaseStartIndex = lastResultsLength;
     },
   };
 }
