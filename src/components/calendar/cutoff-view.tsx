@@ -15,7 +15,12 @@ export function CutoffView({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">Current cutoff: {cutoffLabel}</p>
-      <AgendaView entries={entries} currency={currency} accounts={accounts} />
+      <AgendaView
+        entries={entries}
+        currency={currency}
+        accounts={accounts}
+        emptyMessage="Nothing scheduled this cutoff."
+      />
     </div>
   );
 }

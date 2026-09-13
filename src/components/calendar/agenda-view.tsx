@@ -5,13 +5,15 @@ export function AgendaView({
   entries,
   currency,
   accounts,
+  emptyMessage = "Nothing in the next 30 days.",
 }: {
   entries: CalendarEntry[];
   currency: string;
   accounts: { id: string; name: string }[];
+  emptyMessage?: string;
 }) {
   if (entries.length === 0) {
-    return <p className="text-muted-foreground">Nothing in the next 30 days.</p>;
+    return <p className="text-muted-foreground">{emptyMessage}</p>;
   }
 
   const groups = new Map<string, CalendarEntry[]>();

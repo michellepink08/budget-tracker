@@ -29,7 +29,12 @@ export default async function CalendarPage({
   const params = await searchParams;
   const view: View = VIEWS.includes(params.view as View) ? (params.view as View) : "agenda";
 
-  const now = new Date();
+  // Start-of-day, not the exact instant — otherwise a same-day entry
+  // (dated at midnight) would fall outside a range starting "now" later in
+  // the day, and would be misflagged OVERDUE by a strict `date < now`
+  // instant comparison even though its day isn't over yet.
+  const nowInstant = new Date();
+  const now = new Date(nowInstant.getFullYear(), nowInstant.getMonth(), nowInstant.getDate());
   const accounts = await listAccounts(prisma, user.id);
   const accountOptions = accounts.map((a) => ({ id: a.id, name: a.name }));
 
