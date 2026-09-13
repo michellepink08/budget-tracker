@@ -7,7 +7,7 @@ import type { z } from "zod";
 import { toast } from "sonner";
 import { accountSchema } from "@/lib/validations/account";
 import { createAccountAction, updateAccountAction } from "@/actions/account.actions";
-import { ACCOUNT_TYPES } from "@/lib/constants/financial";
+import { ACCOUNT_TYPES, ACCOUNT_PURPOSES } from "@/lib/constants/financial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,10 +36,18 @@ type ExistingAccount = {
   accountType: string;
   openingBalance: number;
   currency: string;
-  includeInLiquidFunds: boolean;
+  purpose: string;
   isPrimaryFundingAccount: boolean;
   color: string;
   icon: string;
+};
+
+const PURPOSE_LABELS: Record<string, string> = {
+  DISPOSABLE: "Disposable (everyday spending)",
+  SAVINGS: "Savings / Reserve",
+  RESTRICTED: "Restricted (dedicated obligation)",
+  CREDIT: "Credit card",
+  DEBT: "Loan / Debt",
 };
 
 export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) {
@@ -59,7 +67,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
           accountType: existing.accountType as AccountFormValues["accountType"],
           openingBalance: toMajorUnits(existing.openingBalance, existing.currency),
           currency: existing.currency,
-          includeInLiquidFunds: existing.includeInLiquidFunds,
+          purpose: existing.purpose as AccountFormValues["purpose"],
           isPrimaryFundingAccount: existing.isPrimaryFundingAccount,
           color: existing.color,
           icon: existing.icon,
@@ -69,7 +77,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
           accountType: "CHECKING",
           openingBalance: 0,
           currency: "PHP",
-          includeInLiquidFunds: true,
+          purpose: "DISPOSABLE",
           isPrimaryFundingAccount: false,
           color: "blue",
           icon: "landmark",
@@ -77,6 +85,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
   });
 
   const accountType = watch("accountType");
+  const purpose = watch("purpose");
 
   async function onSubmit(values: AccountFormValues) {
     const formData = new FormData();
@@ -84,7 +93,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
     formData.set("accountType", values.accountType);
     formData.set("openingBalance", String(values.openingBalance));
     formData.set("currency", values.currency);
-    formData.set("includeInLiquidFunds", String(values.includeInLiquidFunds));
+    formData.set("purpose", values.purpose);
     formData.set("isPrimaryFundingAccount", String(values.isPrimaryFundingAccount));
     formData.set("color", values.color);
     formData.set("icon", values.icon);
@@ -159,14 +168,30 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
             </select>
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={!watch("includeInLiquidFunds")}
-              onChange={(e) => setValue("includeInLiquidFunds", !e.target.checked)}
-            />
-            Restricted fund (excluded from liquid funds and safe-to-spend)
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="purpose">Purpose</Label>
+            <Select value={purpose} onValueChange={(v) => setValue("purpose", v as AccountFormValues["purpose"])}>
+              <SelectTrigger id="purpose">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCOUNT_PURPOSES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {PURPOSE_LABELS[p]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {purpose === "RESTRICTED"
+                ? "Excluded from liquid funds and safe-to-spend — for a dedicated obligation."
+                : purpose === "SAVINGS"
+                  ? "Counted toward liquid funds, tracked separately as savings/reserves."
+                  : purpose === "CREDIT" || purpose === "DEBT"
+                    ? "Never counted as spendable funds."
+                    : "Everyday spending — included in safe-to-spend."}
+            </p>
+          </div>
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" {...register("isPrimaryFundingAccount")} />

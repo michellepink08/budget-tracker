@@ -15,7 +15,7 @@ function parseAccountForm(formData: FormData) {
     accountType: formData.get("accountType"),
     openingBalance: Number(formData.get("openingBalance")),
     currency: formData.get("currency"),
-    includeInLiquidFunds: formData.get("includeInLiquidFunds") === "true",
+    purpose: formData.get("purpose"),
     isPrimaryFundingAccount: formData.get("isPrimaryFundingAccount") === "true",
     color: formData.get("color"),
     icon: formData.get("icon"),

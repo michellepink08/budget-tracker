@@ -12,6 +12,7 @@ type AccountRow = {
   openingBalance: number;
   currency: string;
   includeInLiquidFunds: boolean;
+  purpose: string;
   isPrimaryFundingAccount: boolean;
   color: string;
   icon: string;

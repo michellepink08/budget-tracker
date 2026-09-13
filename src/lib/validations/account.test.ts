@@ -8,7 +8,7 @@ describe("accountSchema", () => {
       accountType: "CHECKING",
       openingBalance: 1000,
       currency: "PHP",
-      includeInLiquidFunds: true,
+      purpose: "DISPOSABLE",
       isPrimaryFundingAccount: false,
       color: "blue",
       icon: "landmark",
@@ -22,7 +22,7 @@ describe("accountSchema", () => {
       accountType: "CHECKING",
       openingBalance: 0,
       currency: "PHP",
-      includeInLiquidFunds: true,
+      purpose: "DISPOSABLE",
       isPrimaryFundingAccount: false,
       color: "blue",
       icon: "landmark",
@@ -36,7 +36,21 @@ describe("accountSchema", () => {
       accountType: "NOT_A_TYPE",
       openingBalance: 0,
       currency: "PHP",
-      includeInLiquidFunds: true,
+      purpose: "DISPOSABLE",
+      isPrimaryFundingAccount: false,
+      color: "blue",
+      icon: "landmark",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects an invalid purpose", () => {
+    const result = accountSchema.safeParse({
+      name: "Checking",
+      accountType: "CHECKING",
+      openingBalance: 0,
+      currency: "PHP",
+      purpose: "NOT_A_PURPOSE",
       isPrimaryFundingAccount: false,
       color: "blue",
       icon: "landmark",
