@@ -45,6 +45,7 @@ model User {
   receipts             Receipt[]
   receiptLines         ReceiptLine[]
   receiptImages        ReceiptImage[]
+  customReminders      CustomReminder[]
 }
 
 model Account {
@@ -282,6 +283,20 @@ model ReceiptImage {
   receipt Receipt @relation(fields: [receiptId], references: [id])
 }
 
+model CustomReminder {
+  id                  String   @id @default(cuid())
+  userId              String
+  label               String
+  date                DateTime
+  amount              Int?
+  state               String   @default("UPCOMING")
+  linkedTransactionId String?
+  createdAt           DateTime @default(now())
+
+  user              User         @relation(fields: [userId], references: [id])
+  linkedTransaction Transaction? @relation(fields: [linkedTransactionId], references: [id])
+}
+
 model Category {
   id         String    @id @default(cuid())
   userId     String
@@ -383,6 +398,7 @@ model Transaction {
   budgetPeriod       BudgetPeriod? @relation(fields: [budgetPeriodId], references: [id])
   incomeForecasts    IncomeForecast[]
   receipts           Receipt[]
+  customReminders    CustomReminder[]
 }
 
 model RecurringRule {
