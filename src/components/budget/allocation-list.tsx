@@ -1,6 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { AllocationFormDialog } from "@/components/budget/allocation-form-dialog";
 import type { AllocationWithActual } from "@/lib/budget-allocations";
+import { Card } from "@/components/ui/card";
 
 export function AllocationList({
   allocations,
@@ -26,7 +27,7 @@ export function AllocationList({
       {allocations.map((allocation) => {
         const pct = Math.max(0, Math.min(100, allocation.percentUsed));
         return (
-          <div key={allocation.id} className="rounded-lg border p-4">
+          <Card key={allocation.id} className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{allocation.category.name}</p>
@@ -60,7 +61,7 @@ export function AllocationList({
                 ? `${formatMoney(allocation.remaining, currency)} remaining`
                 : `${formatMoney(-allocation.remaining, currency)} over budget`}
             </p>
-          </div>
+          </Card>
         );
       })}
     </div>

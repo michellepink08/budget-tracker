@@ -5,6 +5,7 @@ import { listCategories } from "@/lib/categories";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionForm } from "@/components/transactions/transaction-form";
+import { Card } from "@/components/ui/card";
 
 export default async function TransactionsPage({
   searchParams,
@@ -36,10 +37,10 @@ export default async function TransactionsPage({
         <h1 className="text-xl font-semibold">Transactions</h1>
       </div>
 
-      <div className="rounded-lg border p-4">
+      <Card className="p-4">
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Add transaction</h2>
         <TransactionForm accounts={accounts} categories={categories} />
-      </div>
+      </Card>
 
       <TransactionFilters accounts={accounts} />
       <TransactionList transactions={transactions} />

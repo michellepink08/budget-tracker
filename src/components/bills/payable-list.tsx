@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { PayableFormDialog } from "@/components/bills/payable-form-dialog";
+import { Card } from "@/components/ui/card";
 
 type PayableRow = {
   id: string;
@@ -29,7 +30,7 @@ export function PayableList({
   return (
     <div className="flex flex-col gap-3">
       {payables.map((payable) => (
-        <div key={payable.id} className="flex items-center justify-between rounded-lg border p-4">
+        <Card key={payable.id} className="flex items-center justify-between p-4">
           <div>
             <p className="font-medium">
               {payable.name}
@@ -46,7 +47,7 @@ export function PayableList({
           {payable.status === "PENDING" && (
             <PayableFormDialog accounts={accounts} categories={categories} existing={payable} />
           )}
-        </div>
+        </Card>
       ))}
     </div>
   );

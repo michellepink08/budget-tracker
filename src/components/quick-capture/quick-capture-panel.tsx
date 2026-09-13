@@ -6,6 +6,7 @@ import { Mic, MicOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import {
   parseQuickCaptureAction,
   confirmQuickCaptureDraftAction,
@@ -198,7 +199,7 @@ export function QuickCapturePanel({
           {parseError && <p className="text-sm text-destructive">{parseError}</p>}
 
           {drafts?.map((entry, index) => (
-            <div key={index} className="rounded-lg border p-3 text-sm">
+            <Card key={index} className="p-3 text-sm">
               <p className="mb-2">{summarize(entry.draft)}</p>
 
               {entry.draft.intent === "question" && entry.draft.answer?.kind === "list" && (
@@ -250,7 +251,7 @@ export function QuickCapturePanel({
               )}
 
               {entry.status === "error" && <p className="text-destructive">{entry.error}</p>}
-            </div>
+            </Card>
           ))}
         </div>
       </DialogContent>

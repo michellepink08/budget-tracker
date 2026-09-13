@@ -1,6 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { CreditCardFormDialog } from "@/components/loans-cards/credit-card-form-dialog";
 import { CreditCardPaymentDialog } from "@/components/loans-cards/credit-card-payment-dialog";
+import { Card } from "@/components/ui/card";
 
 type CreditCardRow = {
   id: string;
@@ -28,7 +29,7 @@ export function CreditCardList({
   return (
     <div className="flex flex-col gap-3">
       {cards.map((card) => (
-        <div key={card.id} className="flex items-center justify-between rounded-lg border p-4">
+        <Card key={card.id} className="flex items-center justify-between p-4">
           <div>
             <p className="font-medium">{card.account.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -41,7 +42,7 @@ export function CreditCardList({
             <CreditCardPaymentDialog creditCardId={card.id} payingAccounts={payingAccounts} />
             <CreditCardFormDialog linkableAccounts={linkableAccounts} existing={card} />
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

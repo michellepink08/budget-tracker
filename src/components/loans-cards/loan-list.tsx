@@ -3,6 +3,7 @@ import { LoanFormDialog } from "@/components/loans-cards/loan-form-dialog";
 import { LoanPaymentDialog } from "@/components/loans-cards/loan-payment-dialog";
 import { archiveLoanAction } from "@/actions/loan.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const LOAN_CURRENCY = "PHP";
 
@@ -30,7 +31,7 @@ export function LoanList({
   return (
     <div className="flex flex-col gap-3">
       {loans.map((loan) => (
-        <div key={loan.id} className="flex items-center justify-between rounded-lg border p-4">
+        <Card key={loan.id} className="flex items-center justify-between p-4">
           <div>
             <p className="font-medium">{loan.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -57,7 +58,7 @@ export function LoanList({
               </Button>
             </form>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

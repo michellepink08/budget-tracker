@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { APP_NAME } from "@/lib/config";
 import { ViewDemoButton } from "@/components/landing/view-demo-button";
 import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const DIFFERENTIATORS = [
   {
@@ -58,10 +59,10 @@ export default async function Home() {
 
       <section className="mx-auto grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2">
         {DIFFERENTIATORS.map((item) => (
-          <div key={item.title} className="rounded-lg border p-5">
+          <Card key={item.title} className="p-5">
             <h2 className="font-medium">{item.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
-          </div>
+          </Card>
         ))}
       </section>
     </div>

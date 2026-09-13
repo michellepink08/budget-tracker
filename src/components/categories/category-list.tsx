@@ -2,6 +2,7 @@ import { CategoryFormDialog } from "@/components/categories/category-form-dialog
 import { SubcategoryForm } from "@/components/categories/subcategory-form";
 import { archiveCategoryAction, archiveSubcategoryAction } from "@/actions/category.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type SubcategoryRow = { id: string; name: string };
 type CategoryRow = {
@@ -23,7 +24,7 @@ export function CategoryList({ categories }: { categories: CategoryRow[] }) {
   return (
     <div className="flex flex-col gap-3">
       {categories.map((category) => (
-        <div key={category.id} className="rounded-lg border p-4">
+        <Card key={category.id} className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">{category.name}</p>
@@ -67,7 +68,7 @@ export function CategoryList({ categories }: { categories: CategoryRow[] }) {
           <div className="mt-3">
             <SubcategoryForm categoryId={category.id} />
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

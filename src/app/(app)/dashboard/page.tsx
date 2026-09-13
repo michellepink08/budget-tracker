@@ -10,6 +10,7 @@ import { listAccounts } from "@/lib/accounts";
 import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
+import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 
 const UPCOMING_WINDOW_DAYS = 7;
@@ -90,23 +91,23 @@ export default async function DashboardPage() {
       <h1 className="text-xl font-semibold">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border p-4">
+        <Card className="p-4">
           <p className="text-sm text-muted-foreground">Safe to spend</p>
           <p className="text-2xl font-semibold">{formatMoney(safeToSpend, user.currency)}</p>
-        </div>
-        <div className="rounded-lg border p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-sm text-muted-foreground">Liquid funds</p>
           <p className="text-2xl font-semibold">{formatMoney(liquidFunds, user.currency)}</p>
-        </div>
-        <div className="rounded-lg border p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-sm text-muted-foreground">Budgeted this cycle</p>
           <p className="text-2xl font-semibold">{formatMoney(totalPlanned, user.currency)}</p>
           <p className="text-sm text-muted-foreground">{formatMoney(totalActual, user.currency)} spent</p>
-        </div>
-        <div className="rounded-lg border p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-sm text-muted-foreground">Remaining this cycle</p>
           <p className="text-2xl font-semibold">{formatMoney(totalRemaining, user.currency)}</p>
-        </div>
+        </Card>
       </div>
 
       <FundingRecommendationBanner recommendation={recommendationView} />
@@ -118,13 +119,13 @@ export default async function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {upcoming.map((item) => (
-              <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
+              <Card key={item.id} className="flex items-center justify-between p-3">
                 <p className="font-medium">{item.description}</p>
                 <div className="text-right text-sm text-muted-foreground">
                   <p>{formatMoney(item.amount, user.currency)}</p>
                   <p>{item.dueDate.toLocaleDateString()}</p>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -135,7 +136,7 @@ export default async function DashboardPage() {
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">Restricted funds</h2>
           <div className="flex flex-col gap-2">
             {restrictedFunds.map((fund) => (
-              <div key={fund.accountId} className="rounded-lg border p-3">
+              <Card key={fund.accountId} className="p-3">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">{fund.accountName}</p>
                   <p className="font-medium">{formatMoney(fund.balance, user.currency)}</p>
@@ -152,7 +153,7 @@ export default async function DashboardPage() {
                 <p className="text-sm text-muted-foreground">
                   Projected after payment: {formatMoney(fund.projectedBalance, user.currency)}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { DeleteTransactionButton } from "@/components/transactions/delete-transaction-button";
+import { Card } from "@/components/ui/card";
 
 type TransactionRow = {
   id: string;
@@ -23,9 +24,9 @@ export function TransactionList({ transactions }: { transactions: TransactionRow
   return (
     <div className="flex flex-col gap-2">
       {transactions.map((txn) => (
-        <div
+        <Card
           key={txn.id}
-          className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
             <p className="font-medium">{txn.description}</p>
@@ -40,7 +41,7 @@ export function TransactionList({ transactions }: { transactions: TransactionRow
             </span>
             <DeleteTransactionButton transactionId={txn.id} />
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

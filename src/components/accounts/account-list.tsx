@@ -3,6 +3,7 @@ import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { ReconcileDialog } from "@/components/accounts/reconcile-dialog";
 import { archiveAccountAction } from "@/actions/account.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type AccountRow = {
   id: string;
@@ -29,9 +30,9 @@ export function AccountList({ accounts }: { accounts: AccountRow[] }) {
   return (
     <div className="flex flex-col gap-3">
       {accounts.map((account) => (
-        <div
+        <Card
           key={account.id}
-          className="flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
             <p className="font-medium">
@@ -61,7 +62,7 @@ export function AccountList({ accounts }: { accounts: AccountRow[] }) {
               </Button>
             </form>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

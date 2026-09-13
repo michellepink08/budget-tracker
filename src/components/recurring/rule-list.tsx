@@ -2,6 +2,7 @@ import { formatMoney } from "@/lib/money";
 import { RuleFormDialog } from "@/components/recurring/rule-form-dialog";
 import { toggleRecurringRuleActiveAction } from "@/actions/recurring.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type RuleRow = {
   id: string;
@@ -34,7 +35,7 @@ export function RuleList({
   return (
     <div className="flex flex-col gap-3">
       {rules.map((rule) => (
-        <div key={rule.id} className="flex items-center justify-between rounded-lg border p-4">
+        <Card key={rule.id} className="flex items-center justify-between p-4">
           <div>
             <p className="font-medium">{rule.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -56,7 +57,7 @@ export function RuleList({
               </Button>
             </form>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

@@ -2,6 +2,7 @@ import { formatMoney } from "@/lib/money";
 import { RecurringPayableFormDialog } from "@/components/bills/recurring-payable-form-dialog";
 import { toggleRecurringPayableActiveAction } from "@/actions/recurring-payable.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type RuleRow = {
   id: string;
@@ -33,7 +34,7 @@ export function RecurringPayableList({
   return (
     <div className="flex flex-col gap-3">
       {rules.map((rule) => (
-        <div key={rule.id} className="flex items-center justify-between rounded-lg border p-4">
+        <Card key={rule.id} className="flex items-center justify-between p-4">
           <div>
             <p className="font-medium">{rule.name}</p>
             <p className="text-sm text-muted-foreground">
@@ -56,7 +57,7 @@ export function RecurringPayableList({
               </Button>
             </form>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );

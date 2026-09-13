@@ -1,6 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { archiveInstallmentPurchaseAction } from "@/actions/installment-purchase.actions";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type PurchaseRow = {
   id: string;
@@ -25,7 +26,7 @@ export function InstallmentPurchaseList({ purchases }: { purchases: PurchaseRow[
           .reduce((sum, p) => sum + p.amount, 0);
 
         return (
-          <div key={purchase.id} className="flex items-center justify-between rounded-lg border p-4">
+          <Card key={purchase.id} className="flex items-center justify-between p-4">
             <div>
               <p className="font-medium">{purchase.name}</p>
               <p className="text-sm text-muted-foreground">
@@ -44,7 +45,7 @@ export function InstallmentPurchaseList({ purchases }: { purchases: PurchaseRow[
                 Archive
               </Button>
             </form>
-          </div>
+          </Card>
         );
       })}
     </div>
