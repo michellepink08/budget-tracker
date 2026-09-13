@@ -41,7 +41,7 @@ export async function seedDemoData(
     accountType: "CHECKING",
     openingBalance: 4500000, // ₱45,000.00
     currency: "PHP",
-    includeInLiquidFunds: true,
+    purpose: "DISPOSABLE",
     isPrimaryFundingAccount: true,
     color: "blue",
     icon: "landmark",
@@ -52,7 +52,7 @@ export async function seedDemoData(
     accountType: "SAVINGS",
     openingBalance: 12000000, // ₱120,000.00
     currency: "PHP",
-    includeInLiquidFunds: true,
+    purpose: "SAVINGS",
     isPrimaryFundingAccount: false,
     color: "green",
     icon: "piggy-bank",
@@ -63,7 +63,7 @@ export async function seedDemoData(
     accountType: "CREDIT_CARD",
     openingBalance: -850000, // owes ₱8,500.00
     currency: "PHP",
-    includeInLiquidFunds: false,
+    purpose: "CREDIT",
     isPrimaryFundingAccount: false,
     color: "purple",
     icon: "credit-card",
