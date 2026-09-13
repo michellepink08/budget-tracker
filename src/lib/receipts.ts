@@ -140,7 +140,7 @@ export async function deleteLine(
 // user knows extraction ran (even when — as with the stub — it found
 // nothing and the review screen is 100% manual from here).
 export async function runOcrExtraction(
-  prisma: Pick<PrismaClient, "receipt" | "receiptLine">,
+  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem">,
   userId: string,
   receiptId: string,
   imageBuffers: Buffer[],
@@ -150,15 +150,21 @@ export async function runOcrExtraction(
     return { ok: false, error: "Receipt not found" };
   }
 
+  const activeCatalogItems = await listActiveCatalogItems(prisma, userId);
   const updateData: Record<string, unknown> = { status: "REVIEWED" };
   for (const buffer of imageBuffers) {
     const result = await adapter.extract(buffer);
     for (const line of result.lines) {
+      let catalogItemId: string | null = null;
+      if (line.name.trim()) {
+        const resolved = await resolveAlias(prisma, userId, "shopping_item", line.name, activeCatalogItems);
+        if (resolved.status === "resolved") catalogItemId = resolved.id;
+      }
       await prisma.receiptLine.create({
         data: {
           userId,
           receiptId,
-          catalogItemId: null,
+          catalogItemId,
           rawText: null,
           name: line.name,
           quantity: line.quantity ?? 1,

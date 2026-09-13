@@ -267,6 +267,25 @@ describe("runOcrExtraction", () => {
     expect(result.ok).toBe(true);
     expect(prisma.receiptLine.create).toHaveBeenCalledTimes(1);
   });
+
+  it("with an adapter that extracts a line matching an existing alias, auto-fills the catalog item", async () => {
+    const fakeAdapter: OcrAdapter = {
+      extract: vi.fn(async () => ({ lines: [{ name: "Milk", quantity: 1, unitPrice: 15000, lineTotal: 15000 }] })),
+    };
+    const prisma = makeFakePrisma({
+      receipt: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1" }),
+        update: vi.fn(async ({ data }: any) => ({ id: "receipt-1", ...data })),
+      },
+      alias: { findUnique: vi.fn().mockResolvedValue({ targetId: "catalog-1" }), upsert: vi.fn().mockResolvedValue({}) },
+    });
+    const result = await runOcrExtraction(prisma, "user-1", "receipt-1", [Buffer.from("")], fakeAdapter);
+    expect(result.ok).toBe(true);
+    expect(prisma.receiptLine.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ catalogItemId: "catalog-1" }),
+    });
+  });
 });
 
 describe("confirmReceipt", () => {
