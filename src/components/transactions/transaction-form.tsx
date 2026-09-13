@@ -61,14 +61,14 @@ export function TransactionForm({
         <button
           type="button"
           onClick={() => setIsTransfer(false)}
-          className={`rounded-md border px-3 py-1 ${!isTransfer ? "bg-secondary" : ""}`}
+          className={`rounded-md border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${!isTransfer ? "bg-secondary" : "hover:bg-muted"}`}
         >
           Transaction
         </button>
         <button
           type="button"
           onClick={() => setIsTransfer(true)}
-          className={`rounded-md border px-3 py-1 ${isTransfer ? "bg-secondary" : ""}`}
+          className={`rounded-md border px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isTransfer ? "bg-secondary" : "hover:bg-muted"}`}
         >
           Transfer
         </button>

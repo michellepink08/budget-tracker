@@ -34,8 +34,8 @@ export function AppearanceSettings({ initialThemeMode }: { initialThemeMode: str
               onClick={() => handleThemeChange(mode)}
               className={
                 themeMode === mode
-                  ? "rounded-md border-2 border-primary px-3 py-1.5 text-sm capitalize"
-                  : "rounded-md border-2 border-transparent px-3 py-1.5 text-sm capitalize text-muted-foreground"
+                  ? "rounded-md border-2 border-primary px-3 py-1.5 text-sm capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  : "rounded-md border-2 border-transparent px-3 py-1.5 text-sm capitalize text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               }
             >
               {mode}

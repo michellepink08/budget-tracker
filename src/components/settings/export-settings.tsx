@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 type AccountOption = { id: string; name: string };
 type CategoryOption = { id: string; name: string };
 
@@ -114,12 +116,9 @@ export function ExportSettings({
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/80"
-      >
+      <Button type="submit" className="self-start">
         Export
-      </button>
+      </Button>
     </form>
   );
 }
