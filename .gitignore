@@ -48,3 +48,10 @@ next-env.d.ts
 # brainstorming companion scratch files
 .superpowers/
 .playwright-mcp/
+
+# playwright (e2e)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/e2e/.auth/
