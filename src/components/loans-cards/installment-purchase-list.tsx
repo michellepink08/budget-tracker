@@ -1,6 +1,5 @@
 import { formatMoney } from "@/lib/money";
-import { archiveInstallmentPurchaseAction } from "@/actions/installment-purchase.actions";
-import { Button } from "@/components/ui/button";
+import { ArchiveInstallmentPurchaseButton } from "@/components/loans-cards/archive-installment-purchase-button";
 import { Card } from "@/components/ui/card";
 
 type PurchaseRow = {
@@ -35,16 +34,7 @@ export function InstallmentPurchaseList({ purchases }: { purchases: PurchaseRow[
                 {formatMoney(purchase.totalAmount, purchase.account.currency)}
               </p>
             </div>
-            <form
-              action={async () => {
-                "use server";
-                await archiveInstallmentPurchaseAction(purchase.id);
-              }}
-            >
-              <Button type="submit" variant="ghost">
-                Archive
-              </Button>
-            </form>
+            <ArchiveInstallmentPurchaseButton purchaseId={purchase.id} />
           </Card>
         );
       })}

@@ -1,8 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { humanizeEnum } from "@/lib/enum-labels";
 import { RuleFormDialog } from "@/components/recurring/rule-form-dialog";
-import { toggleRecurringRuleActiveAction } from "@/actions/recurring.actions";
-import { Button } from "@/components/ui/button";
+import { ToggleRuleActiveButton } from "@/components/recurring/toggle-rule-active-button";
 import { Card } from "@/components/ui/card";
 
 type RuleRow = {
@@ -47,16 +46,7 @@ export function RuleList({
           </div>
           <div className="flex gap-2">
             <RuleFormDialog accounts={accounts} categories={categories} existing={rule} />
-            <form
-              action={async () => {
-                "use server";
-                await toggleRecurringRuleActiveAction(rule.id, !rule.active);
-              }}
-            >
-              <Button type="submit" variant="ghost">
-                {rule.active ? "Deactivate" : "Activate"}
-              </Button>
-            </form>
+            <ToggleRuleActiveButton ruleId={rule.id} active={rule.active} />
           </div>
         </Card>
       ))}

@@ -1,8 +1,8 @@
 import { CategoryFormDialog } from "@/components/categories/category-form-dialog";
 import { humanizeEnum } from "@/lib/enum-labels";
 import { SubcategoryForm } from "@/components/categories/subcategory-form";
-import { archiveCategoryAction, archiveSubcategoryAction } from "@/actions/category.actions";
-import { Button } from "@/components/ui/button";
+import { ArchiveCategoryButton } from "@/components/categories/archive-category-button";
+import { ArchiveSubcategoryButton } from "@/components/categories/archive-subcategory-button";
 import { Card } from "@/components/ui/card";
 
 type SubcategoryRow = { id: string; name: string };
@@ -33,16 +33,7 @@ export function CategoryList({ categories }: { categories: CategoryRow[] }) {
             </div>
             <div className="flex gap-2">
               <CategoryFormDialog existing={category} />
-              <form
-                action={async () => {
-                  "use server";
-                  await archiveCategoryAction(category.id);
-                }}
-              >
-                <Button type="submit" variant="ghost">
-                  Archive
-                </Button>
-              </form>
+              <ArchiveCategoryButton categoryId={category.id} />
             </div>
           </div>
 
@@ -51,16 +42,7 @@ export function CategoryList({ categories }: { categories: CategoryRow[] }) {
               {category.subcategories.map((sub) => (
                 <li key={sub.id} className="flex items-center justify-between">
                   {sub.name}
-                  <form
-                    action={async () => {
-                      "use server";
-                      await archiveSubcategoryAction(sub.id);
-                    }}
-                  >
-                    <Button type="submit" variant="ghost" size="sm">
-                      Archive
-                    </Button>
-                  </form>
+                  <ArchiveSubcategoryButton subcategoryId={sub.id} />
                 </li>
               ))}
             </ul>

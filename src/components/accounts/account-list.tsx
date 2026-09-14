@@ -5,10 +5,9 @@ import { humanizeEnum } from "@/lib/enum-labels";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { ReconcileDialog } from "@/components/accounts/reconcile-dialog";
 import { SavingsGoalFormDialog } from "@/components/accounts/savings-goal-form-dialog";
-import { archiveAccountAction } from "@/actions/account.actions";
+import { ArchiveAccountButton } from "@/components/accounts/archive-account-button";
 import { computeSavingsProgress } from "@/lib/savings-goals";
 import type { RestrictedFundGroup } from "@/lib/restricted-funds";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 
@@ -50,27 +49,12 @@ type AccountRow = {
 
 type SavingsGoalRow = { accountId: string; targetAmount: number | null; assignedAmount: number };
 
-function ArchiveForm({ accountId }: { accountId: string }) {
-  return (
-    <form
-      action={async () => {
-        "use server";
-        await archiveAccountAction(accountId);
-      }}
-    >
-      <Button type="submit" variant="ghost">
-        Archive
-      </Button>
-    </form>
-  );
-}
-
 function AccountRowActions({ account }: { account: AccountRow }) {
   return (
     <div className="flex gap-2">
       <AccountFormDialog existing={account} />
       <ReconcileDialog accountId={account.id} currency={account.currency} />
-      <ArchiveForm accountId={account.id} />
+      <ArchiveAccountButton accountId={account.id} />
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { humanizeEnum } from "@/lib/enum-labels";
 import { RecurringPayableFormDialog } from "@/components/bills/recurring-payable-form-dialog";
-import { toggleRecurringPayableActiveAction } from "@/actions/recurring-payable.actions";
-import { Button } from "@/components/ui/button";
+import { ToggleRecurringPayableActiveButton } from "@/components/bills/toggle-recurring-payable-active-button";
 import { Card } from "@/components/ui/card";
 
 type RuleRow = {
@@ -47,16 +46,7 @@ export function RecurringPayableList({
           </div>
           <div className="flex gap-2">
             <RecurringPayableFormDialog accounts={accounts} categories={categories} existing={rule} />
-            <form
-              action={async () => {
-                "use server";
-                await toggleRecurringPayableActiveAction(rule.id, !rule.active);
-              }}
-            >
-              <Button type="submit" variant="ghost">
-                {rule.active ? "Deactivate" : "Activate"}
-              </Button>
-            </form>
+            <ToggleRecurringPayableActiveButton ruleId={rule.id} active={rule.active} />
           </div>
         </Card>
       ))}

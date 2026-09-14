@@ -1,8 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { LoanFormDialog } from "@/components/loans-cards/loan-form-dialog";
 import { LoanPaymentDialog } from "@/components/loans-cards/loan-payment-dialog";
-import { archiveLoanAction } from "@/actions/loan.actions";
-import { Button } from "@/components/ui/button";
+import { ArchiveLoanButton } from "@/components/loans-cards/archive-loan-button";
 import { Card } from "@/components/ui/card";
 
 const LOAN_CURRENCY = "PHP";
@@ -47,16 +46,7 @@ export function LoanList({
               accounts={payingAccounts}
             />
             <LoanFormDialog existing={loan} />
-            <form
-              action={async () => {
-                "use server";
-                await archiveLoanAction(loan.id);
-              }}
-            >
-              <Button type="submit" variant="ghost">
-                Archive
-              </Button>
-            </form>
+            <ArchiveLoanButton loanId={loan.id} />
           </div>
         </Card>
       ))}
