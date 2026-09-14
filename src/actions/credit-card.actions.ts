@@ -7,6 +7,7 @@ import { creditCardSchema } from "@/lib/validations/credit-card";
 import { createCreditCard, makeCreditCardPayment, updateCreditCard } from "@/lib/credit-cards";
 import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
 
 export type CreditCardActionResult = { ok: true } | { ok: false; error: string };
 
@@ -27,7 +28,8 @@ export async function createCreditCardAction(formData: FormData): Promise<Credit
   const parsed = parseCreditCardForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the credit card details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
 
   await createCreditCard(prisma, session.user.id, {
     ...parsed.data,
@@ -48,7 +50,8 @@ export async function updateCreditCardAction(
   const parsed = parseCreditCardForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the credit card details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
 
   const result = await updateCreditCard(prisma, session.user.id, creditCardId, {
     ...parsed.data,
@@ -69,7 +72,8 @@ export async function makeCreditCardPaymentAction(
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
 
   const accountId = String(formData.get("accountId"));
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: accountId } });
+  const account = await assertOwnedAccount(prisma, user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
   const amount = toMinorUnits(Number(formData.get("amount")), account.currency);
   const date = new Date(String(formData.get("date")));
 
