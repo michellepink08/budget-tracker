@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   archiveCatalogItem,
+  assertOwnedCatalogItem,
   createCatalogItem,
   getLatestPrice,
   getPriceHistory,
@@ -231,5 +232,17 @@ describe("getPriceHistory", () => {
       where: { userId: "user-1", catalogItemId: "item-1" },
       orderBy: { confirmedAt: "desc" },
     });
+  });
+});
+
+describe("assertOwnedCatalogItem", () => {
+  it("returns true when the catalog item belongs to the user", async () => {
+    const prisma = { shoppingCatalogItem: { findFirst: vi.fn().mockResolvedValue({ id: "item-1" }) } } as any;
+    expect(await assertOwnedCatalogItem(prisma, "user-1", "item-1")).toBe(true);
+  });
+
+  it("returns false when the catalog item belongs to another user", async () => {
+    const prisma = { shoppingCatalogItem: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
+    expect(await assertOwnedCatalogItem(prisma, "user-1", "item-owned-by-someone-else")).toBe(false);
   });
 });

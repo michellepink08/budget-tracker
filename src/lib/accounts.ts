@@ -65,6 +65,14 @@ export async function archiveAccount(
   return { ok: true };
 }
 
+export async function assertOwnedAccount(
+  prisma: Pick<PrismaClient, "account">,
+  userId: string,
+  accountId: string,
+) {
+  return prisma.account.findFirst({ where: { id: accountId, userId } });
+}
+
 export async function listAccounts(
   prisma: Pick<PrismaClient, "account">,
   userId: string,

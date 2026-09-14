@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   archiveCategory,
   archiveSubcategory,
+  assertOwnedCategory,
+  assertOwnedSubcategory,
   createCategory,
   createSubcategory,
   listCategories,
@@ -82,5 +84,29 @@ describe("archiveSubcategory", () => {
     const result = await archiveSubcategory(prisma, "user-1", "sub-1");
 
     expect(result).toEqual({ ok: false, error: "Subcategory not found" });
+  });
+});
+
+describe("assertOwnedCategory", () => {
+  it("returns true when the category belongs to the user", async () => {
+    const prisma = { category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) } } as any;
+    expect(await assertOwnedCategory(prisma, "user-1", "cat-1")).toBe(true);
+  });
+
+  it("returns false when the category belongs to another user", async () => {
+    const prisma = { category: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
+    expect(await assertOwnedCategory(prisma, "user-1", "cat-owned-by-someone-else")).toBe(false);
+  });
+});
+
+describe("assertOwnedSubcategory", () => {
+  it("returns true when the subcategory belongs to the user", async () => {
+    const prisma = { subcategory: { findFirst: vi.fn().mockResolvedValue({ id: "sub-1" }) } } as any;
+    expect(await assertOwnedSubcategory(prisma, "user-1", "sub-1")).toBe(true);
+  });
+
+  it("returns false when the subcategory belongs to another user", async () => {
+    const prisma = { subcategory: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
+    expect(await assertOwnedSubcategory(prisma, "user-1", "sub-owned-by-someone-else")).toBe(false);
   });
 });

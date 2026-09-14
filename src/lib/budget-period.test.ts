@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
+import { assertOwnedBudgetPeriod, resolveBudgetPeriodForDate } from "@/lib/budget-period";
 
 function makeFakePrisma(existing: unknown = null) {
   return {
@@ -33,5 +33,17 @@ describe("resolveBudgetPeriodForDate", () => {
     expect(args.data.startDate).toEqual(new Date(2026, 8, 11));
     expect(args.data.endDate).toEqual(new Date(2026, 9, 10));
     expect(args.data.status).toBe("ACTIVE");
+  });
+});
+
+describe("assertOwnedBudgetPeriod", () => {
+  it("returns true when the budget period belongs to the user", async () => {
+    const prisma = { budgetPeriod: { findFirst: vi.fn().mockResolvedValue({ id: "period-1" }) } } as any;
+    expect(await assertOwnedBudgetPeriod(prisma, "user-1", "period-1")).toBe(true);
+  });
+
+  it("returns false when the budget period belongs to another user", async () => {
+    const prisma = { budgetPeriod: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
+    expect(await assertOwnedBudgetPeriod(prisma, "user-1", "period-owned-by-someone-else")).toBe(false);
   });
 });

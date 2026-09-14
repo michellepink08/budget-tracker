@@ -58,6 +58,24 @@ export async function listCategories(
   });
 }
 
+export async function assertOwnedCategory(
+  prisma: Pick<PrismaClient, "category">,
+  userId: string,
+  categoryId: string,
+): Promise<boolean> {
+  const category = await prisma.category.findFirst({ where: { id: categoryId, userId } });
+  return category !== null;
+}
+
+export async function assertOwnedSubcategory(
+  prisma: Pick<PrismaClient, "subcategory">,
+  userId: string,
+  subcategoryId: string,
+): Promise<boolean> {
+  const subcategory = await prisma.subcategory.findFirst({ where: { id: subcategoryId, userId } });
+  return subcategory !== null;
+}
+
 export async function createSubcategory(
   prisma: Pick<PrismaClient, "subcategory">,
   userId: string,

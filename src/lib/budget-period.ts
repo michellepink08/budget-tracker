@@ -31,3 +31,12 @@ export async function resolveBudgetPeriodForDate(
     },
   });
 }
+
+export async function assertOwnedBudgetPeriod(
+  prisma: Pick<PrismaClient, "budgetPeriod">,
+  userId: string,
+  budgetPeriodId: string,
+): Promise<boolean> {
+  const period = await prisma.budgetPeriod.findFirst({ where: { id: budgetPeriodId, userId } });
+  return period !== null;
+}

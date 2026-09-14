@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { archiveAccount, createAccount, listAccounts, updateAccount } from "@/lib/accounts";
+import { archiveAccount, assertOwnedAccount, createAccount, listAccounts, updateAccount } from "@/lib/accounts";
 
 const SAMPLE_INPUT = {
   name: "Everyday Checking",
@@ -113,5 +113,22 @@ describe("listAccounts", () => {
       where: { userId: "user-1" },
       orderBy: { createdAt: "asc" },
     });
+  });
+});
+
+describe("assertOwnedAccount", () => {
+  it("returns the account when it belongs to the user", async () => {
+    const findFirst = vi.fn().mockResolvedValue({ id: "acc-1", userId: "user-1", currency: "PHP" });
+    const prisma = { account: { findFirst } } as any;
+
+    const result = await assertOwnedAccount(prisma, "user-1", "acc-1");
+
+    expect(result).toEqual({ id: "acc-1", userId: "user-1", currency: "PHP" });
+    expect(findFirst).toHaveBeenCalledWith({ where: { id: "acc-1", userId: "user-1" } });
+  });
+
+  it("returns null when the account belongs to another user (or doesn't exist)", async () => {
+    const prisma = { account: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
+    expect(await assertOwnedAccount(prisma, "user-1", "acc-owned-by-someone-else")).toBeNull();
   });
 });

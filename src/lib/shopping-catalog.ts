@@ -30,7 +30,7 @@ export async function createCatalogItem(
   return item;
 }
 
-async function assertOwnedCatalogItem(
+export async function assertOwnedCatalogItem(
   prisma: Pick<PrismaClient, "shoppingCatalogItem">,
   userId: string,
   catalogItemId: string,
