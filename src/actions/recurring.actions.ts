@@ -13,6 +13,7 @@ import {
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
+import { assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type RecurringActionResult = { ok: true } | { ok: false; error: string };
 
@@ -38,6 +39,14 @@ export async function createRecurringRuleAction(formData: FormData): Promise<Rec
 
   const parsed = parseRecurringForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring rule details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    user.id,
+    () => prisma.recurringRule.count({ where: { userId: user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const account = await assertOwnedAccount(prisma, user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
