@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createBudgetPeriodAction } from "@/actions/budget.actions";
@@ -19,6 +20,7 @@ import {
 type FormValues = { name: string; startDate: string; endDate: string };
 
 export function PeriodFormDialog() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -39,6 +41,7 @@ export function PeriodFormDialog() {
     }
     toast.success("Period created");
     setOpen(false);
+    router.refresh();
   }
 
   return (
