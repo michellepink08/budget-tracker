@@ -1,4 +1,5 @@
 import { CategoryFormDialog } from "@/components/categories/category-form-dialog";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { SubcategoryForm } from "@/components/categories/subcategory-form";
 import { archiveCategoryAction, archiveSubcategoryAction } from "@/actions/category.actions";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export function CategoryList({ categories }: { categories: CategoryRow[] }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">{category.name}</p>
-              <p className="text-sm text-muted-foreground">{category.type}</p>
+              <p className="text-sm text-muted-foreground">{humanizeEnum(category.type)}</p>
             </div>
             <div className="flex gap-2">
               <CategoryFormDialog existing={category} />

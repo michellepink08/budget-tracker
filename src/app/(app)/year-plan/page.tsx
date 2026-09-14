@@ -18,6 +18,7 @@ import { CutoffTable } from "@/components/year-plan/cutoff-table";
 import { ReserveChart } from "@/components/year-plan/reserve-chart";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
+import { humanizeEnum } from "@/lib/enum-labels";
 
 export default async function YearPlanPage() {
   const session = await auth();
@@ -170,11 +171,11 @@ export default async function YearPlanPage() {
               <Card key={forecast.id} className="flex items-center justify-between p-3">
                 <div>
                   <p className="font-medium">
-                    {forecast.cutoffLabel} · {forecast.source}
+                    {forecast.cutoffLabel} · {humanizeEnum(forecast.source)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {formatMoney(forecast.expectedAmount, user.currency)} · {forecast.expectedDate.toLocaleDateString()} ·{" "}
-                    {forecast.status}
+                    {humanizeEnum(forecast.status)}
                     {forecast.actualTransactionId ? " · Confirmed — received" : ""}
                   </p>
                 </div>

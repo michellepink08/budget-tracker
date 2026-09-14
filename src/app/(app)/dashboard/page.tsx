@@ -16,6 +16,7 @@ import { FundingRecommendationBanner } from "@/components/bills/funding-recommen
 import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
+import { humanizeEnum } from "@/lib/enum-labels";
 
 const UPCOMING_WINDOW_DAYS = 7;
 
@@ -166,7 +167,7 @@ export default async function DashboardPage() {
                   {formatMoney(yearPlanSummary.nextForecast.expectedAmount, user.currency)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {yearPlanSummary.nextForecast.source} ·{" "}
+                  {humanizeEnum(yearPlanSummary.nextForecast.source)} ·{" "}
                   {yearPlanSummary.nextForecast.expectedDate.toLocaleDateString()}
                 </p>
               </>

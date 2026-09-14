@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/money";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { DeleteTransactionButton } from "@/components/transactions/delete-transaction-button";
 import { EditTransactionButton } from "@/components/transactions/edit-transaction-button";
 import { AuditHistoryLink } from "@/components/audit-log/audit-history-link";
@@ -45,7 +46,7 @@ export function TransactionList({
             <p className="font-medium">{txn.description}</p>
             <p className="text-sm text-muted-foreground">
               {txn.date.toLocaleDateString()} · {txn.account.name}
-              {txn.category ? ` · ${txn.category.name}` : ""} · {txn.type}
+              {txn.category ? ` · ${txn.category.name}` : ""} · {humanizeEnum(txn.type)}
             </p>
           </div>
           <div className="flex items-center gap-3">

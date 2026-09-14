@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet, PiggyBank, Lock, CreditCard, type LucideIcon } from "lucide-react";
 import { formatMoney } from "@/lib/money";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { ReconcileDialog } from "@/components/accounts/reconcile-dialog";
 import { SavingsGoalFormDialog } from "@/components/accounts/savings-goal-form-dialog";
@@ -121,7 +122,7 @@ export function AccountList({
                     )}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {account.accountType} · {formatMoney(account.balance, account.currency)} · Included in Safe to
+                    {humanizeEnum(account.accountType)} · {formatMoney(account.balance, account.currency)} · Included in Safe to
                     spend
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -157,7 +158,7 @@ export function AccountList({
                     <p className="font-medium">{formatMoney(account.balance, account.currency)}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {account.accountType} · Included in Safe to spend
+                    {humanizeEnum(account.accountType)} · Included in Safe to spend
                   </p>
                   {goal && goal.targetAmount !== null ? (
                     <p className="text-sm text-muted-foreground">
@@ -204,7 +205,7 @@ export function AccountList({
                     <p className="font-medium">{formatMoney(account.balance, account.currency)}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {account.accountType} · Excluded from liquid funds and Safe to spend
+                    {humanizeEnum(account.accountType)} · Excluded from liquid funds and Safe to spend
                   </p>
                   {group && (
                     <p className="text-sm text-muted-foreground">
@@ -247,7 +248,7 @@ export function AccountList({
                 <div>
                   <p className="font-medium">{account.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {account.accountType} · {formatMoney(account.balance, account.currency)} · Never counted as
+                    {humanizeEnum(account.accountType)} · {formatMoney(account.balance, account.currency)} · Never counted as
                     spendable funds
                   </p>
                 </div>

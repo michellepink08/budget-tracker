@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/money";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { RecurringPayableFormDialog } from "@/components/bills/recurring-payable-form-dialog";
 import { toggleRecurringPayableActiveAction } from "@/actions/recurring-payable.actions";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export function RecurringPayableList({
           <div>
             <p className="font-medium">{rule.name}</p>
             <p className="text-sm text-muted-foreground">
-              {formatMoney(rule.amount, rule.account.currency)} · {rule.frequency}
+              {formatMoney(rule.amount, rule.account.currency)} · {humanizeEnum(rule.frequency)}
               {rule.intervalDays ? ` (every ${rule.intervalDays}d)` : ""} · {rule.account.name}
               {rule.category ? ` · ${rule.category.name}` : ""} · next{" "}
               {rule.nextDueDate.toLocaleDateString()}
