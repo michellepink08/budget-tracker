@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { accountSchema } from "@/lib/validations/account";
 import { archiveAccount, createAccount, updateAccount } from "@/lib/accounts";
 import { toMinorUnits } from "@/lib/money";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type AccountActionResult = { ok: true } | { ok: false; error: string };
 
@@ -28,6 +29,14 @@ export async function createAccountAction(formData: FormData): Promise<AccountAc
 
   const parsed = parseAccountForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the account details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.account.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   await createAccount(prisma, session.user.id, {
     ...parsed.data,
@@ -60,6 +69,9 @@ export async function updateAccountAction(
 export async function archiveAccountAction(accountId: string): Promise<AccountActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await archiveAccount(prisma, session.user.id, accountId);
   if (result.ok) revalidatePath("/accounts");
