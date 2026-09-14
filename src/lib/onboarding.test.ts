@@ -1,12 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { completeOnboarding } from "@/lib/onboarding";
+import { completeOnboarding, completeOnboardingWithAccount } from "@/lib/onboarding";
 
-function makeFakePrisma() {
-  return {
+function makeFakePrisma(overrides: Record<string, any> = {}) {
+  const prisma: any = {
     user: {
       update: vi.fn().mockResolvedValue({}),
     },
-  } as any;
+    account: {
+      create: vi.fn().mockResolvedValue({ id: "acc-1" }),
+    },
+    ...overrides,
+  };
+  prisma.$transaction = overrides.$transaction ?? vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
+  return prisma;
 }
 
 describe("completeOnboarding", () => {
@@ -24,5 +30,38 @@ describe("completeOnboarding", () => {
     expect(args.data.cycleStartDay).toBe(25);
     expect(args.data.currency).toBe("PHP");
     expect(args.data.onboardedAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("completeOnboardingWithAccount", () => {
+  it("updates the user and creates the account inside one transaction", async () => {
+    const prisma = makeFakePrisma();
+
+    await completeOnboardingWithAccount(
+      prisma,
+      "user-1",
+      { cycleStartDay: 25, currency: "PHP" },
+      { name: "Everyday Checking", accountType: "CHECKING", openingBalance: 500000 },
+    );
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: expect.objectContaining({ cycleStartDay: 25, currency: "PHP", onboardedAt: expect.any(Date) }),
+    });
+    expect(prisma.account.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        name: "Everyday Checking",
+        accountType: "CHECKING",
+        openingBalance: 500000,
+        currency: "PHP",
+        purpose: "DISPOSABLE",
+        isPrimaryFundingAccount: true,
+        color: "blue",
+        icon: "landmark",
+        includeInLiquidFunds: true,
+      },
+    });
   });
 });
