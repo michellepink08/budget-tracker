@@ -16,6 +16,7 @@ model User {
   receiptAutoDeleteImages Boolean @default(false)
   createdAt     DateTime @default(now())
   onboardedAt   DateTime?
+  demoResetAt   DateTime? // when the shared demo account was last auto/manually reset; unused for every other user
 
   accounts             Account[]
   categories           Category[]
