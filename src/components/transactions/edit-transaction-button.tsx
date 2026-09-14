@@ -88,8 +88,12 @@ export function EditTransactionButton({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="description">Description</Label>
-            <Input id="description" {...register("description", { required: true })} />
+            <Label htmlFor="description">Description (optional)</Label>
+            <Input
+              id="description"
+              placeholder="Leave blank to use the transaction type"
+              {...register("description")}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

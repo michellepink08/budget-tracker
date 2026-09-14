@@ -15,6 +15,7 @@ import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
 import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
+import { humanizeEnum } from "@/lib/enum-labels";
 
 export type TransactionActionResult = { ok: true } | { ok: false; error: string };
 
@@ -138,8 +139,11 @@ export async function updateTransactionAction(
   const before = await prisma.transaction.findFirst({ where: { id: transactionId, userId: user.id } });
   if (!before) return { ok: false, error: "Transaction not found" };
 
+  // A blank description isn't a validation error here either — fall back to
+  // the transaction's own type, same as when it was first created.
+  const submittedDescription = String(formData.get("description") ?? "").trim();
   const input = {
-    description: String(formData.get("description") ?? ""),
+    description: submittedDescription || humanizeEnum(before.type),
     notes: (formData.get("notes") as string) || undefined,
     categoryId: (formData.get("categoryId") as string) || null,
     subcategoryId: (formData.get("subcategoryId") as string) || null,
