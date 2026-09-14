@@ -32,10 +32,11 @@ export async function createAllocationAction(formData: FormData): Promise<Budget
   });
   if (!parsed.success) return { ok: false, error: "Please check the allocation details" };
 
-  await createAllocation(prisma, user.id, {
+  const result = await createAllocation(prisma, user.id, {
     ...parsed.data,
     plannedAmount: toMinorUnits(parsed.data.plannedAmount, user.currency),
   });
+  if (!result.ok) return result;
 
   revalidatePath("/budget");
   return { ok: true };

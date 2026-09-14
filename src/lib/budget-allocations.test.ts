@@ -17,16 +17,18 @@ describe("createAllocation", () => {
     const create = vi.fn().mockResolvedValue({ id: "alloc-1" });
     const prisma = {
       budgetAllocation: { create },
-      budgetPeriod: { findUniqueOrThrow: vi.fn().mockResolvedValue({ startDate: new Date(2026, 8, 25) }) },
+      budgetPeriod: { findFirst: vi.fn().mockResolvedValue({ startDate: new Date(2026, 8, 25) }) },
+      category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) },
     } as any;
 
-    await createAllocation(prisma, "user-1", {
+    const result = await createAllocation(prisma, "user-1", {
       budgetPeriodId: "period-1",
       categoryId: "cat-1",
       plannedAmount: 8000,
       rolloverMode: "CARRY_UNUSED",
     });
 
+    expect(result).toEqual({ ok: true, id: "alloc-1" });
     expect(create).toHaveBeenCalledWith({
       data: {
         userId: "user-1",
@@ -37,6 +39,44 @@ describe("createAllocation", () => {
         rolloverAmount: 1500,
       },
     });
+  });
+
+  it("reports not found when the budget period belongs to another user", async () => {
+    const create = vi.fn();
+    const prisma = {
+      budgetAllocation: { create },
+      budgetPeriod: { findFirst: vi.fn().mockResolvedValue(null) },
+      category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) },
+    } as any;
+
+    const result = await createAllocation(prisma, "user-1", {
+      budgetPeriodId: "period-1",
+      categoryId: "cat-1",
+      plannedAmount: 8000,
+      rolloverMode: "CARRY_UNUSED",
+    });
+
+    expect(result).toEqual({ ok: false, error: "Budget period not found" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("reports not found when the category belongs to another user", async () => {
+    const create = vi.fn();
+    const prisma = {
+      budgetAllocation: { create },
+      budgetPeriod: { findFirst: vi.fn().mockResolvedValue({ startDate: new Date(2026, 8, 25) }) },
+      category: { findFirst: vi.fn().mockResolvedValue(null) },
+    } as any;
+
+    const result = await createAllocation(prisma, "user-1", {
+      budgetPeriodId: "period-1",
+      categoryId: "cat-1",
+      plannedAmount: 8000,
+      rolloverMode: "CARRY_UNUSED",
+    });
+
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(create).not.toHaveBeenCalled();
   });
 });
 

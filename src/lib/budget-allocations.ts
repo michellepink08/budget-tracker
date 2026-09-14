@@ -11,20 +11,29 @@ export type AllocationInput = {
 
 export type AllocationMutationResult = { ok: true } | { ok: false; error: string };
 
+export type CreateAllocationResult = { ok: true; id: string } | { ok: false; error: string };
+
 export async function createAllocation(
-  prisma: Pick<PrismaClient, "budgetAllocation" | "budgetPeriod" | "transaction">,
+  prisma: Pick<PrismaClient, "budgetAllocation" | "budgetPeriod" | "category" | "transaction">,
   userId: string,
   input: AllocationInput,
-) {
-  const period = await prisma.budgetPeriod.findUniqueOrThrow({
-    where: { id: input.budgetPeriodId },
+): Promise<CreateAllocationResult> {
+  const period = await prisma.budgetPeriod.findFirst({
+    where: { id: input.budgetPeriodId, userId },
   });
+  if (!period) return { ok: false, error: "Budget period not found" };
+
+  const category = await prisma.category.findFirst({
+    where: { id: input.categoryId, userId },
+  });
+  if (!category) return { ok: false, error: "Category not found" };
 
   const rolloverAmount = await resolveRolloverCarryIn(prisma, userId, input.categoryId, period.startDate);
 
-  return prisma.budgetAllocation.create({
+  const allocation = await prisma.budgetAllocation.create({
     data: { userId, ...input, rolloverAmount },
   });
+  return { ok: true, id: allocation.id };
 }
 
 export async function updateAllocation(
