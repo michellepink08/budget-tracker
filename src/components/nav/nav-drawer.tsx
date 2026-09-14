@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
-import { navLinks, isNavLinkActive } from "@/components/nav/nav-links";
+import { mainLinks, planLinks, isNavLinkActive, type NavLink } from "@/components/nav/nav-links";
 import { APP_NAME } from "@/lib/config";
 
 type AccountOption = { id: string; name: string; currency: string };
@@ -24,6 +24,25 @@ export function NavDrawer({
 }) {
   const pathname = usePathname();
 
+  function renderLink(link: NavLink) {
+    const isActive = isNavLinkActive(pathname, link.href);
+    const Icon = link.icon;
+    return (
+      <Link
+        key={link.href}
+        href={link.href}
+        onClick={() => onOpenChange(false)}
+        className={
+          (isActive ? "bg-muted font-medium" : "hover:bg-muted") +
+          " flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        }
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {link.label}
+      </Link>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -32,24 +51,11 @@ export function NavDrawer({
       >
         <DialogTitle className="sr-only">{APP_NAME} navigation</DialogTitle>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-          {navLinks.map((link) => {
-            const isActive = isNavLinkActive(pathname, link.href);
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => onOpenChange(false)}
-                className={
-                  (isActive ? "bg-muted font-medium" : "hover:bg-muted") +
-                  " flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {link.label}
-              </Link>
-            );
-          })}
+          {mainLinks.map(renderLink)}
+          <p className="mt-3 mb-1 px-3 text-[11px] font-semibold tracking-wide text-muted-foreground">
+            PLAN &amp; REVIEW
+          </p>
+          {planLinks.map(renderLink)}
         </nav>
         <div className="mt-2 flex flex-col gap-2 border-t pt-3">
           <AddTransactionButton accounts={accounts} categories={categories} />
