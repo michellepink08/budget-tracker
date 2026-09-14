@@ -3,8 +3,11 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   // Tests share one real demo account/database (see e2e/global-setup.ts)
-  // — running them in parallel would race on the same rows.
+  // — running them in parallel would race on the same rows. Both settings
+  // are needed: fullyParallel only serializes tests within one file,
+  // workers controls how many spec files run concurrently.
   fullyParallel: false,
+  workers: 1,
   globalSetup: "./e2e/global-setup.ts",
   webServer: {
     command: "npm run dev",
