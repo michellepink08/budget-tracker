@@ -17,6 +17,7 @@ import {
 } from "@/lib/shopping-list";
 import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type ShoppingActionResult = { ok: true } | { ok: false; error: string };
 
@@ -31,6 +32,14 @@ export async function createListAction(formData: FormData): Promise<ShoppingActi
     budgetCategoryId: formData.get("budgetCategoryId") || null,
   });
   if (!parsed.success) return { ok: false, error: "Please check the list details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.shoppingList.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const result = await createList(prisma, session.user.id, parsed.data);
   if (!result.ok) return result;
@@ -81,6 +90,14 @@ export async function addItemAction(
   const parsed = await parseItemForm(formData, currency, session.user.id);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.shoppingListItem.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
+
   const result = await addItem(prisma, session.user.id, listId, parsed.data);
   if (result.ok) revalidatePath("/shopping");
   return result;
@@ -105,6 +122,9 @@ export async function updateItemAction(
 export async function deleteItemAction(itemId: string): Promise<ShoppingActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await deleteItem(prisma, session.user.id, itemId);
   if (result.ok) revalidatePath("/shopping");
@@ -144,6 +164,9 @@ export async function moveUnpurchasedToNewListAction(
 export async function deleteListAction(listId: string): Promise<ShoppingActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await deleteList(prisma, session.user.id, listId);
   if (result.ok) revalidatePath("/shopping");
