@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { savingsGoalSchema } from "@/lib/validations/savings-goal";
 import { upsertSavingsGoal } from "@/lib/savings-goals";
 import { toMinorUnits } from "@/lib/money";
+import { assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type SavingsGoalActionResult = { ok: true } | { ok: false; error: string };
 
@@ -23,6 +24,17 @@ export async function upsertSavingsGoalAction(
     assignedAmount: Number(formData.get("assignedAmount")),
   });
   if (!parsed.success) return { ok: false, error: "Please check the goal details" };
+
+  const existingGoal = await prisma.savingsGoal.findUnique({ where: { accountId } });
+  if (!existingGoal) {
+    const capResult = await assertUnderDemoCap(
+      prisma,
+      session.user.id,
+      () => prisma.savingsGoal.count({ where: { userId: session.user.id } }),
+      100,
+    );
+    if (capResult) return capResult;
+  }
 
   const result = await upsertSavingsGoal(prisma, session.user.id, accountId, {
     targetAmount: parsed.data.targetAmount === null ? null : toMinorUnits(parsed.data.targetAmount, currency),
