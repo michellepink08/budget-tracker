@@ -8,6 +8,7 @@ import { createCreditCard, makeCreditCardPayment, updateCreditCard } from "@/lib
 import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
+import { assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type CreditCardActionResult = { ok: true } | { ok: false; error: string };
 
@@ -27,6 +28,14 @@ export async function createCreditCardAction(formData: FormData): Promise<Credit
 
   const parsed = parseCreditCardForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the credit card details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.creditCard.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
