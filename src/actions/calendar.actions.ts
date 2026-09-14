@@ -8,6 +8,7 @@ import { createReminder, deleteReminder, markPaid, skip } from "@/lib/calendar/r
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory } from "@/lib/categories";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type CalendarActionResult = { ok: true } | { ok: false; error: string };
 
@@ -22,6 +23,14 @@ export async function createReminderAction(currency: string, formData: FormData)
     amount: rawAmount ? Number(rawAmount) : null,
   });
   if (!parsed.success) return { ok: false, error: "Please check the reminder details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.customReminder.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   await createReminder(prisma, session.user.id, {
     label: parsed.data.label,
@@ -74,6 +83,9 @@ export async function skipReminderAction(reminderId: string): Promise<CalendarAc
 export async function deleteReminderAction(reminderId: string): Promise<CalendarActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await deleteReminder(prisma, session.user.id, reminderId);
   if (result.ok) revalidatePath("/calendar");
