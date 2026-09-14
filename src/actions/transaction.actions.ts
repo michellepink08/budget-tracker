@@ -14,6 +14,7 @@ import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type TransactionActionResult = { ok: true } | { ok: false; error: string };
 
@@ -40,6 +41,14 @@ export async function createTransactionAction(
     notes: formData.get("notes") || undefined,
   });
   if (!parsed.success) return { ok: false, error: "Please check the transaction details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    user.id,
+    () => prisma.transaction.count({ where: { userId: user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const account = await assertOwnedAccount(prisma, user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
@@ -81,6 +90,14 @@ export async function createTransferAction(formData: FormData): Promise<Transact
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the transfer details" };
   }
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    user.id,
+    () => prisma.transaction.count({ where: { userId: user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const [source, destination] = await Promise.all([
     assertOwnedAccount(prisma, user.id, parsed.data.sourceAccountId),
@@ -164,6 +181,9 @@ export async function deleteTransactionAction(
 ): Promise<TransactionActionResult> {
   const user = await currentUser();
   if (!user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, user.id);
+  if (demoResult) return demoResult;
 
   const result = await prisma.$transaction(async (tx) => {
     const deleteResult = await deleteTransaction(tx, user.id, transactionId);
