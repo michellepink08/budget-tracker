@@ -8,6 +8,7 @@ import { ROLLOVER_MODES } from "@/lib/constants/financial";
 import { createAllocation, updateAllocation } from "@/lib/budget-allocations";
 import { createBudgetPeriod } from "@/lib/budget-periods";
 import { toMinorUnits } from "@/lib/money";
+import { assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type BudgetActionResult = { ok: true } | { ok: false; error: string };
 
@@ -31,6 +32,14 @@ export async function createAllocationAction(formData: FormData): Promise<Budget
     rolloverMode: formData.get("rolloverMode"),
   });
   if (!parsed.success) return { ok: false, error: "Please check the allocation details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    user.id,
+    () => prisma.budgetAllocation.count({ where: { userId: user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const result = await createAllocation(prisma, user.id, {
     ...parsed.data,
@@ -91,6 +100,14 @@ export async function createBudgetPeriodAction(formData: FormData): Promise<Budg
   if (parsed.data.endDate <= parsed.data.startDate) {
     return { ok: false, error: "End date must be after start date" };
   }
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.budgetPeriod.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   await createBudgetPeriod(prisma, session.user.id, { ...parsed.data, status: "UPCOMING" });
 
