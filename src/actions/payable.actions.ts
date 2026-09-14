@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { payableSchema } from "@/lib/validations/payable";
 import { createPayable, markPayablePaid, updatePayable } from "@/lib/payables";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type PayableActionResult = { ok: true } | { ok: false; error: string };
 
@@ -26,7 +28,11 @@ export async function createPayableAction(formData: FormData): Promise<PayableAc
   const parsed = parsePayableForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the bill details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   await createPayable(prisma, session.user.id, {
     ...parsed.data,
@@ -44,11 +50,16 @@ export async function updatePayableAction(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
-  const account = await prisma.account.findFirst({ where: { id: String(formData.get("accountId")) } });
-  const currency = account?.currency ?? "PHP";
+  const accountId = String(formData.get("accountId"));
+  const account = await assertOwnedAccount(prisma, session.user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  const currency = account.currency;
 
   const parsed = parsePayableForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the bill details" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   const result = await updatePayable(prisma, session.user.id, payableId, {
     ...parsed.data,
