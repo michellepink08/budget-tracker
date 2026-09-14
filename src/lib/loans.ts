@@ -8,6 +8,8 @@ export type LoanInput = {
   monthlyPayment: number; // minor units
   remainingBalance: number; // minor units
   startDate: Date;
+  endDate?: Date | null; // when set, the term (in months) is derived, not stored
+  dueDay?: number | null; // day of month (1-31) — projects a monthly calendar entry when set
 };
 
 export type LoanMutationResult = { ok: true } | { ok: false; error: string };

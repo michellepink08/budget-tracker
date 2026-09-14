@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { createLoanAction, updateLoanAction } from "@/actions/loan.actions";
 import { toMajorUnits } from "@/lib/money";
 import { toAnnualInterestRate, type InterestRatePeriod } from "@/lib/interest-rate";
+import { computeLoanTermMonths } from "@/lib/loan-term";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,8 @@ type FormValues = {
   monthlyPayment: number;
   remainingBalance: number;
   startDate: string;
+  endDate: string;
+  dueDay: string;
 };
 
 type ExistingLoan = {
@@ -36,6 +39,8 @@ type ExistingLoan = {
   monthlyPayment: number;
   remainingBalance: number;
   startDate: Date;
+  endDate: Date | null;
+  dueDay: number | null;
 };
 
 const LOAN_CURRENCY = "PHP";
@@ -58,6 +63,8 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
           monthlyPayment: toMajorUnits(existing.monthlyPayment, LOAN_CURRENCY),
           remainingBalance: toMajorUnits(existing.remainingBalance, LOAN_CURRENCY),
           startDate: existing.startDate.toISOString().slice(0, 10),
+          endDate: existing.endDate ? existing.endDate.toISOString().slice(0, 10) : "",
+          dueDay: existing.dueDay ? String(existing.dueDay) : "",
         }
       : {
           name: "",
@@ -66,10 +73,16 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
           monthlyPayment: 0,
           remainingBalance: 0,
           startDate: new Date().toISOString().slice(0, 10),
+          endDate: "",
+          dueDay: "",
         },
   });
 
   const enteredInterestRate = watch("interestRate");
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
+  const termMonths =
+    startDate && endDate ? computeLoanTermMonths(new Date(startDate), new Date(endDate)) : null;
 
   async function onSubmit(values: FormValues) {
     const formData = new FormData();
@@ -79,6 +92,8 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
     formData.set("monthlyPayment", String(values.monthlyPayment));
     formData.set("remainingBalance", String(values.remainingBalance));
     formData.set("startDate", values.startDate);
+    formData.set("endDate", values.endDate);
+    formData.set("dueDay", values.dueDay);
 
     const result = existing
       ? await updateLoanAction(existing.id, formData)
@@ -175,6 +190,31 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="startDate">Start date</Label>
             <Input id="startDate" type="date" {...register("startDate")} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="endDate">End date (optional)</Label>
+            <Input id="endDate" type="date" {...register("endDate")} />
+            {termMonths !== null && (
+              <p className="text-xs text-muted-foreground">
+                {termMonths > 0 ? `${termMonths}-month term` : "End date must be after the start date"}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="dueDay">Due day of month (optional)</Label>
+            <Input
+              id="dueDay"
+              type="number"
+              min="1"
+              max="31"
+              placeholder="e.g. 15"
+              {...register("dueDay")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Shows this loan&apos;s payment on the Calendar every month{endDate ? ", until the end date" : ""}.
+            </p>
           </div>
 
           <DialogFooter>

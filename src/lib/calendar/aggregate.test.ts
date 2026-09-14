@@ -11,6 +11,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     creditCard: { findMany: vi.fn().mockResolvedValue([]) },
     installmentPayment: { findMany: vi.fn().mockResolvedValue([]) },
     installmentPurchase: { findMany: vi.fn().mockResolvedValue([]) },
+    loan: { findMany: vi.fn().mockResolvedValue([]) },
     recurringRule: { findMany: vi.fn().mockResolvedValue([]) },
     recurringPayable: { findMany: vi.fn().mockResolvedValue([]) },
     incomeForecast: { findMany: vi.fn().mockResolvedValue([]) },
@@ -198,6 +199,46 @@ describe("listCalendarEntries — CREDIT_CARD projection", () => {
     const due = entries.find((e) => e.sourceType === "CREDIT_CARD_DUE");
     expect(statement?.date).toEqual(d(2026, 9, 30));
     expect(due?.date).toEqual(d(2026, 9, 15));
+  });
+});
+
+describe("listCalendarEntries — LOAN_DUE projection", () => {
+  it("projects a monthly due entry for a loan with a dueDay set", async () => {
+    const prisma = makeFakePrisma({
+      loan: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "loan-1", name: "Car loan", monthlyPayment: 1500000, startDate: d(2026, 1, 1), endDate: null, dueDay: 15 },
+        ]),
+      },
+    });
+    const entries = await listCalendarEntries(prisma, "user-1", range, now);
+    expect(entries).toContainEqual(
+      expect.objectContaining({ sourceType: "LOAN_DUE", sourceId: "loan-1", date: d(2026, 9, 15), amount: 1500000 }),
+    );
+  });
+
+  it("stops projecting once the month is past the loan's endDate", async () => {
+    const prisma = makeFakePrisma({
+      loan: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "loan-1", name: "Car loan", monthlyPayment: 1500000, startDate: d(2026, 1, 1), endDate: d(2026, 8, 15), dueDay: 15 },
+        ]),
+      },
+    });
+    const entries = await listCalendarEntries(prisma, "user-1", range, now);
+    expect(entries.filter((e) => e.sourceType === "LOAN_DUE")).toHaveLength(0);
+  });
+
+  it("doesn't project before the loan's startDate month", async () => {
+    const prisma = makeFakePrisma({
+      loan: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "loan-1", name: "Car loan", monthlyPayment: 1500000, startDate: d(2026, 10, 1), endDate: null, dueDay: 15 },
+        ]),
+      },
+    });
+    const entries = await listCalendarEntries(prisma, "user-1", range, now);
+    expect(entries.filter((e) => e.sourceType === "LOAN_DUE")).toHaveLength(0);
   });
 });
 

@@ -19,6 +19,7 @@ import type { CalendarEntry } from "@/lib/calendar/aggregate";
 
 const SOURCE_PAGE: Partial<Record<CalendarEntry["sourceType"], string>> = {
   INSTALLMENT: "/loans-cards",
+  LOAN_DUE: "/loans-cards",
   CREDIT_CARD_STATEMENT: "/loans-cards",
   CREDIT_CARD_DUE: "/loans-cards",
   INCOME_FORECAST: "/year-plan",

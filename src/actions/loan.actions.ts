@@ -14,6 +14,8 @@ export type LoanActionResult = { ok: true } | { ok: false; error: string };
 const LOAN_CURRENCY = "PHP"; // loans aren't linked to an Account, so there's no per-loan currency yet
 
 function parseLoanForm(formData: FormData) {
+  const rawEndDate = formData.get("endDate");
+  const rawDueDay = formData.get("dueDay");
   return loanSchema.safeParse({
     name: formData.get("name"),
     principal: Number(formData.get("principal")),
@@ -21,6 +23,8 @@ function parseLoanForm(formData: FormData) {
     monthlyPayment: Number(formData.get("monthlyPayment")),
     remainingBalance: Number(formData.get("remainingBalance")),
     startDate: new Date(String(formData.get("startDate"))),
+    endDate: rawEndDate ? new Date(String(rawEndDate)) : undefined,
+    dueDay: rawDueDay ? Number(rawDueDay) : undefined,
   });
 }
 

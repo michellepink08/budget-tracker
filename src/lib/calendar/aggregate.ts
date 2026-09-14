@@ -8,6 +8,7 @@ export type CalendarEntry = {
     | "CREDIT_CARD_STATEMENT"
     | "CREDIT_CARD_DUE"
     | "INSTALLMENT"
+    | "LOAN_DUE"
     | "RECURRING_RULE"
     | "RECURRING_PAYABLE"
     | "INCOME_FORECAST"
@@ -45,6 +46,7 @@ type CalendarPrisma = Pick<
   | "creditCard"
   | "installmentPayment"
   | "installmentPurchase"
+  | "loan"
   | "recurringRule"
   | "recurringPayable"
   | "incomeForecast"
@@ -283,6 +285,45 @@ export async function listCalendarEntries(
           date: dueDate,
           label: `${cc.account.name} payment due`,
           amount: null,
+          confidence: "CONFIRMED",
+          state: deriveOverdue(dueDate, now, "UPCOMING"),
+        });
+      }
+    }
+  }
+
+  // LOAN_DUE — same no-stored-rows projection as the credit card due date,
+  // but only for loans that opted in with a dueDay, and only for the
+  // months between startDate and endDate (an open-ended loan with no
+  // endDate keeps projecting for as long as it stays unarchived).
+  const loans = await prisma.loan.findMany({
+    where: { userId, archivedAt: null, dueDay: { not: null } },
+  });
+  for (const loan of loans as {
+    id: string;
+    name: string;
+    monthlyPayment: number;
+    startDate: Date;
+    endDate: Date | null;
+    dueDay: number | null;
+  }[]) {
+    if (!loan.dueDay) continue;
+    const startMonthIndex = loan.startDate.getFullYear() * 12 + loan.startDate.getMonth();
+    const endMonthIndex = loan.endDate ? loan.endDate.getFullYear() * 12 + loan.endDate.getMonth() : null;
+    for (const { year, monthIndex0 } of monthsInRange) {
+      const monthIndex = year * 12 + monthIndex0;
+      if (monthIndex < startMonthIndex) continue;
+      if (endMonthIndex !== null && monthIndex > endMonthIndex) continue;
+
+      const dueDate = clampedMonthDate(year, monthIndex0, loan.dueDay);
+      if (dueDate >= range.start && dueDate <= range.end) {
+        entries.push({
+          id: `loan-due-${loan.id}-${year}-${monthIndex0}`,
+          sourceType: "LOAN_DUE",
+          sourceId: loan.id,
+          date: dueDate,
+          label: `${loan.name} payment due`,
+          amount: loan.monthlyPayment,
           confidence: "CONFIRMED",
           state: deriveOverdue(dueDate, now, "UPCOMING"),
         });

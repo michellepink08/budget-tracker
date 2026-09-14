@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/money";
+import { computeLoanTermMonths } from "@/lib/loan-term";
 import { LoanFormDialog } from "@/components/loans-cards/loan-form-dialog";
 import { LoanPaymentDialog } from "@/components/loans-cards/loan-payment-dialog";
 import { ArchiveLoanButton } from "@/components/loans-cards/archive-loan-button";
@@ -14,6 +15,8 @@ type LoanRow = {
   monthlyPayment: number;
   remainingBalance: number;
   startDate: Date;
+  endDate: Date | null;
+  dueDay: number | null;
 };
 
 export function LoanList({
@@ -37,6 +40,8 @@ export function LoanList({
               {formatMoney(loan.remainingBalance, LOAN_CURRENCY)} remaining of{" "}
               {formatMoney(loan.principal, LOAN_CURRENCY)} · {formatMoney(loan.monthlyPayment, LOAN_CURRENCY)}
               /mo · {loan.interestRate}% APR
+              {loan.endDate ? ` · ${computeLoanTermMonths(loan.startDate, loan.endDate)}-month term` : ""}
+              {loan.dueDay ? ` · due day ${loan.dueDay}` : ""}
             </p>
           </div>
           <div className="flex gap-2">

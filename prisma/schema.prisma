@@ -477,6 +477,8 @@ model Loan {
   monthlyPayment   Int
   remainingBalance Int
   startDate        DateTime
+  endDate          DateTime? // when set, the loan's term (in months) is derived from startDate/endDate rather than stored
+  dueDay           Int? // day of month (1-31) payments are due — when set, projects a monthly due entry onto the calendar from startDate through endDate
   archivedAt       DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
