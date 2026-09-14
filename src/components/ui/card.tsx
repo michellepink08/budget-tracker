@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-const cardVariants = cva("rounded-lg border bg-card text-card-foreground", {
+const cardVariants = cva("group rounded-lg border bg-card text-card-foreground", {
   variants: {
     variant: {
       default:
@@ -25,10 +25,37 @@ const cardVariants = cva("rounded-lg border bg-card text-card-foreground", {
       success: "border-success/30 bg-success-background text-foreground",
     },
     interactive: {
-      true: "cursor-pointer transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(114,29,66,0.12)] active:translate-y-0 active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      // Wine theme v3: 2-3px lift (vs. the old 1px), a subtle 1.01 scale,
+      // a background brighten, and a per-variant border glow (added below
+      // via compoundVariants, since the glow color must match whichever
+      // semantic variant the card already has). 200ms sits in the spec's
+      // 180-220ms range. motion-reduce keeps the glow/shadow/brighten and
+      // the focus ring but drops all movement, matching the same pattern
+      // already used in side-nav.tsx's nav links.
+      true:
+        "cursor-pointer transition-[transform,box-shadow,filter] duration-200 ease-out" +
+        " hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_8px_24px_rgba(114,29,66,0.16)] hover:brightness-105" +
+        " focus-visible:-translate-y-0.5 focus-visible:scale-[1.01] focus-visible:shadow-[0_8px_24px_rgba(114,29,66,0.16)] focus-visible:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" +
+        " active:translate-y-0 active:scale-100 active:shadow-[0_2px_8px_rgba(114,29,66,0.1)] active:brightness-100" +
+        " motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:focus-visible:translate-y-0 motion-reduce:focus-visible:scale-100",
       false: "",
     },
   },
+  compoundVariants: [
+    { variant: "disposable", interactive: true, class: "hover:border-disposable-accent/70 focus-visible:border-disposable-accent/70" },
+    { variant: "savings", interactive: true, class: "hover:border-savings-accent/70 focus-visible:border-savings-accent/70" },
+    { variant: "restricted", interactive: true, class: "hover:border-restricted-accent/70 focus-visible:border-restricted-accent/70" },
+    { variant: "expense", interactive: true, class: "hover:border-expense-accent/70 focus-visible:border-expense-accent/70" },
+    { variant: "completed", interactive: true, class: "hover:border-completed-accent/70 focus-visible:border-completed-accent/70" },
+    { variant: "warning", interactive: true, class: "hover:border-warning/70 focus-visible:border-warning/70" },
+    { variant: "danger", interactive: true, class: "hover:border-danger/70 focus-visible:border-danger/70" },
+    { variant: "info", interactive: true, class: "hover:border-info/70 focus-visible:border-info/70" },
+    { variant: "success", interactive: true, class: "hover:border-success/70 focus-visible:border-success/70" },
+    { variant: "default", interactive: true, class: "hover:border-primary/40 focus-visible:border-primary/40" },
+    { variant: "raised", interactive: true, class: "hover:border-primary/40 focus-visible:border-primary/40" },
+    { variant: "highlight", interactive: true, class: "hover:border-primary/50 focus-visible:border-primary/50" },
+    { variant: "flat", interactive: true, class: "hover:border-primary/30 focus-visible:border-primary/30" },
+  ],
   defaultVariants: { variant: "default", interactive: false },
 })
 

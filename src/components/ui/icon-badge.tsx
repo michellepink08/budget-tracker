@@ -2,7 +2,13 @@ import type { LucideIcon } from "lucide-react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-const iconBadgeVariants = cva("flex shrink-0 items-center justify-center rounded-full", {
+const iconBadgeVariants = cva(
+  // The translate/duration only ever fires when an IconBadge sits inside
+  // an interactive Card (which renders as `group` — see card.tsx) and
+  // that card is hovered/focused; outside a Card this is inert, since
+  // group-hover/group-focus-visible require a `.group` ancestor to exist.
+  "flex shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover:-translate-y-0.5 group-focus-visible:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0",
+  {
   variants: {
     tone: {
       wine: "bg-primary/10 text-primary",
@@ -30,7 +36,8 @@ const iconBadgeVariants = cva("flex shrink-0 items-center justify-center rounded
     },
   },
   defaultVariants: { tone: "wine", size: "md" },
-})
+  }
+)
 
 export interface IconBadgeProps extends VariantProps<typeof iconBadgeVariants> {
   icon: LucideIcon
