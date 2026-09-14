@@ -11,6 +11,7 @@ import {
   createSubcategory,
   updateCategory,
 } from "@/lib/categories";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type CategoryActionResult = { ok: true } | { ok: false; error: string };
 
@@ -25,6 +26,14 @@ export async function createCategoryAction(formData: FormData): Promise<Category
     icon: formData.get("icon"),
   });
   if (!parsed.success) return { ok: false, error: "Please check the category details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.category.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   await createCategory(prisma, session.user.id, parsed.data);
   revalidatePath("/settings");
@@ -55,6 +64,9 @@ export async function archiveCategoryAction(categoryId: string): Promise<Categor
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
+
   const result = await archiveCategory(prisma, session.user.id, categoryId);
   if (result.ok) revalidatePath("/settings");
   return result;
@@ -70,6 +82,14 @@ export async function createSubcategoryAction(formData: FormData): Promise<Categ
   });
   if (!parsed.success) return { ok: false, error: "Please check the subcategory details" };
 
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.subcategory.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
+
   const result = await createSubcategory(prisma, session.user.id, parsed.data);
   if (!result.ok) return result;
   revalidatePath("/settings");
@@ -81,6 +101,9 @@ export async function archiveSubcategoryAction(
 ): Promise<CategoryActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await archiveSubcategory(prisma, session.user.id, subcategoryId);
   if (result.ok) revalidatePath("/settings");
