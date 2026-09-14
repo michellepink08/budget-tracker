@@ -37,7 +37,7 @@ export async function createTransactionAction(
     accountId: formData.get("accountId"),
     categoryId: formData.get("categoryId") || undefined,
     subcategoryId: formData.get("subcategoryId") || undefined,
-    description: formData.get("description"),
+    description: formData.get("description") || undefined,
     notes: formData.get("notes") || undefined,
   });
   if (!parsed.success) return { ok: false, error: "Please check the transaction details" };

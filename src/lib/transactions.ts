@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { createTransfer, type TransferResult } from "@/lib/transfers";
 import { signedAmountForType, type SignableTransactionType } from "@/lib/transaction-rules";
+import { humanizeEnum } from "@/lib/enum-labels";
 
 export type TransactionMutationResult = { ok: true } | { ok: false; error: string };
 
@@ -12,7 +13,7 @@ export type ExpenseLikeInput = {
   accountId: string;
   categoryId?: string;
   subcategoryId?: string;
-  description: string;
+  description?: string;
   notes?: string;
   budgetPeriodId?: string; // manual override — skips auto-resolution
 };
@@ -45,6 +46,11 @@ export async function createExpenseLikeTransaction(
     input.budgetPeriodId,
   );
 
+  // A blank description isn't a validation error — most people don't have
+  // anything more useful to say than "this was an expense", so fall back to
+  // the transaction type itself rather than forcing the user to type it.
+  const description = input.description?.trim() || humanizeEnum(input.type);
+
   return prisma.transaction.create({
     data: {
       userId,
@@ -55,7 +61,7 @@ export async function createExpenseLikeTransaction(
       categoryId: input.categoryId,
       subcategoryId: input.subcategoryId,
       budgetPeriodId,
-      description: input.description,
+      description,
       notes: input.notes,
     },
   });

@@ -63,6 +63,35 @@ describe("createExpenseLikeTransaction", () => {
     expect(args.budgetPeriodId).toBe("period-manual");
     expect(args.amount).toBe(5000);
   });
+
+  it("fills in a humanized type as the description when none is given", async () => {
+    const prisma = makeFakePrisma();
+
+    await createExpenseLikeTransaction(prisma, "user-1", 11, {
+      type: "CREDIT_CARD_PAYMENT",
+      amount: 500,
+      date: new Date(2026, 8, 15),
+      accountId: "acc-1",
+    });
+
+    const args = prisma.transaction.create.mock.calls[0][0].data;
+    expect(args.description).toBe("Credit Card Payment");
+  });
+
+  it("falls back to the humanized type when the given description is blank", async () => {
+    const prisma = makeFakePrisma();
+
+    await createExpenseLikeTransaction(prisma, "user-1", 11, {
+      type: "EXPENSE",
+      amount: 500,
+      date: new Date(2026, 8, 15),
+      accountId: "acc-1",
+      description: "   ",
+    });
+
+    const args = prisma.transaction.create.mock.calls[0][0].data;
+    expect(args.description).toBe("Expense");
+  });
 });
 
 describe("createTransferTransaction", () => {

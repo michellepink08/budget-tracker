@@ -19,7 +19,7 @@ export const transactionSchema = z.object({
   accountId: z.string().min(1),
   categoryId: z.string().optional(),
   subcategoryId: z.string().optional(),
-  description: z.string().min(1, "Description is required"),
+  description: z.string().optional(),
   notes: z.string().optional(),
 });
 

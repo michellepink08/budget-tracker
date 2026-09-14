@@ -34,15 +34,24 @@ describe("transactionSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects an empty description", () => {
-    const result = transactionSchema.safeParse({
-      type: "EXPENSE",
-      amount: 500,
-      date: new Date(),
-      accountId: "acc-1",
-      description: "",
-    });
-    expect(result.success).toBe(false);
+  it("accepts a missing or empty description — the system fills one in from the type", () => {
+    expect(
+      transactionSchema.safeParse({
+        type: "EXPENSE",
+        amount: 500,
+        date: new Date(),
+        accountId: "acc-1",
+        description: "",
+      }).success,
+    ).toBe(true);
+    expect(
+      transactionSchema.safeParse({
+        type: "EXPENSE",
+        amount: 500,
+        date: new Date(),
+        accountId: "acc-1",
+      }).success,
+    ).toBe(true);
   });
 });
 
