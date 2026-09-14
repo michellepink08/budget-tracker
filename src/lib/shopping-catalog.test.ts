@@ -20,6 +20,9 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     alias: {
       create: vi.fn(async ({ data }: any) => ({ id: "alias-1", ...data })),
     },
+    category: {
+      findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }),
+    },
     shoppingPriceHistory: {
       create: vi.fn(async ({ data }: any) => ({ id: "price-1", ...data })),
       findFirst: vi.fn().mockResolvedValue(null),
@@ -32,7 +35,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
 describe("createCatalogItem", () => {
   it("creates the item scoped to the user", async () => {
     const prisma = makeFakePrisma();
-    const item = await createCatalogItem(prisma, "user-1", {
+    const result = await createCatalogItem(prisma, "user-1", {
       canonicalName: "Milk",
       brand: null,
       size: null,
@@ -42,10 +45,26 @@ describe("createCatalogItem", () => {
       preferredStoreId: null,
       aliases: [],
     });
-    expect(item.id).toBe("item-1");
+    expect(result).toEqual({ ok: true, id: "item-1" });
     expect(prisma.shoppingCatalogItem.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: "user-1", canonicalName: "Milk" }),
     });
+  });
+
+  it("reports not found when the category belongs to another user", async () => {
+    const prisma = makeFakePrisma({ category: { findFirst: vi.fn().mockResolvedValue(null) } });
+    const result = await createCatalogItem(prisma, "user-1", {
+      canonicalName: "Milk",
+      brand: null,
+      size: null,
+      unit: null,
+      categoryId: "cat-owned-by-someone-else",
+      defaultQuantity: 1,
+      preferredStoreId: null,
+      aliases: [],
+    });
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(prisma.shoppingCatalogItem.create).not.toHaveBeenCalled();
   });
 
   it("writes a normalized Alias row (kind: shopping_item) for each alias", async () => {
@@ -126,17 +145,50 @@ describe("archiveCatalogItem", () => {
 
 describe("recordPrice", () => {
   it("always inserts, never updates an existing row", async () => {
-    const prisma = makeFakePrisma();
-    await recordPrice(prisma, "user-1", "item-1", { storeId: "store-1", unitPrice: 5000, source: "MANUAL" });
+    const prisma = makeFakePrisma({
+      shoppingCatalogItem: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "item-1", userId: "user-1" }),
+        update: vi.fn(),
+      },
+    });
+    const result = await recordPrice(prisma, "user-1", "item-1", {
+      storeId: "store-1",
+      unitPrice: 5000,
+      source: "MANUAL",
+    });
+    expect(result.ok).toBe(true);
     expect(prisma.shoppingPriceHistory.create).toHaveBeenCalledWith({
       data: { userId: "user-1", catalogItemId: "item-1", storeId: "store-1", unitPrice: 5000, source: "MANUAL" },
     });
     expect(prisma.shoppingPriceHistory.update).toBeUndefined();
   });
 
+  it("reports not found when the catalog item belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      shoppingCatalogItem: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+      },
+    });
+    const result = await recordPrice(prisma, "user-1", "item-owned-by-someone-else", {
+      storeId: "store-1",
+      unitPrice: 5000,
+      source: "MANUAL",
+    });
+    expect(result).toEqual({ ok: false, error: "Catalog item not found" });
+    expect(prisma.shoppingPriceHistory.create).not.toHaveBeenCalled();
+  });
+
   it("recording a second price never mutates the first row", async () => {
     const rows: any[] = [];
     const prisma = makeFakePrisma({
+      shoppingCatalogItem: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "item-1", userId: "user-1" }),
+        update: vi.fn(),
+      },
       shoppingPriceHistory: {
         create: vi.fn(async ({ data }: any) => {
           const row = { id: `price-${rows.length + 1}`, ...data };

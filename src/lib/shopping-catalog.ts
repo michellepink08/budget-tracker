@@ -2,7 +2,9 @@ import type { PrismaClient } from "@prisma/client";
 
 export type ShoppingMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
-type CatalogPrisma = Pick<PrismaClient, "shoppingCatalogItem" | "alias">;
+type CatalogPrisma = Pick<PrismaClient, "shoppingCatalogItem" | "alias" | "category">;
+
+export type CreateCatalogItemResult = { ok: true; id: string } | { ok: false; error: string };
 
 export async function createCatalogItem(
   prisma: CatalogPrisma,
@@ -17,7 +19,12 @@ export async function createCatalogItem(
     preferredStoreId: string | null;
     aliases: string[];
   },
-) {
+): Promise<CreateCatalogItemResult> {
+  if (input.categoryId) {
+    const category = await prisma.category.findFirst({ where: { id: input.categoryId, userId } });
+    if (!category) return { ok: false, error: "Category not found" };
+  }
+
   const { aliases, ...itemInput } = input;
   const item = await prisma.shoppingCatalogItem.create({ data: { userId, ...itemInput } });
   for (const alias of aliases) {
@@ -27,7 +34,7 @@ export async function createCatalogItem(
       data: { userId, kind: "shopping_item", alias: normalized, targetId: item.id },
     });
   }
-  return item;
+  return { ok: true, id: item.id };
 }
 
 export async function assertOwnedCatalogItem(
@@ -40,7 +47,7 @@ export async function assertOwnedCatalogItem(
 }
 
 export async function updateCatalogItem(
-  prisma: Pick<PrismaClient, "shoppingCatalogItem">,
+  prisma: Pick<PrismaClient, "shoppingCatalogItem" | "category">,
   userId: string,
   catalogItemId: string,
   input: Partial<{
@@ -56,6 +63,10 @@ export async function updateCatalogItem(
 ): Promise<ShoppingMutationResult> {
   if (!(await assertOwnedCatalogItem(prisma, userId, catalogItemId))) {
     return { ok: false, error: "Catalog item not found" };
+  }
+  if (input.categoryId) {
+    const category = await prisma.category.findFirst({ where: { id: input.categoryId, userId } });
+    if (!category) return { ok: false, error: "Category not found" };
   }
   const item = await prisma.shoppingCatalogItem.update({ where: { id: catalogItemId }, data: input });
   return { ok: true, id: item.id };
@@ -77,13 +88,19 @@ export async function archiveCatalogItem(
   return { ok: true };
 }
 
+export type RecordPriceResult = { ok: true; id: string } | { ok: false; error: string };
+
 export async function recordPrice(
-  prisma: Pick<PrismaClient, "shoppingPriceHistory">,
+  prisma: Pick<PrismaClient, "shoppingPriceHistory" | "shoppingCatalogItem">,
   userId: string,
   catalogItemId: string,
   input: { storeId: string | null; unitPrice: number; source: string },
-) {
-  return prisma.shoppingPriceHistory.create({ data: { userId, catalogItemId, ...input } });
+): Promise<RecordPriceResult> {
+  if (!(await assertOwnedCatalogItem(prisma, userId, catalogItemId))) {
+    return { ok: false, error: "Catalog item not found" };
+  }
+  const price = await prisma.shoppingPriceHistory.create({ data: { userId, catalogItemId, ...input } });
+  return { ok: true, id: price.id };
 }
 
 export async function getLatestPrice(

@@ -31,7 +31,7 @@ export async function createCatalogItemAction(formData: FormData): Promise<Shopp
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
 
   const preferredStoreId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
-  await createCatalogItem(prisma, session.user.id, {
+  const result = await createCatalogItem(prisma, session.user.id, {
     canonicalName: parsed.data.canonicalName,
     brand: parsed.data.brand,
     size: parsed.data.size,
@@ -41,6 +41,7 @@ export async function createCatalogItemAction(formData: FormData): Promise<Shopp
     preferredStoreId,
     aliases: parsed.data.aliases,
   });
+  if (!result.ok) return result;
   revalidatePath("/shopping");
   return { ok: true };
 }
@@ -94,11 +95,12 @@ export async function recordPriceAction(
   if (!parsed.success) return { ok: false, error: "Please check the price details" };
 
   const storeId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
-  await recordPrice(prisma, session.user.id, catalogItemId, {
+  const result = await recordPrice(prisma, session.user.id, catalogItemId, {
     storeId,
     unitPrice: toMinorUnits(parsed.data.unitPrice, currency),
     source: parsed.data.source,
   });
+  if (!result.ok) return result;
   revalidatePath("/shopping");
   return { ok: true };
 }
