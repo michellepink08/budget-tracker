@@ -77,4 +77,14 @@ describe("transferSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("accepts a missing description — the system fills in \"Transfer\"", () => {
+    const result = transferSchema.safeParse({
+      amount: 500,
+      date: new Date(),
+      sourceAccountId: "acc-1",
+      destinationAccountId: "acc-2",
+    });
+    expect(result.success).toBe(true);
+  });
 });

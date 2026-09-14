@@ -72,7 +72,7 @@ export type TransferInput = {
   date: Date;
   sourceAccountId: string;
   destinationAccountId: string;
-  description: string;
+  description?: string;
   budgetPeriodId?: string;
 };
 

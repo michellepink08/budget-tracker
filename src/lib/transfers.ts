@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { humanizeEnum } from "@/lib/enum-labels";
 
 export type CreateTransferInput = {
   userId: string;
@@ -6,7 +7,7 @@ export type CreateTransferInput = {
   amount: number; // non-negative magnitude, minor units
   sourceAccountId: string;
   destinationAccountId: string;
-  description: string;
+  description?: string;
   budgetPeriodId?: string;
 };
 
@@ -34,6 +35,10 @@ export async function createTransfer(
     throw new Error("sourceAccountId and destinationAccountId must differ");
   }
 
+  // Same "blank isn't an error" treatment as regular transactions — most
+  // transfers don't need anything more descriptive than "Transfer".
+  const description = input.description?.trim() || humanizeEnum("TRANSFER");
+
   // All three writes (both sides of the transfer, plus linking them back
   // together) happen in one DB transaction — a failure partway through
   // must never leave one side of the transfer written without the other.
@@ -46,7 +51,7 @@ export async function createTransfer(
         amount: -input.amount,
         accountId: input.sourceAccountId,
         destinationAccountId: input.destinationAccountId,
-        description: input.description,
+        description,
         budgetPeriodId: input.budgetPeriodId,
       },
     });
@@ -59,7 +64,7 @@ export async function createTransfer(
         amount: input.amount,
         accountId: input.destinationAccountId,
         destinationAccountId: input.sourceAccountId,
-        description: input.description,
+        description,
         budgetPeriodId: input.budgetPeriodId,
         linkedTransactionId: outgoing.id,
       },

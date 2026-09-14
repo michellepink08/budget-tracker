@@ -29,7 +29,7 @@ export const transferSchema = z
     date: z.date(),
     sourceAccountId: z.string().min(1),
     destinationAccountId: z.string().min(1),
-    description: z.string().min(1, "Description is required"),
+    description: z.string().optional(),
   })
   .refine((data) => data.sourceAccountId !== data.destinationAccountId, {
     message: "Source and destination accounts must be different",

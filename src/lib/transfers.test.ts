@@ -66,6 +66,23 @@ describe("createTransfer", () => {
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
+  it("fills in a default description when none is given", async () => {
+    const prisma = makeFakePrisma();
+
+    await createTransfer(prisma, {
+      userId: "user-1",
+      date: new Date(2026, 8, 15),
+      amount: 5000,
+      sourceAccountId: "acc-checking",
+      destinationAccountId: "acc-savings",
+    });
+
+    const outgoingArgs = prisma.transaction.create.mock.calls[0][0].data;
+    const incomingArgs = prisma.transaction.create.mock.calls[1][0].data;
+    expect(outgoingArgs.description).toBe("Transfer");
+    expect(incomingArgs.description).toBe("Transfer");
+  });
+
   it("rejects a negative amount", async () => {
     const prisma = makeFakePrisma();
     await expect(

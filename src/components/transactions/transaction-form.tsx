@@ -194,12 +194,11 @@ export function TransactionForm({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="description">Description{isTransfer ? "" : " (optional)"}</Label>
+        <Label htmlFor="description">Description (optional)</Label>
         <Input
           id="description"
           name="description"
-          placeholder={isTransfer ? undefined : "Leave blank to use the transaction type"}
-          required={isTransfer}
+          placeholder={isTransfer ? "Leave blank to use \"Transfer\"" : "Leave blank to use the transaction type"}
         />
       </div>
 

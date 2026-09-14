@@ -86,7 +86,7 @@ export async function createTransferAction(formData: FormData): Promise<Transact
     date: new Date(String(formData.get("date"))),
     sourceAccountId: formData.get("sourceAccountId"),
     destinationAccountId: formData.get("destinationAccountId"),
-    description: formData.get("description"),
+    description: formData.get("description") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the transfer details" };
