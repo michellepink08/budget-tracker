@@ -76,12 +76,18 @@ export async function assertOwnedSubcategory(
   return subcategory !== null;
 }
 
+export type CreateSubcategoryResult = { ok: true; id: string } | { ok: false; error: string };
+
 export async function createSubcategory(
-  prisma: Pick<PrismaClient, "subcategory">,
+  prisma: Pick<PrismaClient, "subcategory" | "category">,
   userId: string,
   input: SubcategoryInput,
-) {
-  return prisma.subcategory.create({ data: { userId, ...input } });
+): Promise<CreateSubcategoryResult> {
+  const category = await prisma.category.findFirst({ where: { id: input.categoryId, userId } });
+  if (!category) return { ok: false, error: "Category not found" };
+
+  const subcategory = await prisma.subcategory.create({ data: { userId, ...input } });
+  return { ok: true, id: subcategory.id };
 }
 
 export async function archiveSubcategory(

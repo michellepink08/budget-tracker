@@ -70,7 +70,8 @@ export async function createSubcategoryAction(formData: FormData): Promise<Categ
   });
   if (!parsed.success) return { ok: false, error: "Please check the subcategory details" };
 
-  await createSubcategory(prisma, session.user.id, parsed.data);
+  const result = await createSubcategory(prisma, session.user.id, parsed.data);
+  if (!result.ok) return result;
   revalidatePath("/settings");
   return { ok: true };
 }

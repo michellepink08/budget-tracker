@@ -66,13 +66,30 @@ describe("listCategories", () => {
 describe("createSubcategory", () => {
   it("creates a subcategory scoped to the given user", async () => {
     const create = vi.fn().mockResolvedValue({ id: "sub-1" });
-    const prisma = { subcategory: { create } } as any;
+    const prisma = {
+      subcategory: { create },
+      category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) },
+    } as any;
 
-    await createSubcategory(prisma, "user-1", { name: "Produce", categoryId: "cat-1" });
+    const result = await createSubcategory(prisma, "user-1", { name: "Produce", categoryId: "cat-1" });
 
+    expect(result).toEqual({ ok: true, id: "sub-1" });
     expect(create).toHaveBeenCalledWith({
       data: { userId: "user-1", name: "Produce", categoryId: "cat-1" },
     });
+  });
+
+  it("reports not found when the parent category belongs to another user", async () => {
+    const create = vi.fn();
+    const prisma = {
+      subcategory: { create },
+      category: { findFirst: vi.fn().mockResolvedValue(null) },
+    } as any;
+
+    const result = await createSubcategory(prisma, "user-1", { name: "Produce", categoryId: "cat-1" });
+
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(create).not.toHaveBeenCalled();
   });
 });
 
