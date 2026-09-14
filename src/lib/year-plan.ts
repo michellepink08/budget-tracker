@@ -5,7 +5,7 @@ export type YearPlanMutationResult = { ok: true; id: string } | { ok: false; err
 type YearPlanPrisma = Pick<PrismaClient, "yearPlan" | "yearPlanPhase" | "incomeForecast">;
 
 export async function createYearPlan(
-  prisma: Pick<PrismaClient, "yearPlan">,
+  prisma: Pick<PrismaClient, "yearPlan" | "savingsGoal">,
   userId: string,
   input: {
     name: string;
@@ -14,8 +14,13 @@ export async function createYearPlan(
     minCashBuffer: number;
     vacationReserveGoalId: string | null;
   },
-) {
-  return prisma.yearPlan.create({ data: { userId, ...input } });
+): Promise<YearPlanMutationResult> {
+  if (input.vacationReserveGoalId) {
+    const goal = await prisma.savingsGoal.findFirst({ where: { id: input.vacationReserveGoalId, userId } });
+    if (!goal) return { ok: false, error: "Savings goal not found" };
+  }
+  const plan = await prisma.yearPlan.create({ data: { userId, ...input } });
+  return { ok: true, id: plan.id };
 }
 
 async function assertOwnedPlan(
@@ -63,6 +68,10 @@ export async function addIncomeForecast(
   if (!(await assertOwnedPlan(prisma, userId, yearPlanId))) {
     return { ok: false, error: "Year plan not found" };
   }
+  if (input.phaseId) {
+    const phase = await prisma.yearPlanPhase.findFirst({ where: { id: input.phaseId, userId, yearPlanId } });
+    if (!phase) return { ok: false, error: "Phase not found" };
+  }
   const forecast = await prisma.incomeForecast.create({ data: { userId, yearPlanId, ...input } });
   return { ok: true, id: forecast.id };
 }
@@ -85,7 +94,7 @@ export async function linkForecastToTransaction(
 }
 
 export async function updateYearPlan(
-  prisma: Pick<PrismaClient, "yearPlan">,
+  prisma: Pick<PrismaClient, "yearPlan" | "savingsGoal">,
   userId: string,
   yearPlanId: string,
   input: Partial<{
@@ -98,6 +107,10 @@ export async function updateYearPlan(
 ): Promise<YearPlanMutationResult> {
   if (!(await assertOwnedPlan(prisma, userId, yearPlanId))) {
     return { ok: false, error: "Year plan not found" };
+  }
+  if (input.vacationReserveGoalId) {
+    const goal = await prisma.savingsGoal.findFirst({ where: { id: input.vacationReserveGoalId, userId } });
+    if (!goal) return { ok: false, error: "Savings goal not found" };
   }
   const plan = await prisma.yearPlan.update({ where: { id: yearPlanId }, data: input });
   return { ok: true, id: plan.id };
@@ -177,7 +190,7 @@ async function assertOwnedForecast(
 }
 
 export async function updateIncomeForecast(
-  prisma: Pick<PrismaClient, "incomeForecast">,
+  prisma: Pick<PrismaClient, "incomeForecast" | "yearPlanPhase">,
   userId: string,
   forecastId: string,
   input: Partial<{
@@ -192,6 +205,9 @@ export async function updateIncomeForecast(
 ): Promise<YearPlanMutationResult> {
   if (!(await assertOwnedForecast(prisma, userId, forecastId))) {
     return { ok: false, error: "Forecast not found" };
+  }
+  if (input.phaseId && !(await assertOwnedPhase(prisma, userId, input.phaseId))) {
+    return { ok: false, error: "Phase not found" };
   }
   const forecast = await prisma.incomeForecast.update({ where: { id: forecastId }, data: input });
   return { ok: true, id: forecast.id };

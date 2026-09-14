@@ -39,6 +39,7 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     },
     transaction: { update: vi.fn(), findMany: vi.fn() },
     account: { update: vi.fn(), findMany: vi.fn() },
+    savingsGoal: { findFirst: vi.fn().mockResolvedValue({ id: "goal-1" }) },
     ...overrides,
   } as any;
 }
@@ -46,17 +47,30 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
 describe("createYearPlan", () => {
   it("creates a plan scoped to the given user", async () => {
     const prisma = makeFakePrisma();
-    const plan = await createYearPlan(prisma, "user-1", {
+    const result = await createYearPlan(prisma, "user-1", {
       name: "2026 Onboard Cycle",
       startDate: new Date(2026, 0, 1),
       endDate: new Date(2027, 5, 30),
       minCashBuffer: 2000000,
       vacationReserveGoalId: null,
     });
-    expect(plan.id).toBe("plan-1");
+    expect(result).toEqual({ ok: true, id: "plan-1" });
     expect(prisma.yearPlan.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: "user-1", name: "2026 Onboard Cycle" }),
     });
+  });
+
+  it("reports not found when the vacation reserve goal belongs to another user", async () => {
+    const prisma = makeFakePrisma({ savingsGoal: { findFirst: vi.fn().mockResolvedValue(null) } });
+    const result = await createYearPlan(prisma, "user-1", {
+      name: "2026 Onboard Cycle",
+      startDate: new Date(2026, 0, 1),
+      endDate: new Date(2027, 5, 30),
+      minCashBuffer: 2000000,
+      vacationReserveGoalId: "goal-owned-by-someone-else",
+    });
+    expect(result).toEqual({ ok: false, error: "Savings goal not found" });
+    expect(prisma.yearPlan.create).not.toHaveBeenCalled();
   });
 });
 
@@ -125,6 +139,34 @@ describe("addIncomeForecast", () => {
       notes: null,
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("rejects when phaseId does not belong to the same plan/user", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "plan-1", userId: "user-1" }),
+      },
+      yearPlanPhase: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(),
+      },
+    });
+    const result = await addIncomeForecast(prisma, "user-1", "plan-1", {
+      phaseId: "phase-owned-by-someone-else",
+      source: "MY_SALARY",
+      expectedDate: new Date(2026, 0, 15),
+      expectedAmount: 3500000,
+      cutoffLabel: "Jan 1-15",
+      status: "EXPECTED",
+      notes: null,
+    });
+    expect(result).toEqual({ ok: false, error: "Phase not found" });
+    expect(prisma.incomeForecast.create).not.toHaveBeenCalled();
   });
 });
 
@@ -204,6 +246,22 @@ describe("updateYearPlan", () => {
       where: { id: "plan-1" },
       data: { name: "Renamed", minCashBuffer: 5000 },
     });
+  });
+
+  it("rejects when the vacation reserve goal belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      yearPlan: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "plan-1", userId: "user-1" }),
+        update: vi.fn(),
+      },
+      savingsGoal: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const result = await updateYearPlan(prisma, "user-1", "plan-1", {
+      vacationReserveGoalId: "goal-owned-by-someone-else",
+    });
+    expect(result).toEqual({ ok: false, error: "Savings goal not found" });
+    expect(prisma.yearPlan.update).not.toHaveBeenCalled();
   });
 });
 
@@ -309,6 +367,32 @@ describe("updateIncomeForecast", () => {
       where: { id: "forecast-1" },
       data: { expectedAmount: 1000 },
     });
+  });
+
+  it("rejects when phaseId belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      incomeForecast: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "forecast-1", userId: "user-1" }),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(),
+      },
+      yearPlanPhase: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(),
+        delete: vi.fn(),
+      },
+    });
+    const result = await updateIncomeForecast(prisma, "user-1", "forecast-1", {
+      phaseId: "phase-owned-by-someone-else",
+    });
+    expect(result).toEqual({ ok: false, error: "Phase not found" });
+    expect(prisma.incomeForecast.update).not.toHaveBeenCalled();
   });
 });
 

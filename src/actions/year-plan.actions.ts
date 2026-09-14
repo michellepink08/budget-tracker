@@ -32,10 +32,11 @@ export async function createYearPlanAction(currency: string, formData: FormData)
   });
   if (!parsed.success) return { ok: false, error: "Please check the plan details" };
 
-  await createYearPlan(prisma, session.user.id, {
+  const result = await createYearPlan(prisma, session.user.id, {
     ...parsed.data,
     minCashBuffer: toMinorUnits(parsed.data.minCashBuffer, currency),
   });
+  if (!result.ok) return result;
   revalidatePath("/year-plan");
   return { ok: true };
 }
