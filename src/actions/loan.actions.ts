@@ -7,6 +7,7 @@ import { loanSchema } from "@/lib/validations/loan";
 import { archiveLoan, createLoan, makeLoanPayment, updateLoan } from "@/lib/loans";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type LoanActionResult = { ok: true } | { ok: false; error: string };
 
@@ -29,6 +30,14 @@ export async function createLoanAction(formData: FormData): Promise<LoanActionRe
 
   const parsed = parseLoanForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the loan details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.loan.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   await createLoan(prisma, session.user.id, {
     ...parsed.data,
@@ -62,6 +71,9 @@ export async function updateLoanAction(loanId: string, formData: FormData): Prom
 export async function archiveLoanAction(loanId: string): Promise<LoanActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await archiveLoan(prisma, session.user.id, loanId);
   if (result.ok) revalidatePath("/loans-cards");
