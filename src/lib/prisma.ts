@@ -22,7 +22,17 @@ neonConfig.poolQueryViaFetch = true;
 // binaries this machine's Application Control policy blocks.
 function createPrismaClient() {
   const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
-  return new PrismaClient({ adapter });
+  return new PrismaClient({
+    adapter,
+    // Neon's serverless Postgres can suspend its compute when idle; waking
+    // it back up plus the WebSocket handshake for a new connection can
+    // take longer than Prisma's 2s/5s defaults, which was surfacing as
+    // "Transaction API error: Unable to start a transaction in the given
+    // time" (P2028) on every interactive $transaction (transfers, credit
+    // card payments, receipt confirmation, etc.) whenever the compute had
+    // gone idle.
+    transactionOptions: { maxWait: 10000, timeout: 15000 },
+  });
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
