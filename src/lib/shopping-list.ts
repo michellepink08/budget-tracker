@@ -1,20 +1,28 @@
 import type { PrismaClient } from "@prisma/client";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { listAllocationsWithActuals } from "@/lib/budget-allocations";
+import { assertOwnedCategory } from "@/lib/categories";
+import { assertOwnedCatalogItem } from "@/lib/shopping-catalog";
 
 export type ShoppingMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
-type ListPrisma = Pick<PrismaClient, "shoppingList" | "shoppingListItem">;
+type ListPrisma = Pick<PrismaClient, "shoppingList" | "shoppingListItem" | "category" | "shoppingCatalogItem">;
+
+export type CreateListResult = { ok: true; id: string } | { ok: false; error: string };
 
 export async function createList(
-  prisma: Pick<PrismaClient, "shoppingList">,
+  prisma: Pick<PrismaClient, "shoppingList" | "category">,
   userId: string,
   input: { name: string; plannedDate: Date | null; budgetCategoryId: string | null },
-) {
+): Promise<CreateListResult> {
+  if (input.budgetCategoryId && !(await assertOwnedCategory(prisma, userId, input.budgetCategoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
   const existingCurrent = await prisma.shoppingList.findFirst({ where: { userId, isCurrent: true } });
-  return prisma.shoppingList.create({
+  const list = await prisma.shoppingList.create({
     data: { userId, ...input, isCurrent: existingCurrent === null },
   });
+  return { ok: true, id: list.id };
 }
 
 async function assertOwnedList(
@@ -45,6 +53,12 @@ export async function addItem(
   if (!(await assertOwnedList(prisma, userId, listId))) {
     return { ok: false, error: "List not found" };
   }
+  if (input.categoryId && !(await assertOwnedCategory(prisma, userId, input.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (input.catalogItemId && !(await assertOwnedCatalogItem(prisma, userId, input.catalogItemId))) {
+    return { ok: false, error: "Catalog item not found" };
+  }
   const item = await prisma.shoppingListItem.create({ data: { userId, listId, ...input } });
   return { ok: true, id: item.id };
 }
@@ -59,7 +73,7 @@ async function assertOwnedItem(
 }
 
 export async function updateItem(
-  prisma: Pick<PrismaClient, "shoppingListItem">,
+  prisma: Pick<PrismaClient, "shoppingListItem" | "category">,
   userId: string,
   itemId: string,
   input: Partial<{
@@ -74,6 +88,9 @@ export async function updateItem(
 ): Promise<ShoppingMutationResult> {
   if (!(await assertOwnedItem(prisma, userId, itemId))) {
     return { ok: false, error: "Item not found" };
+  }
+  if (input.categoryId && !(await assertOwnedCategory(prisma, userId, input.categoryId))) {
+    return { ok: false, error: "Category not found" };
   }
   const item = await prisma.shoppingListItem.update({ where: { id: itemId }, data: input });
   return { ok: true, id: item.id };

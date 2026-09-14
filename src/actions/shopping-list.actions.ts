@@ -32,7 +32,8 @@ export async function createListAction(formData: FormData): Promise<ShoppingActi
   });
   if (!parsed.success) return { ok: false, error: "Please check the list details" };
 
-  await createList(prisma, session.user.id, parsed.data);
+  const result = await createList(prisma, session.user.id, parsed.data);
+  if (!result.ok) return result;
   revalidatePath("/shopping");
   return { ok: true };
 }

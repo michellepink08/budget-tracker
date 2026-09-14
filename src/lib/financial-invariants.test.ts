@@ -207,12 +207,13 @@ describe("§13 invariant: planning records don't affect actual balances", () => 
       },
     };
 
-    const list = await createShoppingList(prisma, "user-1", {
+    const result = await createShoppingList(prisma, "user-1", {
       name: "Groceries",
       plannedDate: null,
       budgetCategoryId: null,
     });
-    expect(list.id).toBe("list-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.id).toBe("list-1");
   });
 });
 

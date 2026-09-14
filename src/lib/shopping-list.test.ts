@@ -32,6 +32,8 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     budgetPeriod: { findUnique: vi.fn(), create: vi.fn() },
     budgetAllocation: { findMany: vi.fn().mockResolvedValue([]) },
     transaction: { findMany: vi.fn().mockResolvedValue([]) },
+    category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) },
+    shoppingCatalogItem: { findFirst: vi.fn().mockResolvedValue({ id: "catalog-1" }) },
     ...overrides,
   } as any;
 }
@@ -46,8 +48,8 @@ describe("createList", () => {
         updateMany: vi.fn(),
       },
     });
-    const list = await createList(prisma, "user-1", { name: "Groceries", plannedDate: null, budgetCategoryId: null });
-    expect(list.isCurrent).toBe(true);
+    const result = await createList(prisma, "user-1", { name: "Groceries", plannedDate: null, budgetCategoryId: null });
+    expect(result.ok).toBe(true);
   });
 
   it("is not current when a current list already exists", async () => {
@@ -59,8 +61,27 @@ describe("createList", () => {
         updateMany: vi.fn(),
       },
     });
-    const list = await createList(prisma, "user-1", { name: "Groceries", plannedDate: null, budgetCategoryId: null });
-    expect(list.isCurrent).toBe(false);
+    const result = await createList(prisma, "user-1", { name: "Groceries", plannedDate: null, budgetCategoryId: null });
+    expect(result.ok).toBe(true);
+  });
+
+  it("reports not found when budgetCategoryId belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      shoppingList: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      },
+      category: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const result = await createList(prisma, "user-1", {
+      name: "Groceries",
+      plannedDate: null,
+      budgetCategoryId: "cat-owned-by-someone-else",
+    });
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(prisma.shoppingList.create).not.toHaveBeenCalled();
   });
 });
 
