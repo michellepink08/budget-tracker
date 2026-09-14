@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-background">
       <SideNav accounts={accounts} categories={categories} />
       <div className="flex flex-1 flex-col">
-        <TopNav accounts={accounts} categories={categories} />
+        <TopNav accounts={accounts} categories={categories} email={session?.user?.email ?? null} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
       </div>
     </div>
