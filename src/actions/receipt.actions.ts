@@ -27,6 +27,7 @@ import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory } from "@/lib/categories";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type ReceiptActionResult = { ok: true; id: string } | { ok: false; error: string };
 export type ReceiptVoidActionResult = { ok: true } | { ok: false; error: string };
@@ -41,6 +42,14 @@ export async function createDraftReceiptAction(formData: FormData): Promise<Rece
     receiptNumber: formData.get("receiptNumber") || null,
   });
   if (!parsed.success) return { ok: false, error: "Please check the receipt details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.receipt.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const storeId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
   const receipt = await createDraftReceipt(prisma, session.user.id, {
@@ -69,6 +78,9 @@ export async function uploadReceiptImageAction(receiptId: string, formData: Form
 export async function removeReceiptImageAction(imageId: string): Promise<ReceiptVoidActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const image = await prisma.receiptImage.findFirst({ where: { id: imageId, userId: session.user.id } });
   if (!image) return { ok: false, error: "Image not found" };
@@ -167,6 +179,9 @@ export async function toggleLineExcludedAction(lineId: string, excluded: boolean
 export async function deleteLineAction(lineId: string): Promise<ReceiptVoidActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await deleteLine(prisma, session.user.id, lineId);
   if (result.ok) revalidatePath("/shopping");
