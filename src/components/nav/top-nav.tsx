@@ -42,7 +42,7 @@ export function TopNav({
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label="Open navigation"
-          className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+          className="rounded-md p-1 transition-transform hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-90 motion-reduce:active:scale-100"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -52,7 +52,7 @@ export function TopNav({
             type="button"
             onClick={() => setQuickCaptureOpen(true)}
             aria-label="Quick Capture"
-            className="rounded-md p-1 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+            className="rounded-md p-1 transition-transform hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-90 motion-reduce:active:scale-100"
           >
             <span className="text-sm">⌘K</span>
           </button>
@@ -65,7 +65,7 @@ export function TopNav({
                 <button
                   type="button"
                   aria-label="Account menu"
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-xs font-semibold hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-xs font-semibold transition-transform hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-90 motion-reduce:active:scale-100"
                 />
               }
             >

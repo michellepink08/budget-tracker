@@ -148,7 +148,7 @@ export function SideNav({
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="shrink-0 rounded-md p-1 text-[var(--nav-foreground)]/70 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+          className="shrink-0 rounded-md p-1 text-[var(--nav-foreground)]/70 transition-all hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-90 motion-reduce:active:scale-100"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -159,7 +159,7 @@ export function SideNav({
         onClick={() => setQuickCaptureOpen(true)}
         className={
           (collapsed ? "justify-center" : "justify-between") +
-          " group relative mx-2 mt-2 flex items-center gap-2 rounded-lg border border-[#F4DBE4]/25 bg-white/[0.06] px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-colors duration-150 hover:border-[#F4DBE4]/40 hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60"
+          " group relative mx-2 mt-2 flex items-center gap-2 rounded-lg border border-[#F4DBE4]/25 bg-white/[0.06] px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-150 hover:border-[#F4DBE4]/40 hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-[0.97] motion-reduce:active:scale-100"
         }
       >
         <span className="flex items-center gap-2">
