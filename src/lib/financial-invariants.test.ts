@@ -106,13 +106,27 @@ describe("§13 invariant: transfers are excluded from income and expense totals"
   });
 });
 
-describe("§13 invariant: credit-card payments create no additional spending beyond the one posted transaction", () => {
-  it("makeCreditCardPayment writes exactly one transaction row, regardless of how many times the card is queried", async () => {
+describe("§13 invariant: a credit-card payment never creates net-worth-changing spending — it's a transfer of debt, not an expense", () => {
+  it("the two rows created by a payment sum to zero across the paying account and the card's own account", async () => {
+    const created: any[] = [];
     const prisma: any = {
       creditCard: { findFirst: vi.fn().mockResolvedValue({ id: "card-1", userId: "user-1", accountId: "acc-cc" }) },
-      transaction: { create: vi.fn().mockResolvedValue({ id: "txn-1" }) },
+      account: { findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "acc-checking", name: "Everyday Checking" }) },
+      transaction: {
+        create: vi.fn(async ({ data }: any) => {
+          const row = { id: `txn-${created.length + 1}`, ...data };
+          created.push(row);
+          return row;
+        }),
+        update: vi.fn(async ({ where, data }: any) => {
+          const row = created.find((r) => r.id === where.id);
+          Object.assign(row, data);
+          return row;
+        }),
+      },
       budgetPeriod: { findUnique: vi.fn().mockResolvedValue({ id: "period-1" }), create: vi.fn() },
     };
+    prisma.$transaction = vi.fn((fn: (tx: unknown) => unknown) => fn(prisma));
 
     await makeCreditCardPayment(prisma, "user-1", 25, "card-1", {
       accountId: "acc-checking",
@@ -120,7 +134,14 @@ describe("§13 invariant: credit-card payments create no additional spending bey
       date: new Date(2026, 8, 12),
     });
 
-    expect(prisma.transaction.create).toHaveBeenCalledTimes(1);
+    expect(created).toHaveLength(2);
+    const total = created.reduce((sum, t) => sum + t.amount, 0);
+    expect(total).toBe(0);
+
+    const payingEffect = created.reduce((sum, t) => sum + accountEffect(t, "acc-checking"), 0);
+    const cardEffect = created.reduce((sum, t) => sum + accountEffect(t, "acc-cc"), 0);
+    expect(payingEffect).toBe(-300000);
+    expect(cardEffect).toBe(300000);
   });
 });
 
