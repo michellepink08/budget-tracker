@@ -11,6 +11,8 @@ import {
   updateRecurringPayable,
 } from "@/lib/recurring-payables";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type RecurringPayableActionResult = { ok: true } | { ok: false; error: string };
 
@@ -35,7 +37,11 @@ export async function createRecurringPayableAction(
   const parsed = parseRecurringPayableForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring bill details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   await createRecurringPayable(prisma, session.user.id, {
     ...parsed.data,
@@ -53,11 +59,16 @@ export async function updateRecurringPayableAction(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
-  const account = await prisma.account.findFirst({ where: { id: String(formData.get("accountId")) } });
-  const currency = account?.currency ?? "PHP";
+  const accountId = String(formData.get("accountId"));
+  const account = await assertOwnedAccount(prisma, session.user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  const currency = account.currency;
 
   const parsed = parseRecurringPayableForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring bill details" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   const result = await updateRecurringPayable(prisma, session.user.id, ruleId, {
     ...parsed.data,
