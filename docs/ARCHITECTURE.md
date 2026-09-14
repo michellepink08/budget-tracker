@@ -59,4 +59,11 @@ The app is deployed on Vercel, backed by a Postgres database provisioned through
 
 Schema changes are applied by Vercel's own build step (`prisma db push`, part of the project's configured Build Command), which runs on Vercel's unrestricted Linux build machine — never on this Windows machine. That's also why `prisma/schema.sql` and `scripts/db-push.mjs` (the old hand-rolled SQLite-syntax workaround for the same binary block) were retired: schema application no longer needs to happen locally at all.
 
+**Two things every interactive `prisma.$transaction()` call needs to actually work, both discovered the hard way after transfers/credit-card-payments/receipt-confirmation were silently failing in production:**
+
+1. **`WS_NO_BUFFER_UTIL="1"` and `WS_NO_UTF_8_VALIDATE="1"`** — the `ws` package's native bufferutil/utf-8-validate addons throw `"b.mask is not a function"` in both this dev environment and on Vercel, which breaks the Neon driver adapter's WebSocket connection outright. These force `ws`'s pure-JS fallback. Set in `.env` locally and as real Vercel project environment variables (`vercel env add`, since `.env` isn't deployed).
+2. **A raised `transactionOptions.maxWait`/`timeout`** (`src/lib/prisma.ts`) — Prisma's defaults (2s/5s) are too short for Neon's serverless Postgres to wake a suspended compute and complete a fresh WebSocket handshake, surfacing as `PrismaClientKnownRequestError: ... P2028`.
+
+Without both fixes, every `$transaction` call (transfers, credit card payments, receipt confirmation, recurring/installment payment confirmation, calendar reminder "mark paid", onboarding-with-account) fails.
+
 **Single shared database:** for now, the same Postgres database serves both production and local development — the same one-environment model this project has always had (previously one local SQLite file), just relocated to the cloud. The practical consequence: a schema change only takes effect once deployed (edit `schema.prisma`, commit, push, let Vercel's build apply it) — local dev then sees the new schema automatically, since it points at the same database. Splitting into separate dev/prod databases later (e.g. via Neon's branching, or Vercel's Development/Preview/Production environment-variable scoping) is a clean future upgrade if stronger isolation is ever needed — not built here.
