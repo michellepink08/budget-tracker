@@ -16,6 +16,7 @@ import {
   updateYearPlan,
 } from "@/lib/year-plan";
 import { toMinorUnits } from "@/lib/money";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type YearPlanActionResult = { ok: true } | { ok: false; error: string };
 
@@ -31,6 +32,14 @@ export async function createYearPlanAction(currency: string, formData: FormData)
     vacationReserveGoalId: formData.get("vacationReserveGoalId") || null,
   });
   if (!parsed.success) return { ok: false, error: "Please check the plan details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.yearPlan.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const result = await createYearPlan(prisma, session.user.id, {
     ...parsed.data,
@@ -70,6 +79,9 @@ export async function deleteYearPlanAction(yearPlanId: string): Promise<YearPlan
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
+
   const result = await deleteYearPlan(prisma, session.user.id, yearPlanId);
   if (result.ok) revalidatePath("/year-plan");
   return result;
@@ -91,6 +103,14 @@ export async function addPhaseAction(
     estimatedExpensesPerCutoff: Number(formData.get("estimatedExpensesPerCutoff")),
   });
   if (!parsed.success) return { ok: false, error: "Please check the phase details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.yearPlanPhase.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const result = await addPhase(prisma, session.user.id, yearPlanId, {
     ...parsed.data,
@@ -125,6 +145,9 @@ export async function deletePhaseAction(phaseId: string): Promise<YearPlanAction
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
+
   const result = await deletePhase(prisma, session.user.id, phaseId);
   if (result.ok) revalidatePath("/year-plan");
   return result;
@@ -148,6 +171,14 @@ export async function addIncomeForecastAction(
     notes: formData.get("notes") || null,
   });
   if (!parsed.success) return { ok: false, error: "Please check the forecast details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.incomeForecast.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const result = await addIncomeForecast(prisma, session.user.id, yearPlanId, {
     ...parsed.data,
@@ -187,6 +218,9 @@ export async function updateIncomeForecastAction(
 export async function deleteIncomeForecastAction(forecastId: string): Promise<YearPlanActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await deleteIncomeForecast(prisma, session.user.id, forecastId);
   if (result.ok) revalidatePath("/year-plan");
