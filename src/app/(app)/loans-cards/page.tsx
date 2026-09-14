@@ -75,9 +75,9 @@ export default async function LoansCardsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">Loans & Cards</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <LoanFormDialog />
           <CreditCardFormDialog linkableAccounts={linkableAccounts} />
           <InstallmentPurchaseFormDialog creditCardAccounts={creditCardAccounts} categories={categories} />
