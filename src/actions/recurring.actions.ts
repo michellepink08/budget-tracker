@@ -11,6 +11,8 @@ import {
   updateRecurringRule,
 } from "@/lib/recurring";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
 
 export type RecurringActionResult = { ok: true } | { ok: false; error: string };
 
@@ -37,7 +39,14 @@ export async function createRecurringRuleAction(formData: FormData): Promise<Rec
   const parsed = parseRecurringForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring rule details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (parsed.data.subcategoryId && !(await assertOwnedSubcategory(prisma, user.id, parsed.data.subcategoryId))) {
+    return { ok: false, error: "Subcategory not found" };
+  }
 
   await createRecurringRule(prisma, user.id, {
     ...parsed.data,
@@ -55,11 +64,19 @@ export async function updateRecurringRuleAction(
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
-  const account = await prisma.account.findFirst({ where: { id: String(formData.get("accountId")) } });
-  const currency = account?.currency ?? "PHP";
+  const accountId = String(formData.get("accountId"));
+  const account = await assertOwnedAccount(prisma, session.user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  const currency = account.currency;
 
   const parsed = parseRecurringForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring rule details" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (parsed.data.subcategoryId && !(await assertOwnedSubcategory(prisma, session.user.id, parsed.data.subcategoryId))) {
+    return { ok: false, error: "Subcategory not found" };
+  }
 
   const result = await updateRecurringRule(prisma, session.user.id, ruleId, {
     ...parsed.data,
