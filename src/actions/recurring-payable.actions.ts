@@ -13,6 +13,7 @@ import {
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory } from "@/lib/categories";
+import { assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type RecurringPayableActionResult = { ok: true } | { ok: false; error: string };
 
@@ -36,6 +37,14 @@ export async function createRecurringPayableAction(
 
   const parsed = parseRecurringPayableForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the recurring bill details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.recurringPayable.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
