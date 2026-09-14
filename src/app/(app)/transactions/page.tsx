@@ -43,7 +43,7 @@ export default async function TransactionsPage({
       </Card>
 
       <TransactionFilters accounts={accounts} />
-      <TransactionList transactions={transactions} />
+      <TransactionList transactions={transactions} categories={categories} />
     </div>
   );
 }

@@ -1,7 +1,10 @@
 import { formatMoney } from "@/lib/money";
 import { DeleteTransactionButton } from "@/components/transactions/delete-transaction-button";
+import { EditTransactionButton } from "@/components/transactions/edit-transaction-button";
 import { AuditHistoryLink } from "@/components/audit-log/audit-history-link";
 import { Card } from "@/components/ui/card";
+
+type CategoryOption = { id: string; name: string; subcategories: { id: string; name: string }[] };
 
 type TransactionRow = {
   id: string;
@@ -9,11 +12,20 @@ type TransactionRow = {
   type: string;
   amount: number;
   description: string;
+  notes: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
   account: { name: string; currency: string };
   category: { name: string } | null;
 };
 
-export function TransactionList({ transactions }: { transactions: TransactionRow[] }) {
+export function TransactionList({
+  transactions,
+  categories,
+}: {
+  transactions: TransactionRow[];
+  categories: CategoryOption[];
+}) {
   if (transactions.length === 0) {
     return (
       <p className="text-muted-foreground">
@@ -41,6 +53,14 @@ export function TransactionList({ transactions }: { transactions: TransactionRow
               {formatMoney(txn.amount, txn.account.currency)}
             </span>
             <AuditHistoryLink entityType="TRANSACTION" entityId={txn.id} />
+            <EditTransactionButton
+              transactionId={txn.id}
+              description={txn.description}
+              notes={txn.notes}
+              categoryId={txn.categoryId}
+              subcategoryId={txn.subcategoryId}
+              categories={categories}
+            />
             <DeleteTransactionButton transactionId={txn.id} />
           </div>
         </Card>
