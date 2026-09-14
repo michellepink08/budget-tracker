@@ -18,6 +18,7 @@ export async function resetDemoDataAction(): Promise<DemoActionResult> {
   }
 
   await seedDemoData(prisma, user.id, user.cycleStartDay);
+  await prisma.user.update({ where: { id: user.id }, data: { demoResetAt: new Date() } });
 
   revalidatePath("/", "layout");
   return { ok: true };
