@@ -10,6 +10,8 @@ import {
   payInstallmentTerm,
 } from "@/lib/installment-purchases";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type InstallmentActionResult = { ok: true } | { ok: false; error: string };
 
@@ -29,7 +31,11 @@ export async function createInstallmentPurchaseAction(
   });
   if (!parsed.success) return { ok: false, error: "Please check the installment purchase details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   await createInstallmentPurchase(prisma, session.user.id, {
     ...parsed.data,
@@ -61,7 +67,8 @@ export async function payInstallmentTermAction(
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
 
   const accountId = String(formData.get("accountId"));
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: accountId } });
+  const account = await assertOwnedAccount(prisma, user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
 
   const overrideAmountRaw = formData.get("amount");
   const overrideDateRaw = formData.get("date");
