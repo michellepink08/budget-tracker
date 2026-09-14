@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createInstallmentPurchaseAction } from "@/actions/installment-purchase.actions";
@@ -35,6 +36,7 @@ export function InstallmentPurchaseFormDialog({
   creditCardAccounts: AccountOption[];
   categories: CategoryOption[];
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -67,6 +69,7 @@ export function InstallmentPurchaseFormDialog({
     }
     toast.success("Installment purchase added");
     setOpen(false);
+    router.refresh();
   }
 
   const noCreditCardAccounts = creditCardAccounts.length === 0;

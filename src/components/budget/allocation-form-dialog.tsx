@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createAllocationAction, updateAllocationAction } from "@/actions/budget.actions";
@@ -46,6 +47,7 @@ export function AllocationFormDialog({
   existing?: ExistingAllocation;
   existingCategoryName?: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -78,6 +80,7 @@ export function AllocationFormDialog({
     }
     toast.success(existing ? "Allocation updated" : "Allocation added");
     setOpen(false);
+    router.refresh();
   }
 
   const disabled = !existing && availableCategories.length === 0;

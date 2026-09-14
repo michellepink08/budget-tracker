@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -55,6 +56,7 @@ export function RecurringPayableFormDialog({
   categories: CategoryOption[];
   existing?: ExistingRule;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -108,6 +110,7 @@ export function RecurringPayableFormDialog({
     }
     toast.success(existing ? "Recurring bill updated" : "Recurring bill created");
     setOpen(false);
+    router.refresh();
   }
 
   return (

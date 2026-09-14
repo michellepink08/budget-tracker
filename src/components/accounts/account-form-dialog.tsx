@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -52,6 +53,7 @@ const PURPOSE_LABELS: Record<string, string> = {
 };
 
 export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -110,6 +112,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
     toast.success(existing ? "Account updated" : "Account created");
     setOpen(false);
     if (!existing) reset();
+    router.refresh();
   }
 
   return (

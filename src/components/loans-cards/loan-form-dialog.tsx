@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createLoanAction, updateLoanAction } from "@/actions/loan.actions";
@@ -39,6 +40,7 @@ type ExistingLoan = {
 const LOAN_CURRENCY = "PHP";
 
 export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -83,6 +85,7 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
     }
     toast.success(existing ? "Loan updated" : "Loan added");
     setOpen(false);
+    router.refresh();
   }
 
   return (

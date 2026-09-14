@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createPayableAction, updatePayableAction } from "@/actions/payable.actions";
@@ -46,6 +47,7 @@ export function PayableFormDialog({
   categories: CategoryOption[];
   existing?: ExistingPayable;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -90,6 +92,7 @@ export function PayableFormDialog({
     }
     toast.success(existing ? "Bill updated" : "Bill added");
     setOpen(false);
+    router.refresh();
   }
 
   return (

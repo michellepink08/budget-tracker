@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -32,6 +33,7 @@ type ExistingCategory = {
 };
 
 export function CategoryFormDialog({ existing }: { existing?: ExistingCategory }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -63,6 +65,7 @@ export function CategoryFormDialog({ existing }: { existing?: ExistingCategory }
     toast.success(existing ? "Category updated" : "Category created");
     setOpen(false);
     if (!existing) reset();
+    router.refresh();
   }
 
   return (

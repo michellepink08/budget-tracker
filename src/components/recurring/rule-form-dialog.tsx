@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createRecurringRuleAction, updateRecurringRuleAction } from "@/actions/recurring.actions";
@@ -55,6 +56,7 @@ export function RuleFormDialog({
   categories: CategoryOption[];
   existing?: ExistingRule;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -111,6 +113,7 @@ export function RuleFormDialog({
     }
     toast.success(existing ? "Rule updated" : "Rule created");
     setOpen(false);
+    router.refresh();
   }
 
   return (

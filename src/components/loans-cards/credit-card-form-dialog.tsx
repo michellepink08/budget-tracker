@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createCreditCardAction, updateCreditCardAction } from "@/actions/credit-card.actions";
@@ -43,6 +44,7 @@ export function CreditCardFormDialog({
   linkableAccounts: AccountOption[];
   existing?: ExistingCard;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const {
     register,
@@ -87,6 +89,7 @@ export function CreditCardFormDialog({
     }
     toast.success(existing ? "Card updated" : "Card added");
     setOpen(false);
+    router.refresh();
   }
 
   const noLinkableAccounts = !existing && linkableAccounts.length === 0;
