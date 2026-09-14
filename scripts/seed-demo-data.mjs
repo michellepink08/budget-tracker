@@ -26,7 +26,21 @@ if (!user) {
 // Clear this user's existing financial rows, children first. Every table
 // added since this script was first written (Plans 3A/3B) needs a delete
 // here too, or re-running this script fails on a foreign-key constraint
-// the moment any of those rows exist.
+// the moment any of those rows exist. (Brought up to date for Stage J's
+// e2e work — SavingsGoal/YearPlan/Shopping/Receipts/Alias/etc. had never
+// been added here, so this failed the moment the demo account picked up
+// any of that data.)
+await prisma.alias.deleteMany({ where: { userId: user.id } });
+await prisma.quickCaptureLog.deleteMany({ where: { userId: user.id } });
+await prisma.auditLog.deleteMany({ where: { userId: user.id } });
+await prisma.incomeForecast.deleteMany({ where: { userId: user.id } });
+await prisma.yearPlanPhase.deleteMany({ where: { userId: user.id } });
+await prisma.receiptLine.deleteMany({ where: { userId: user.id } });
+await prisma.receiptImage.deleteMany({ where: { userId: user.id } });
+await prisma.shoppingListItem.deleteMany({ where: { userId: user.id } });
+await prisma.shoppingPriceHistory.deleteMany({ where: { userId: user.id } });
+await prisma.customReminder.deleteMany({ where: { userId: user.id } });
+await prisma.receipt.deleteMany({ where: { userId: user.id } });
 await prisma.installmentPayment.deleteMany({ where: { userId: user.id } });
 await prisma.installmentPurchase.deleteMany({ where: { userId: user.id } });
 await prisma.payable.deleteMany({ where: { userId: user.id } });
@@ -35,8 +49,13 @@ await prisma.recurringRule.deleteMany({ where: { userId: user.id } });
 await prisma.creditCard.deleteMany({ where: { userId: user.id } });
 await prisma.loan.deleteMany({ where: { userId: user.id } });
 await prisma.budgetAllocation.deleteMany({ where: { userId: user.id } });
+await prisma.yearPlan.deleteMany({ where: { userId: user.id } });
+await prisma.savingsGoal.deleteMany({ where: { userId: user.id } });
 await prisma.transaction.deleteMany({ where: { userId: user.id } });
 await prisma.budgetPeriod.deleteMany({ where: { userId: user.id } });
+await prisma.shoppingList.deleteMany({ where: { userId: user.id } });
+await prisma.shoppingCatalogItem.deleteMany({ where: { userId: user.id } });
+await prisma.shoppingStore.deleteMany({ where: { userId: user.id } });
 await prisma.subcategory.deleteMany({ where: { userId: user.id } });
 await prisma.category.deleteMany({ where: { userId: user.id } });
 await prisma.account.deleteMany({ where: { userId: user.id } });
