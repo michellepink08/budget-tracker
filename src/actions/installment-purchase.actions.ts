@@ -12,6 +12,7 @@ import {
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory } from "@/lib/categories";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type InstallmentActionResult = { ok: true } | { ok: false; error: string };
 
@@ -30,6 +31,14 @@ export async function createInstallmentPurchaseAction(
     startDate: new Date(String(formData.get("startDate"))),
   });
   if (!parsed.success) return { ok: false, error: "Please check the installment purchase details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.installmentPurchase.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const account = await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
@@ -51,6 +60,9 @@ export async function archiveInstallmentPurchaseAction(
 ): Promise<InstallmentActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await archiveInstallmentPurchase(prisma, session.user.id, purchaseId);
   if (result.ok) revalidatePath("/loans-cards");
