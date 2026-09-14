@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createTransactionAction, createTransferAction } from "@/actions/transaction.actions";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,7 +87,7 @@ export function TransactionForm({
           >
             {REGULAR_TYPES.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {humanizeEnum(t)}
               </option>
             ))}
           </select>

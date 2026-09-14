@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { addItemAction, updateItemAction } from "@/actions/shopping-list.actions";
 import { SHOPPING_ITEM_PRIORITIES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,7 +161,7 @@ export function ListItemFormDialog({
             >
               {SHOPPING_ITEM_PRIORITIES.map((priority) => (
                 <option key={priority} value={priority}>
-                  {priority}
+                  {humanizeEnum(priority)}
                 </option>
               ))}
             </select>

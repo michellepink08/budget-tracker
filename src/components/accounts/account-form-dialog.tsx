@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { accountSchema } from "@/lib/validations/account";
 import { createAccountAction, updateAccountAction } from "@/actions/account.actions";
 import { ACCOUNT_TYPES, ACCOUNT_PURPOSES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,7 +137,7 @@ export function AccountFormDialog({ existing }: { existing?: ExistingAccount }) 
               <SelectContent>
                 {ACCOUNT_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type}
+                    {humanizeEnum(type)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { addPhaseAction, updatePhaseAction } from "@/actions/year-plan.actions";
 import { YEAR_PLAN_PHASE_TYPES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,7 @@ export function PhaseFormDialog({
             >
               {YEAR_PLAN_PHASE_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {humanizeEnum(type)}
                 </option>
               ))}
             </select>

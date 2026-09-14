@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { addIncomeForecastAction, updateIncomeForecastAction } from "@/actions/year-plan.actions";
 import { INCOME_FORECAST_SOURCES, INCOME_FORECAST_STATUSES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,7 +135,7 @@ export function ForecastFormDialog({
             >
               {INCOME_FORECAST_SOURCES.map((source) => (
                 <option key={source} value={source}>
-                  {source}
+                  {humanizeEnum(source)}
                 </option>
               ))}
             </select>
@@ -161,7 +162,7 @@ export function ForecastFormDialog({
             >
               {INCOME_FORECAST_STATUSES.map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {humanizeEnum(status)}
                 </option>
               ))}
             </select>

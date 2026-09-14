@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { categorySchema } from "@/lib/validations/category";
 import { createCategoryAction, updateCategoryAction } from "@/actions/category.actions";
 import { CATEGORY_TYPES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,7 +90,7 @@ export function CategoryFormDialog({ existing }: { existing?: ExistingCategory }
             >
               {CATEGORY_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {humanizeEnum(type)}
                 </option>
               ))}
             </select>

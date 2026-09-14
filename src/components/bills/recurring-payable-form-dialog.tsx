@@ -8,6 +8,7 @@ import {
   updateRecurringPayableAction,
 } from "@/actions/recurring-payable.actions";
 import { RECURRING_FREQUENCIES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,7 +139,7 @@ export function RecurringPayableFormDialog({
             >
               {RECURRING_FREQUENCIES.map((f) => (
                 <option key={f} value={f}>
-                  {f}
+                  {humanizeEnum(f)}
                 </option>
               ))}
             </select>

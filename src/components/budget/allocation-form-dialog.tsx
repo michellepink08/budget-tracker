@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createAllocationAction, updateAllocationAction } from "@/actions/budget.actions";
 import { ROLLOVER_MODES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +129,7 @@ export function AllocationFormDialog({
             >
               {ROLLOVER_MODES.map((mode) => (
                 <option key={mode} value={mode}>
-                  {mode}
+                  {humanizeEnum(mode)}
                 </option>
               ))}
             </select>

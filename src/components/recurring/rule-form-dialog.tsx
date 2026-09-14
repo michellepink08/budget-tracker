@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createRecurringRuleAction, updateRecurringRuleAction } from "@/actions/recurring.actions";
 import { NON_TRANSFER_TYPES } from "@/lib/validations/transaction";
 import { RECURRING_FREQUENCIES } from "@/lib/constants/financial";
+import { humanizeEnum } from "@/lib/enum-labels";
 import { toMajorUnits } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,7 +137,7 @@ export function RuleFormDialog({
             >
               {NON_TRANSFER_TYPES.map((t) => (
                 <option key={t} value={t}>
-                  {t}
+                  {humanizeEnum(t)}
                 </option>
               ))}
             </select>
@@ -156,7 +157,7 @@ export function RuleFormDialog({
             >
               {RECURRING_FREQUENCIES.map((f) => (
                 <option key={f} value={f}>
-                  {f}
+                  {humanizeEnum(f)}
                 </option>
               ))}
             </select>
