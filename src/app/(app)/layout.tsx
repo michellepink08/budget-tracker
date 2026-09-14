@@ -5,6 +5,8 @@ import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
 import { TopNav } from "@/components/nav/top-nav";
 import { SideNav } from "@/components/nav/side-nav";
+import { DemoBanner } from "@/components/nav/demo-banner";
+import { DEMO_EMAIL } from "@/lib/config";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -25,10 +27,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ])
     : [[], []];
 
+  const isDemo = session?.user?.email === DEMO_EMAIL;
+
   return (
     <div className="flex min-h-screen bg-background">
       <SideNav accounts={accounts} categories={categories} />
       <div className="flex flex-1 flex-col">
+        {isDemo && <DemoBanner />}
         <TopNav accounts={accounts} categories={categories} email={session?.user?.email ?? null} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
       </div>
