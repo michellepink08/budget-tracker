@@ -42,7 +42,11 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
       findUnique: vi.fn().mockResolvedValue(null),
       upsert: vi.fn().mockResolvedValue({}),
     },
-    shoppingCatalogItem: { findMany: vi.fn().mockResolvedValue([]) },
+    shoppingCatalogItem: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue({ id: "catalog-1" }),
+    },
+    category: { findFirst: vi.fn().mockResolvedValue({ id: "cat-1" }) },
     shoppingStore: {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn().mockResolvedValue(null),
@@ -146,6 +150,59 @@ describe("addLine / updateLine / deleteLine", () => {
     const prisma = makeFakePrisma();
     const result = await updateLine(prisma, "user-1", "line-1", { name: "Renamed" });
     expect(result.ok).toBe(false);
+  });
+
+  it("addLine rejects when categoryId belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      receipt: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1" }), update: vi.fn() },
+      category: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const result = await addLine(prisma, "user-1", "receipt-1", {
+      catalogItemId: null,
+      rawText: null,
+      name: "Milk",
+      quantity: 1,
+      unitPrice: 15000,
+      lineTotal: 15000,
+      categoryId: "cat-owned-by-someone-else",
+      excluded: false,
+    });
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(prisma.receiptLine.create).not.toHaveBeenCalled();
+  });
+
+  it("addLine rejects when catalogItemId belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      receipt: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ id: "receipt-1", userId: "user-1" }), update: vi.fn() },
+      shoppingCatalogItem: { findMany: vi.fn().mockResolvedValue([]), findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const result = await addLine(prisma, "user-1", "receipt-1", {
+      catalogItemId: "catalog-owned-by-someone-else",
+      rawText: null,
+      name: "Milk",
+      quantity: 1,
+      unitPrice: 15000,
+      lineTotal: 15000,
+      categoryId: null,
+      excluded: false,
+    });
+    expect(result).toEqual({ ok: false, error: "Catalog item not found" });
+    expect(prisma.receiptLine.create).not.toHaveBeenCalled();
+  });
+
+  it("updateLine rejects when categoryId belongs to another user", async () => {
+    const prisma = makeFakePrisma({
+      receiptLine: {
+        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue({ id: "line-1", userId: "user-1" }),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      category: { findFirst: vi.fn().mockResolvedValue(null) },
+    });
+    const result = await updateLine(prisma, "user-1", "line-1", { categoryId: "cat-owned-by-someone-else" });
+    expect(result).toEqual({ ok: false, error: "Category not found" });
+    expect(prisma.receiptLine.update).not.toHaveBeenCalled();
   });
 
   it("deleteLine rejects when the line does not belong to the user", async () => {

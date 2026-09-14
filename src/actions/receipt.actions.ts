@@ -25,6 +25,8 @@ import { StubOcrAdapter } from "@/lib/receipts/ocr-adapter";
 import { deleteReceiptImage, uploadReceiptImage } from "@/lib/receipts/storage";
 import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type ReceiptActionResult = { ok: true; id: string } | { ok: false; error: string };
 export type ReceiptVoidActionResult = { ok: true } | { ok: false; error: string };
@@ -239,6 +241,13 @@ export async function confirmReceiptAction(
     date: formData.get("date"),
   });
   if (!parsed.success) return { ok: false, error: "Please check the account/category/date" };
+
+  if (!(await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId))) {
+    return { ok: false, error: "Account not found" };
+  }
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   const result = await confirmReceipt(prisma, session.user.id, user.cycleStartDay, receiptId, {
     accountId: parsed.data.accountId,

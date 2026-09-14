@@ -4,8 +4,9 @@ import { recordAudit } from "@/lib/audit-log";
 import { computeReconciliation } from "@/lib/receipts/reconciliation";
 import type { OcrAdapter } from "@/lib/receipts/ocr-adapter";
 import { createAlias, resolveAlias } from "@/lib/aliases";
-import { listActiveCatalogItems } from "@/lib/shopping-catalog";
+import { assertOwnedCatalogItem, listActiveCatalogItems } from "@/lib/shopping-catalog";
 import { getOrCreateStore } from "@/lib/shopping-store";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type ReceiptMutationResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -59,7 +60,7 @@ export async function removeImage(
 }
 
 export async function addLine(
-  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem">,
+  prisma: Pick<PrismaClient, "receipt" | "receiptLine" | "alias" | "shoppingCatalogItem" | "category">,
   userId: string,
   receiptId: string,
   input: {
@@ -75,6 +76,12 @@ export async function addLine(
 ): Promise<ReceiptMutationResult> {
   if (!(await assertOwnedReceipt(prisma, userId, receiptId))) {
     return { ok: false, error: "Receipt not found" };
+  }
+  if (input.categoryId && !(await assertOwnedCategory(prisma, userId, input.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (input.catalogItemId && !(await assertOwnedCatalogItem(prisma, userId, input.catalogItemId))) {
+    return { ok: false, error: "Catalog item not found" };
   }
 
   let catalogItemId = input.catalogItemId;
@@ -103,7 +110,7 @@ async function assertOwnedLine(
 }
 
 export async function updateLine(
-  prisma: Pick<PrismaClient, "receiptLine" | "alias">,
+  prisma: Pick<PrismaClient, "receiptLine" | "alias" | "category" | "shoppingCatalogItem">,
   userId: string,
   lineId: string,
   input: Partial<{
@@ -118,6 +125,12 @@ export async function updateLine(
 ): Promise<ReceiptMutationResult> {
   if (!(await assertOwnedLine(prisma, userId, lineId))) {
     return { ok: false, error: "Line not found" };
+  }
+  if (input.categoryId && !(await assertOwnedCategory(prisma, userId, input.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (input.catalogItemId && !(await assertOwnedCatalogItem(prisma, userId, input.catalogItemId))) {
+    return { ok: false, error: "Catalog item not found" };
   }
   const line = await prisma.receiptLine.update({ where: { id: lineId }, data: input });
 
