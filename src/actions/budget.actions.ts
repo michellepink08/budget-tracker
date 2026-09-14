@@ -109,7 +109,8 @@ export async function createBudgetPeriodAction(formData: FormData): Promise<Budg
   );
   if (capResult) return capResult;
 
-  await createBudgetPeriod(prisma, session.user.id, { ...parsed.data, status: "UPCOMING" });
+  const result = await createBudgetPeriod(prisma, session.user.id, { ...parsed.data, status: "UPCOMING" });
+  if (!result.ok) return result;
 
   revalidatePath("/budget");
   return { ok: true };

@@ -34,14 +34,18 @@ export function PeriodFormDialog() {
     formData.set("startDate", values.startDate);
     formData.set("endDate", values.endDate);
 
-    const result = await createBudgetPeriodAction(formData);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await createBudgetPeriodAction(formData);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Period created");
+      setOpen(false);
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
     }
-    toast.success("Period created");
-    setOpen(false);
-    router.refresh();
   }
 
   return (
