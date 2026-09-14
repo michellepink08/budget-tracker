@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { markReminderPaidSchema, reminderSchema } from "@/lib/validations/calendar";
 import { createReminder, deleteReminder, markPaid, skip } from "@/lib/calendar/reminders";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory } from "@/lib/categories";
 
 export type CalendarActionResult = { ok: true } | { ok: false; error: string };
 
@@ -41,6 +43,13 @@ export async function markReminderPaidAction(reminderId: string, formData: FormD
     categoryId: formData.get("categoryId") || null,
   });
   if (!parsed.success) return { ok: false, error: "Please pick an account" };
+
+  if (!(await assertOwnedAccount(prisma, session.user.id, parsed.data.accountId))) {
+    return { ok: false, error: "Account not found" };
+  }
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, session.user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
 
   const result = await markPaid(prisma, session.user.id, user.cycleStartDay, reminderId, {
     accountId: parsed.data.accountId,
