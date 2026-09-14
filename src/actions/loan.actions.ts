@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { loanSchema } from "@/lib/validations/loan";
 import { archiveLoan, createLoan, makeLoanPayment, updateLoan } from "@/lib/loans";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
 
 export type LoanActionResult = { ok: true } | { ok: false; error: string };
 
@@ -77,7 +78,8 @@ export async function makeLoanPaymentAction(
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
 
   const accountId = String(formData.get("accountId"));
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: accountId } });
+  const account = await assertOwnedAccount(prisma, user.id, accountId);
+  if (!account) return { ok: false, error: "Account not found" };
   const amount = toMinorUnits(Number(formData.get("amount")), account.currency);
   const date = new Date(String(formData.get("date")));
 
