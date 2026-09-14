@@ -45,12 +45,22 @@ export type MakeCreditCardPaymentResult =
   | { ok: true; transactionId: string }
   | { ok: false; error: string };
 
-// No stored balance to update — the card's Account already reflects
-// purchases and payments via computeAccountBalance (Plan 2A). This just
-// logs the normal CREDIT_CARD_PAYMENT transaction against the paying
-// account, exactly as that transaction type already works.
+type MakePaymentPrisma = Pick<
+  PrismaClient,
+  "creditCard" | "transaction" | "account" | "budgetPeriod" | "$transaction"
+>;
+
+// Records a real two-sided ledger entry, mirroring src/lib/transfers.ts's
+// createTransfer: an outgoing row on the paying account (unchanged from
+// before) plus a new incoming row on the card's own account, linked via
+// linkedTransactionId. computeAccountBalance sums by accountId, so the
+// card's balance now actually drops by the payment — the same way any
+// other movement between two of the user's own accounts already works.
+// Nesting prisma.$transaction inside the caller's own $transaction
+// (src/actions/credit-card.actions.ts already wraps this call) is the
+// same pattern createTransfer already relies on for transfers.
 export async function makeCreditCardPayment(
-  prisma: Pick<PrismaClient, "creditCard" | "transaction" | "budgetPeriod">,
+  prisma: MakePaymentPrisma,
   userId: string,
   cycleStartDay: number,
   creditCardId: string,
@@ -60,14 +70,36 @@ export async function makeCreditCardPayment(
   if (!card) {
     return { ok: false, error: "Credit card not found" };
   }
+  const payingAccount = await prisma.account.findUniqueOrThrow({ where: { id: input.accountId } });
 
-  const transaction = await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "CREDIT_CARD_PAYMENT",
-    amount: input.amount,
-    date: input.date,
-    accountId: input.accountId,
-    description: "Credit card payment",
+  return prisma.$transaction(async (tx) => {
+    const outgoing = await createExpenseLikeTransaction(tx, userId, cycleStartDay, {
+      type: "CREDIT_CARD_PAYMENT",
+      amount: input.amount,
+      date: input.date,
+      accountId: input.accountId,
+      description: "Credit card payment",
+    });
+
+    const incoming = await tx.transaction.create({
+      data: {
+        userId,
+        date: input.date,
+        type: "CREDIT_CARD_PAYMENT",
+        amount: input.amount,
+        accountId: card.accountId,
+        destinationAccountId: input.accountId,
+        budgetPeriodId: outgoing.budgetPeriodId,
+        description: `Payment from ${payingAccount.name}`,
+        linkedTransactionId: outgoing.id,
+      },
+    });
+
+    await tx.transaction.update({
+      where: { id: outgoing.id },
+      data: { linkedTransactionId: incoming.id, destinationAccountId: card.accountId },
+    });
+
+    return { ok: true, transactionId: outgoing.id };
   });
-
-  return { ok: true, transactionId: transaction.id };
 }
