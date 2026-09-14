@@ -12,6 +12,8 @@ import {
 } from "@/lib/transactions";
 import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
+import { assertOwnedAccount } from "@/lib/accounts";
+import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
 
 export type TransactionActionResult = { ok: true } | { ok: false; error: string };
 
@@ -39,7 +41,14 @@ export async function createTransactionAction(
   });
   if (!parsed.success) return { ok: false, error: "Please check the transaction details" };
 
-  const account = await prisma.account.findUniqueOrThrow({ where: { id: parsed.data.accountId } });
+  const account = await assertOwnedAccount(prisma, user.id, parsed.data.accountId);
+  if (!account) return { ok: false, error: "Account not found" };
+  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, user.id, parsed.data.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (parsed.data.subcategoryId && !(await assertOwnedSubcategory(prisma, user.id, parsed.data.subcategoryId))) {
+    return { ok: false, error: "Subcategory not found" };
+  }
   const input = { ...parsed.data, amount: toMinorUnits(parsed.data.amount, account.currency) };
 
   await prisma.$transaction(async (tx) => {
@@ -74,9 +83,11 @@ export async function createTransferAction(formData: FormData): Promise<Transact
   }
 
   const [source, destination] = await Promise.all([
-    prisma.account.findUniqueOrThrow({ where: { id: parsed.data.sourceAccountId } }),
-    prisma.account.findUniqueOrThrow({ where: { id: parsed.data.destinationAccountId } }),
+    assertOwnedAccount(prisma, user.id, parsed.data.sourceAccountId),
+    assertOwnedAccount(prisma, user.id, parsed.data.destinationAccountId),
   ]);
+  if (!source) return { ok: false, error: "Source account not found" };
+  if (!destination) return { ok: false, error: "Destination account not found" };
 
   if (source.currency !== destination.currency) {
     return { ok: false, error: "Transfers between different currencies aren't supported yet" };
@@ -116,6 +127,13 @@ export async function updateTransactionAction(
     categoryId: (formData.get("categoryId") as string) || null,
     subcategoryId: (formData.get("subcategoryId") as string) || null,
   };
+
+  if (input.categoryId && !(await assertOwnedCategory(prisma, user.id, input.categoryId))) {
+    return { ok: false, error: "Category not found" };
+  }
+  if (input.subcategoryId && !(await assertOwnedSubcategory(prisma, user.id, input.subcategoryId))) {
+    return { ok: false, error: "Subcategory not found" };
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     const updateResult = await updateTransaction(tx, user.id, transactionId, input);
