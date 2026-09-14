@@ -7,6 +7,7 @@ import { catalogItemSchema, priceRecordSchema } from "@/lib/validations/shopping
 import { archiveCatalogItem, createCatalogItem, recordPrice, updateCatalogItem } from "@/lib/shopping-catalog";
 import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
+import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 
 export type ShoppingActionResult = { ok: true } | { ok: false; error: string };
 
@@ -29,6 +30,14 @@ export async function createCatalogItemAction(formData: FormData): Promise<Shopp
 
   const parsed = parseCatalogItemForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the item details" };
+
+  const capResult = await assertUnderDemoCap(
+    prisma,
+    session.user.id,
+    () => prisma.shoppingCatalogItem.count({ where: { userId: session.user.id } }),
+    100,
+  );
+  if (capResult) return capResult;
 
   const preferredStoreId = await getOrCreateStore(prisma, session.user.id, parsed.data.storeName);
   const result = await createCatalogItem(prisma, session.user.id, {
@@ -73,6 +82,9 @@ export async function updateCatalogItemAction(
 export async function archiveCatalogItemAction(catalogItemId: string): Promise<ShoppingActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const demoResult = await assertNotDemo(prisma, session.user.id);
+  if (demoResult) return demoResult;
 
   const result = await archiveCatalogItem(prisma, session.user.id, catalogItemId);
   if (result.ok) revalidatePath("/shopping");
