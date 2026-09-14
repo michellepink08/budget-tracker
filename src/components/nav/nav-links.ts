@@ -17,22 +17,35 @@ import {
 export type NavLink = { href: string; label: string; icon: LucideIcon };
 
 // Single source of truth for the main nav items — SideNav (desktop) and
-// NavDrawer (mobile/tablet) both render from this exact list, so they
-// can never drift apart into two different sets of links.
-export const navLinks: NavLink[] = [
+// NavDrawer (mobile/tablet) both render from these exact lists, so they
+// can never drift apart into two different sets of links. Split into two
+// groups (main vs. "PLAN & REVIEW") purely for the sidebar's visual
+// grouping (wine theme v3) — routes, isNavLinkActive, and every existing
+// link are otherwise unchanged. Audit History isn't in the user's own
+// 11-item nav structure spec, but removing it would violate their own
+// "do not remove existing routes" rule — placed under PLAN & REVIEW,
+// after Reports, as the closest fit (also a review/history destination).
+export const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/budget", label: "Budget", icon: PiggyBank },
   { href: "/bills", label: "Bills", icon: Receipt },
   { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/year-plan", label: "Year Plan", icon: CalendarRange },
   { href: "/shopping", label: "Shopping", icon: ShoppingCart },
+];
+
+export const planLinks: NavLink[] = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/year-plan", label: "Year Plan", icon: CalendarRange },
   { href: "/loans-cards", label: "Loans & Cards", icon: CreditCard },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/audit-log", label: "Audit History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+
+// Kept for consumers that just need "every nav link" without the
+// grouping (TopNav's current-page-title lookup).
+export const navLinks: NavLink[] = [...mainLinks, ...planLinks];
 
 export function isNavLinkActive(pathname: string | null, href: string): boolean {
   return pathname === href || (pathname?.startsWith(`${href}/`) ?? false);
