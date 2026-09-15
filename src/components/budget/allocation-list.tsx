@@ -1,6 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { AllocationFormDialog } from "@/components/budget/allocation-form-dialog";
-import type { AllocationWithActual } from "@/lib/budget-allocations";
+import type { AllocationWithActual, AvailableAllocationOption } from "@/lib/budget-allocations";
 import { Card } from "@/components/ui/card";
 
 export function AllocationList({
@@ -12,7 +12,7 @@ export function AllocationList({
   allocations: AllocationWithActual[];
   budgetPeriodId: string;
   currency: string;
-  availableCategories: { id: string; name: string }[];
+  availableCategories: AvailableAllocationOption[];
 }) {
   if (allocations.length === 0) {
     return (
@@ -26,11 +26,19 @@ export function AllocationList({
     <div className="flex flex-col gap-3">
       {allocations.map((allocation) => {
         const pct = Math.max(0, Math.min(100, allocation.percentUsed));
+        const label = allocation.subcategoryName
+          ? `${allocation.category.name} — ${allocation.subcategoryName}`
+          : allocation.category.name;
         return (
           <Card key={allocation.id} className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{allocation.category.name}</p>
+                <p className="font-medium">
+                  {label}
+                  {allocation.showDailyAllowance && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">Daily allowance on</span>
+                  )}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   {formatMoney(allocation.actual, currency)} of{" "}
                   {formatMoney(allocation.effectivePlanned, currency)}
@@ -43,7 +51,7 @@ export function AllocationList({
                 currency={currency}
                 availableCategories={availableCategories}
                 existing={allocation}
-                existingCategoryName={allocation.category.name}
+                existingLabel={label}
               />
             </div>
             <div className="mt-2 h-2 rounded-full bg-accent-tint">
