@@ -77,7 +77,10 @@ export type LoanPaymentInput = { accountId: string; amount: number; date: Date }
 // so it's counted the next time that balance is derived, and so it also
 // shows up correctly categorized on the Budget/Ledger pages.
 export async function makeLoanPayment(
-  prisma: Pick<PrismaClient, "loan" | "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "loan" | "transaction" | "budgetPeriod" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   loanId: string,

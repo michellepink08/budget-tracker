@@ -13,7 +13,18 @@ export type ShoppingDashboardSummary = {
 // the user has no current list yet — a genuinely opt-in feature area, not
 // something every user is assumed to have set up.
 export async function getShoppingDashboardSummary(
-  prisma: Pick<PrismaClient, "shoppingList" | "shoppingListItem" | "budgetPeriod" | "budgetAllocation" | "transaction">,
+  prisma: Pick<
+    PrismaClient,
+    | "shoppingList"
+    | "shoppingListItem"
+    | "budgetPeriod"
+    | "budgetAllocation"
+    | "transaction"
+    | "loan"
+    | "recurringPayable"
+    | "category"
+    | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   asOf: Date = new Date(),

@@ -182,7 +182,10 @@ export async function makeListCurrent(
 }
 
 export async function computeShoppingAllowance(
-  prisma: Pick<PrismaClient, "budgetPeriod" | "budgetAllocation" | "transaction">,
+  prisma: Pick<
+    PrismaClient,
+    "budgetPeriod" | "budgetAllocation" | "transaction" | "loan" | "recurringPayable" | "category" | "subcategory"
+  >,
   userId: string,
   list: { budgetCategoryId: string | null },
   cycleStartDay: number,

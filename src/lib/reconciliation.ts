@@ -31,7 +31,10 @@ export type ReconciliationResult =
 // — that row is the audit trail, so no separate reconciliation-history
 // model is needed.
 export async function applyReconciliation(
-  prisma: Pick<PrismaClient, "account" | "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "account" | "transaction" | "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   accountId: string,

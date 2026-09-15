@@ -19,7 +19,10 @@ export type ExpenseLikeInput = {
 };
 
 async function resolvePeriodId(
-  prisma: Pick<PrismaClient, "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory" | "transaction"
+  >,
   userId: string,
   date: Date,
   cycleStartDay: number,
@@ -33,7 +36,10 @@ async function resolvePeriodId(
 }
 
 export async function createExpenseLikeTransaction(
-  prisma: Pick<PrismaClient, "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "transaction" | "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   input: ExpenseLikeInput,
@@ -77,7 +83,17 @@ export type TransferInput = {
 };
 
 export async function createTransferTransaction(
-  prisma: Pick<PrismaClient, "transaction" | "budgetPeriod" | "$transaction">,
+  prisma: Pick<
+    PrismaClient,
+    | "transaction"
+    | "budgetPeriod"
+    | "$transaction"
+    | "loan"
+    | "recurringPayable"
+    | "budgetAllocation"
+    | "category"
+    | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   input: TransferInput,

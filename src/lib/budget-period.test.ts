@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { assertOwnedBudgetPeriod, resolveBudgetPeriodForDate } from "@/lib/budget-period";
 
+vi.mock("@/lib/recurring-allocations", () => ({
+  materializeRecurringAllocations: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { materializeRecurringAllocations } from "@/lib/recurring-allocations";
+
 function makeFakePrisma(existing: unknown = null) {
   return {
     budgetPeriod: {
@@ -19,9 +25,10 @@ describe("resolveBudgetPeriodForDate", () => {
 
     expect(result).toBe(existing);
     expect(prisma.budgetPeriod.create).not.toHaveBeenCalled();
+    expect(materializeRecurringAllocations).not.toHaveBeenCalled();
   });
 
-  it("creates a new period matching the cycle when none exists", async () => {
+  it("creates a new period matching the cycle when none exists, and materializes recurring allocations for it", async () => {
     const prisma = makeFakePrisma(null);
 
     const result = await resolveBudgetPeriodForDate(prisma, "user-1", new Date(2026, 8, 15), 11);
@@ -33,6 +40,7 @@ describe("resolveBudgetPeriodForDate", () => {
     expect(args.data.startDate).toEqual(new Date(2026, 8, 11));
     expect(args.data.endDate).toEqual(new Date(2026, 9, 10));
     expect(args.data.status).toBe("ACTIVE");
+    expect(materializeRecurringAllocations).toHaveBeenCalledWith(prisma, "user-1", "period-new");
   });
 });
 

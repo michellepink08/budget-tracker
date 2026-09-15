@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { formatCycleRange, getCycleForDate } from "@/lib/cycle";
+import { materializeRecurringAllocations } from "@/lib/recurring-allocations";
 
 // Finds the BudgetPeriod for the cycle containing `date`, creating one if
 // it doesn't exist yet. Manual override (letting a user reassign a
@@ -7,7 +8,10 @@ import { formatCycleRange, getCycleForDate } from "@/lib/cycle";
 // not this function's concern — callers can pass an explicit
 // budgetPeriodId directly instead of calling this resolver.
 export async function resolveBudgetPeriodForDate(
-  prisma: Pick<PrismaClient, "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory" | "transaction"
+  >,
   userId: string,
   date: Date,
   cycleStartDay: number,
@@ -21,7 +25,7 @@ export async function resolveBudgetPeriodForDate(
     return existing;
   }
 
-  return prisma.budgetPeriod.create({
+  const period = await prisma.budgetPeriod.create({
     data: {
       userId,
       name: formatCycleRange({ start, end }),
@@ -30,6 +34,10 @@ export async function resolveBudgetPeriodForDate(
       status: "ACTIVE",
     },
   });
+
+  await materializeRecurringAllocations(prisma, userId, period.id);
+
+  return period;
 }
 
 export async function assertOwnedBudgetPeriod(
