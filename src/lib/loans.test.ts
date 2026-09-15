@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { archiveLoan, createLoan, listLoans, makeLoanPayment, updateLoan } from "@/lib/loans";
+import {
+  archiveLoan,
+  computeLoanRemainingBalance,
+  createLoan,
+  listLoans,
+  makeLoanPayment,
+  resolveOrCreateLoanSubcategory,
+  updateLoan,
+} from "@/lib/loans";
 
 const SAMPLE_LOAN = {
   id: "loan-1",
@@ -8,7 +16,9 @@ const SAMPLE_LOAN = {
   principal: 50000000,
   interestRate: 5.5,
   monthlyPayment: 1500000,
-  remainingBalance: 3000000,
+  openingBalance: 3000000,
+  categoryId: "cat-loan",
+  subcategoryId: "sub-1",
   startDate: new Date(2025, 0, 1),
   archivedAt: null,
 };
@@ -18,7 +28,6 @@ function makeFakePrisma(loan: unknown = SAMPLE_LOAN) {
     loan: {
       create: vi.fn().mockResolvedValue({ id: "loan-new" }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      update: vi.fn().mockResolvedValue({}),
       findFirst: vi.fn().mockResolvedValue(loan),
       findMany: vi.fn().mockResolvedValue([]),
     },
@@ -28,6 +37,15 @@ function makeFakePrisma(loan: unknown = SAMPLE_LOAN) {
     },
     transaction: {
       create: vi.fn().mockResolvedValue({ id: "txn-1" }),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    category: {
+      findFirst: vi.fn().mockResolvedValue({ id: "cat-loan", name: "Loan" }),
+      create: vi.fn().mockResolvedValue({ id: "cat-loan-new", name: "Loan" }),
+    },
+    subcategory: {
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({ id: "sub-new" }),
     },
   } as any;
 }
@@ -40,7 +58,9 @@ describe("createLoan", () => {
       principal: 50000000,
       interestRate: 5.5,
       monthlyPayment: 1500000,
-      remainingBalance: 3000000,
+      openingBalance: 3000000,
+      categoryId: "cat-loan",
+      subcategoryId: "sub-1",
       startDate: new Date(2025, 0, 1),
     };
 
@@ -87,13 +107,14 @@ describe("archiveLoan", () => {
 });
 
 describe("listLoans", () => {
-  it("scopes to the user and excludes archived loans by default", async () => {
+  it("scopes to the user, excludes archived loans by default, and includes the subcategory name", async () => {
     const prisma = makeFakePrisma();
 
     await listLoans(prisma, "user-1");
 
     expect(prisma.loan.findMany).toHaveBeenCalledWith({
       where: { userId: "user-1", archivedAt: null },
+      include: { subcategory: true },
       orderBy: { createdAt: "asc" },
     });
   });
@@ -105,13 +126,14 @@ describe("listLoans", () => {
 
     expect(prisma.loan.findMany).toHaveBeenCalledWith({
       where: { userId: "user-1" },
+      include: { subcategory: true },
       orderBy: { createdAt: "asc" },
     });
   });
 });
 
 describe("makeLoanPayment", () => {
-  it("creates a LOAN_PAYMENT transaction and decrements remainingBalance", async () => {
+  it("creates a LOAN_PAYMENT transaction carrying the loan's own subcategory, and never mutates a balance", async () => {
     const prisma = makeFakePrisma();
 
     const result = await makeLoanPayment(prisma, "user-1", 25, "loan-1", {
@@ -125,26 +147,9 @@ describe("makeLoanPayment", () => {
     expect(txnArgs.type).toBe("LOAN_PAYMENT");
     expect(txnArgs.amount).toBe(-1500000);
     expect(txnArgs.accountId).toBe("acc-1");
-
-    expect(prisma.loan.update).toHaveBeenCalledWith({
-      where: { id: "loan-1" },
-      data: { remainingBalance: 1500000 },
-    });
-  });
-
-  it("clamps remainingBalance at zero instead of going negative", async () => {
-    const prisma = makeFakePrisma();
-
-    await makeLoanPayment(prisma, "user-1", 25, "loan-1", {
-      accountId: "acc-1",
-      amount: 5000000, // more than the 3000000 remaining
-      date: new Date(2026, 8, 12),
-    });
-
-    expect(prisma.loan.update).toHaveBeenCalledWith({
-      where: { id: "loan-1" },
-      data: { remainingBalance: 0 },
-    });
+    expect(txnArgs.categoryId).toBe("cat-loan");
+    expect(txnArgs.subcategoryId).toBe("sub-1");
+    expect(prisma.loan.updateMany).not.toHaveBeenCalled();
   });
 
   it("reports not found for a loan the user doesn't own", async () => {
@@ -158,5 +163,72 @@ describe("makeLoanPayment", () => {
 
     expect(result).toEqual({ ok: false, error: "Loan not found" });
     expect(prisma.transaction.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("computeLoanRemainingBalance", () => {
+  it("returns the opening balance as-is when the loan has no subcategory linked yet", async () => {
+    const prisma = { transaction: { findMany: vi.fn() } } as any;
+
+    const remaining = await computeLoanRemainingBalance(prisma, { openingBalance: 3000000, subcategoryId: null });
+
+    expect(remaining).toBe(3000000);
+    expect(prisma.transaction.findMany).not.toHaveBeenCalled();
+  });
+
+  it("subtracts every transaction linked to the loan's subcategory from the opening balance", async () => {
+    const prisma = {
+      transaction: { findMany: vi.fn().mockResolvedValue([{ amount: -500000 }, { amount: -300000 }]) },
+    } as any;
+
+    const remaining = await computeLoanRemainingBalance(prisma, { openingBalance: 3000000, subcategoryId: "sub-1" });
+
+    expect(remaining).toBe(2200000);
+    expect(prisma.transaction.findMany).toHaveBeenCalledWith({ where: { subcategoryId: "sub-1" } });
+  });
+
+  it("clamps at zero instead of going negative", async () => {
+    const prisma = {
+      transaction: { findMany: vi.fn().mockResolvedValue([{ amount: -5000000 }]) },
+    } as any;
+
+    const remaining = await computeLoanRemainingBalance(prisma, { openingBalance: 3000000, subcategoryId: "sub-1" });
+
+    expect(remaining).toBe(0);
+  });
+});
+
+describe("resolveOrCreateLoanSubcategory", () => {
+  it("creates the shared 'Loan' category the first time, then a subcategory under it", async () => {
+    const prisma = makeFakePrisma();
+    prisma.category.findFirst.mockResolvedValue(null);
+
+    const result = await resolveOrCreateLoanSubcategory(prisma, "user-1", "Shopee Pay Later");
+
+    expect(prisma.category.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", name: "Loan", type: "DEBT_PAYMENT", color: "coral", icon: "tag" },
+    });
+    expect(prisma.subcategory.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", categoryId: "cat-loan-new", name: "Shopee Pay Later" },
+    });
+    expect(result).toEqual({ categoryId: "cat-loan-new", subcategoryId: "sub-new" });
+  });
+
+  it("reuses an existing 'Loan' category instead of creating a second one", async () => {
+    const prisma = makeFakePrisma();
+
+    await resolveOrCreateLoanSubcategory(prisma, "user-1", "GCredit");
+
+    expect(prisma.category.create).not.toHaveBeenCalled();
+  });
+
+  it("matches an existing subcategory by name, case-insensitively, instead of creating a duplicate", async () => {
+    const prisma = makeFakePrisma();
+    prisma.subcategory.findMany.mockResolvedValue([{ id: "sub-existing", name: "gcredit" }]);
+
+    const result = await resolveOrCreateLoanSubcategory(prisma, "user-1", "GCredit");
+
+    expect(prisma.subcategory.create).not.toHaveBeenCalled();
+    expect(result).toEqual({ categoryId: "cat-loan", subcategoryId: "sub-existing" });
   });
 });
