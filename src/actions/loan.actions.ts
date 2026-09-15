@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { loanSchema } from "@/lib/validations/loan";
-import { archiveLoan, createLoan, makeLoanPayment, updateLoan } from "@/lib/loans";
+import { archiveLoan, createLoan, makeLoanPayment, resolveOrCreateLoanSubcategory, updateLoan } from "@/lib/loans";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
 import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
@@ -21,10 +21,11 @@ function parseLoanForm(formData: FormData) {
     principal: Number(formData.get("principal")),
     interestRate: Number(formData.get("interestRate")),
     monthlyPayment: Number(formData.get("monthlyPayment")),
-    remainingBalance: Number(formData.get("remainingBalance")),
+    openingBalance: Number(formData.get("openingBalance")),
     startDate: new Date(String(formData.get("startDate"))),
     endDate: rawEndDate ? new Date(String(rawEndDate)) : undefined,
     dueDay: rawDueDay ? Number(rawDueDay) : undefined,
+    loanCategory: formData.get("loanCategory") || undefined,
   });
 }
 
@@ -43,14 +44,30 @@ export async function createLoanAction(formData: FormData): Promise<LoanActionRe
   );
   if (capResult) return capResult;
 
+  let categoryId: string | undefined;
+  let subcategoryId: string | undefined;
+  if (parsed.data.loanCategory?.trim()) {
+    const resolved = await resolveOrCreateLoanSubcategory(prisma, session.user.id, parsed.data.loanCategory);
+    categoryId = resolved.categoryId;
+    subcategoryId = resolved.subcategoryId;
+  }
+
   await createLoan(prisma, session.user.id, {
-    ...parsed.data,
+    name: parsed.data.name,
     principal: toMinorUnits(parsed.data.principal, LOAN_CURRENCY),
+    interestRate: parsed.data.interestRate,
     monthlyPayment: toMinorUnits(parsed.data.monthlyPayment, LOAN_CURRENCY),
-    remainingBalance: toMinorUnits(parsed.data.remainingBalance, LOAN_CURRENCY),
+    openingBalance: toMinorUnits(parsed.data.openingBalance, LOAN_CURRENCY),
+    startDate: parsed.data.startDate,
+    endDate: parsed.data.endDate,
+    dueDay: parsed.data.dueDay,
+    categoryId,
+    subcategoryId,
   });
 
   revalidatePath("/loans-cards");
+  revalidatePath("/transactions");
+  revalidatePath("/budget");
   return { ok: true };
 }
 
@@ -61,14 +78,30 @@ export async function updateLoanAction(loanId: string, formData: FormData): Prom
   const parsed = parseLoanForm(formData);
   if (!parsed.success) return { ok: false, error: "Please check the loan details" };
 
+  let categoryId: string | undefined;
+  let subcategoryId: string | undefined;
+  if (parsed.data.loanCategory?.trim()) {
+    const resolved = await resolveOrCreateLoanSubcategory(prisma, session.user.id, parsed.data.loanCategory);
+    categoryId = resolved.categoryId;
+    subcategoryId = resolved.subcategoryId;
+  }
+
   const result = await updateLoan(prisma, session.user.id, loanId, {
-    ...parsed.data,
+    name: parsed.data.name,
     principal: toMinorUnits(parsed.data.principal, LOAN_CURRENCY),
+    interestRate: parsed.data.interestRate,
     monthlyPayment: toMinorUnits(parsed.data.monthlyPayment, LOAN_CURRENCY),
-    remainingBalance: toMinorUnits(parsed.data.remainingBalance, LOAN_CURRENCY),
+    openingBalance: toMinorUnits(parsed.data.openingBalance, LOAN_CURRENCY),
+    startDate: parsed.data.startDate,
+    endDate: parsed.data.endDate,
+    dueDay: parsed.data.dueDay,
+    ...(categoryId ? { categoryId, subcategoryId } : {}),
   });
 
-  if (result.ok) revalidatePath("/loans-cards");
+  if (result.ok) {
+    revalidatePath("/loans-cards");
+    revalidatePath("/budget");
+  }
   return result;
 }
 
@@ -109,6 +142,7 @@ export async function makeLoanPaymentAction(
     revalidatePath("/loans-cards");
     revalidatePath("/transactions");
     revalidatePath("/accounts");
+    revalidatePath("/budget");
   }
   return result;
 }
