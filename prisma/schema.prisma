@@ -49,6 +49,7 @@ model User {
   receiptLines         ReceiptLine[]
   receiptImages        ReceiptImage[]
   customReminders      CustomReminder[]
+  cyclePaymentPlans    CyclePaymentPlan[]
 }
 
 model Account {
@@ -362,6 +363,7 @@ model BudgetPeriod {
   user         User               @relation(fields: [userId], references: [id])
   allocations  BudgetAllocation[]
   transactions Transaction[]
+  cyclePaymentPlans CyclePaymentPlan[]
 
   @@unique([userId, startDate])
 }
@@ -402,6 +404,8 @@ model Transaction {
   notes                String?
   status               String   @default("CLEARED")
   linkedTransactionId  String?
+  loanId               String?
+  creditCardId         String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -414,6 +418,8 @@ model Transaction {
   incomeForecasts    IncomeForecast[]
   receipts           Receipt[]
   customReminders    CustomReminder[]
+  loan               Loan?         @relation("LoanPaymentTransaction", fields: [loanId], references: [id])
+  creditCard         CreditCard?   @relation("CreditCardPaymentTransaction", fields: [creditCardId], references: [id])
 }
 
 model RecurringRule {
@@ -500,6 +506,7 @@ model Loan {
   user        User         @relation(fields: [userId], references: [id])
   category    Category?    @relation(fields: [categoryId], references: [id])
   subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
+  paymentTransactions Transaction[] @relation("LoanPaymentTransaction")
 }
 
 model Lending {
@@ -538,6 +545,25 @@ model CreditCard {
 
   user    User    @relation(fields: [userId], references: [id])
   account Account @relation(fields: [accountId], references: [id])
+  paymentTransactions Transaction[] @relation("CreditCardPaymentTransaction")
+}
+
+model CyclePaymentPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  budgetPeriodId String
+  sourceType     String
+  sourceId       String
+  expectedAmount Int
+  dueDate        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  budgetPeriod BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
+
+  @@unique([budgetPeriodId, sourceType, sourceId])
+  @@index([userId, budgetPeriodId])
 }
 
 model InstallmentPurchase {
