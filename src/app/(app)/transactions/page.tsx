@@ -27,7 +27,7 @@ export default async function TransactionsPage({
       ...(params.accountId ? { accountId: params.accountId } : {}),
       ...(params.search ? { description: { contains: params.search } } : {}),
     },
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: { account: true, category: true },
   });
 

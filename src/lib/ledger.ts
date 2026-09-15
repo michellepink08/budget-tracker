@@ -4,6 +4,7 @@ import type { AccountPurpose } from "@/lib/constants/financial";
 export type LedgerRow = {
   id: string;
   date: Date;
+  createdAt: Date;
   accountId: string;
   accountName: string;
   description: string;
@@ -35,7 +36,7 @@ export async function listLedgerRows(
     accounts.map(async (account: { id: string; name: string; openingBalance: number }) => {
       const transactions = await prisma.transaction.findMany({
         where: { accountId: account.id },
-        orderBy: { date: "asc" },
+        orderBy: [{ date: "asc" }, { createdAt: "asc" }],
         include: { category: true },
       });
 
@@ -44,6 +45,7 @@ export async function listLedgerRows(
       for (const txn of transactions as {
         id: string;
         date: Date;
+        createdAt: Date;
         amount: number;
         description: string;
         category: { name: string } | null;
@@ -53,6 +55,7 @@ export async function listLedgerRows(
           rows.push({
             id: txn.id,
             date: txn.date,
+            createdAt: txn.createdAt,
             accountId: account.id,
             accountName: account.name,
             description: txn.description,
@@ -66,8 +69,12 @@ export async function listLedgerRows(
     }),
   );
 
-  return rowsPerAccount
-    .flat()
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .reverse();
+  // Sorted explicitly by (date, createdAt) descending — not left to rely on
+  // JS's stable-sort preserving whatever order rows happened to arrive in
+  // across different accounts, which isn't meaningful for same-date ties.
+  return rowsPerAccount.flat().sort((a, b) => {
+    const dateDiff = b.date.getTime() - a.date.getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
 }
