@@ -28,6 +28,7 @@ model User {
   payables             Payable[]
   recurringPayables    RecurringPayable[]
   loans                Loan[]
+  lendings             Lending[]
   creditCards          CreditCard[]
   installmentPurchases InstallmentPurchase[]
   installmentPayments  InstallmentPayment[]
@@ -75,6 +76,7 @@ model Account {
   creditCard           CreditCard?
   installmentPurchases InstallmentPurchase[]
   savingsGoal          SavingsGoal?
+  lendings             Lending[]
 }
 
 model SavingsGoal {
@@ -325,6 +327,7 @@ model Category {
   shoppingListItems    ShoppingListItem[]
   receiptLines         ReceiptLine[]
   loans                Loan[]
+  lendings             Lending[]
 }
 
 model Subcategory {
@@ -341,6 +344,7 @@ model Subcategory {
   recurringRules     RecurringRule[]
   budgetAllocations  BudgetAllocation[]
   loans              Loan[]
+  lendings           Lending[]
 }
 
 model BudgetPeriod {
@@ -494,6 +498,29 @@ model Loan {
   updatedAt        DateTime  @updatedAt
 
   user        User         @relation(fields: [userId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
+}
+
+model Lending {
+  id              String    @id @default(cuid())
+  userId          String
+  borrowerName    String
+  kind            String // "CASH" | "ITEM"
+  amount          Int? // minor units — CASH only
+  itemDescription String? // ITEM only
+  itemValue       Int? // minor units — ITEM only, informational only
+  accountId       String? // CASH only — which account the money left
+  categoryId      String?
+  subcategoryId   String?
+  date            DateTime
+  returned        Boolean   @default(false) // ITEM only
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  account     Account?     @relation(fields: [accountId], references: [id])
   category    Category?    @relation(fields: [categoryId], references: [id])
   subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
 }
