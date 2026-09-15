@@ -15,6 +15,10 @@ describe("signedAmountForType", () => {
     expect(signedAmountForType("TRANSFER_FEE", 150)).toBe(-150);
   });
 
+  it("returns a negative amount for LENDING (an outflow — money leaving to lend to someone)", () => {
+    expect(signedAmountForType("LENDING", 50000)).toBe(-50000);
+  });
+
   it("rejects a negative magnitude", () => {
     expect(() => signedAmountForType("EXPENSE", -100)).toThrow();
   });

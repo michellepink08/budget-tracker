@@ -10,7 +10,8 @@ export type SignableTransactionType =
   | "SAVINGS"
   | "LOAN_PAYMENT"
   | "CREDIT_CARD_PAYMENT"
-  | "TRANSFER_FEE";
+  | "TRANSFER_FEE"
+  | "LENDING";
 
 const INFLOW_TYPES = new Set<SignableTransactionType>(["INCOME", "REFUND"]);
 const OUTFLOW_TYPES = new Set<SignableTransactionType>([
@@ -19,6 +20,7 @@ const OUTFLOW_TYPES = new Set<SignableTransactionType>([
   "LOAN_PAYMENT",
   "CREDIT_CARD_PAYMENT",
   "TRANSFER_FEE",
+  "LENDING",
 ]);
 
 /**

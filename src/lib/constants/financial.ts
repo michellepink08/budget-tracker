@@ -32,6 +32,7 @@ export const TRANSACTION_TYPES = [
   "CREDIT_CARD_PAYMENT",
   "BALANCE_ADJUSTMENT",
   "TRANSFER_FEE",
+  "LENDING",
 ] as const;
 export type TransactionType = (typeof TRANSACTION_TYPES)[number];
 
