@@ -17,8 +17,10 @@ export type BudgetActionResult = { ok: true } | { ok: false; error: string };
 const allocationSchema = z.object({
   budgetPeriodId: z.string().min(1),
   categoryId: z.string().min(1),
+  subcategoryId: z.string().optional(),
   plannedAmount: z.number().positive("Planned amount must be greater than zero"),
   rolloverMode: z.enum(ROLLOVER_MODES),
+  showDailyAllowance: z.boolean(),
 });
 
 export async function createAllocationAction(formData: FormData): Promise<BudgetActionResult> {
@@ -30,8 +32,10 @@ export async function createAllocationAction(formData: FormData): Promise<Budget
   const parsed = allocationSchema.safeParse({
     budgetPeriodId: formData.get("budgetPeriodId"),
     categoryId: formData.get("categoryId"),
+    subcategoryId: formData.get("subcategoryId") || undefined,
     plannedAmount: Number(formData.get("plannedAmount")),
     rolloverMode: formData.get("rolloverMode"),
+    showDailyAllowance: formData.get("showDailyAllowance") === "true",
   });
   if (!parsed.success) return { ok: false, error: "Please check the allocation details" };
 
@@ -45,11 +49,13 @@ export async function createAllocationAction(formData: FormData): Promise<Budget
 
   const result = await createAllocation(prisma, user.id, {
     ...parsed.data,
+    subcategoryId: parsed.data.subcategoryId ?? null,
     plannedAmount: toMinorUnits(parsed.data.plannedAmount, user.currency),
   });
   if (!result.ok) return result;
 
   revalidatePath("/budget");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 
@@ -66,10 +72,12 @@ export async function updateAllocationAction(
     .object({
       plannedAmount: z.number().positive("Planned amount must be greater than zero"),
       rolloverMode: z.enum(ROLLOVER_MODES),
+      showDailyAllowance: z.boolean(),
     })
     .safeParse({
       plannedAmount: Number(formData.get("plannedAmount")),
       rolloverMode: formData.get("rolloverMode"),
+      showDailyAllowance: formData.get("showDailyAllowance") === "true",
     });
   if (!parsed.success) return { ok: false, error: "Please check the allocation details" };
 
@@ -78,7 +86,10 @@ export async function updateAllocationAction(
     plannedAmount: toMinorUnits(parsed.data.plannedAmount, user.currency),
   });
 
-  if (result.ok) revalidatePath("/budget");
+  if (result.ok) {
+    revalidatePath("/budget");
+    revalidatePath("/dashboard");
+  }
   return result;
 }
 
