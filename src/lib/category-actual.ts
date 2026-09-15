@@ -17,3 +17,20 @@ export async function computeCategoryActual(
   return net === 0 ? 0 : -net; // avoid returning -0
 
 }
+
+/**
+ * Same as computeCategoryActual, but scoped to one subcategory instead of
+ * a whole category — a transaction's own subcategoryId already implies
+ * its category, so no separate categoryId filter is needed here.
+ */
+export async function computeSubcategoryActual(
+  prisma: Pick<PrismaClient, "transaction">,
+  budgetPeriodId: string,
+  subcategoryId: string,
+): Promise<number> {
+  const transactions = await prisma.transaction.findMany({
+    where: { budgetPeriodId, subcategoryId },
+  });
+  const net = transactions.reduce((sum, txn) => sum + txn.amount, 0);
+  return net === 0 ? 0 : -net;
+}

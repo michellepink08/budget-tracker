@@ -1,43 +1,35 @@
 import { describe, expect, it, vi } from "vitest";
-import { computeCategoryActual } from "@/lib/category-actual";
+import { computeCategoryActual, computeSubcategoryActual } from "@/lib/category-actual";
 
 describe("computeCategoryActual", () => {
-  it("returns positive net spend for a category with only expenses", async () => {
-    const findMany = vi.fn().mockResolvedValue([{ amount: -3200 }, { amount: -1500 }]);
+  it("sums transaction amounts and flips sign (net outflow becomes positive)", async () => {
+    const findMany = vi.fn().mockResolvedValue([{ amount: -3000 }, { amount: -2000 }]);
     const prisma = { transaction: { findMany } } as any;
 
     const actual = await computeCategoryActual(prisma, "period-1", "cat-1");
 
-    expect(actual).toBe(4700);
-    expect(findMany).toHaveBeenCalledWith({
-      where: { budgetPeriodId: "period-1", categoryId: "cat-1" },
-    });
+    expect(actual).toBe(5000);
+    expect(findMany).toHaveBeenCalledWith({ where: { budgetPeriodId: "period-1", categoryId: "cat-1" } });
   });
+});
 
-  it("nets a refund against an expense in the same category", async () => {
-    const findMany = vi.fn().mockResolvedValue([{ amount: -3200 }, { amount: 500 }]);
+describe("computeSubcategoryActual", () => {
+  it("sums transaction amounts scoped by subcategoryId, not categoryId", async () => {
+    const findMany = vi.fn().mockResolvedValue([{ amount: -1500 }]);
     const prisma = { transaction: { findMany } } as any;
 
-    const actual = await computeCategoryActual(prisma, "period-1", "cat-1");
+    const actual = await computeSubcategoryActual(prisma, "period-1", "sub-1");
 
-    expect(actual).toBe(2700);
+    expect(actual).toBe(1500);
+    expect(findMany).toHaveBeenCalledWith({ where: { budgetPeriodId: "period-1", subcategoryId: "sub-1" } });
   });
 
-  it("returns a negative actual when inflows exceed outflows", async () => {
-    const findMany = vi.fn().mockResolvedValue([{ amount: -1000 }, { amount: 2500 }]);
-    const prisma = { transaction: { findMany } } as any;
-
-    const actual = await computeCategoryActual(prisma, "period-1", "cat-1");
-
-    expect(actual).toBe(-1500);
-  });
-
-  it("returns 0 when there are no transactions", async () => {
+  it("returns 0 (not -0) when there are no matching transactions", async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const prisma = { transaction: { findMany } } as any;
 
-    const actual = await computeCategoryActual(prisma, "period-1", "cat-1");
+    const actual = await computeSubcategoryActual(prisma, "period-1", "sub-1");
 
-    expect(actual).toBe(0);
+    expect(Object.is(actual, 0)).toBe(true);
   });
 });
