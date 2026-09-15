@@ -347,6 +347,8 @@ model BudgetPeriod {
   startDate DateTime
   endDate   DateTime
   status    String
+  rolloverAcknowledgedAt DateTime?
+  rolloverAmount         Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
