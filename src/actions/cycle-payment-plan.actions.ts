@@ -19,3 +19,7 @@ export async function saveCyclePaymentPlanAction(formData: FormData) {
   if (result.ok) revalidatePath("/bills");
   return result;
 }
+
+export async function saveCyclePaymentPlanFormAction(formData: FormData): Promise<void> {
+  await saveCyclePaymentPlanAction(formData);
+}
