@@ -16,8 +16,11 @@ import { assertOwnedAccount } from "@/lib/accounts";
 import { assertOwnedCategory, assertOwnedSubcategory, resolveOrCreateCategory } from "@/lib/categories";
 import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 import { humanizeEnum } from "@/lib/enum-labels";
+import { checkOverspendWarning } from "@/lib/overspend-warning";
 
-export type TransactionActionResult = { ok: true } | { ok: false; error: string };
+export type TransactionActionResult =
+  | { ok: true; warning?: string }
+  | { ok: false; error: string };
 
 async function currentUser() {
   const session = await auth();
@@ -75,7 +78,7 @@ export async function createTransactionAction(
     categoryId,
   };
 
-  await prisma.$transaction(async (tx) => {
+  const createdTransaction = await prisma.$transaction(async (tx) => {
     const transaction = await createExpenseLikeTransaction(tx, user.id, user.cycleStartDay, input);
     await recordAudit(tx, {
       userId: user.id,
@@ -85,10 +88,23 @@ export async function createTransactionAction(
       source: "FORM",
       newValues: { rows: [transaction] },
     });
+    return transaction;
   });
 
+  const warning = createdTransaction.budgetPeriodId
+    ? await checkOverspendWarning(
+        prisma,
+        user.id,
+        createdTransaction.budgetPeriodId,
+        createdTransaction.categoryId,
+        createdTransaction.subcategoryId,
+        user.currency,
+      )
+    : null;
+
   revalidatePath("/transactions");
-  return { ok: true };
+  revalidatePath("/dashboard");
+  return { ok: true, ...(warning ? { warning } : {}) };
 }
 
 export async function createTransferAction(formData: FormData): Promise<TransactionActionResult> {
@@ -190,8 +206,22 @@ export async function updateTransactionAction(
     return updateResult;
   });
 
-  if (result.ok) revalidatePath("/transactions");
-  return result;
+  if (!result.ok) return result;
+
+  const warning = before.budgetPeriodId
+    ? await checkOverspendWarning(
+        prisma,
+        user.id,
+        before.budgetPeriodId,
+        input.categoryId,
+        input.subcategoryId,
+        user.currency,
+      )
+    : null;
+
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  return { ok: true, ...(warning ? { warning } : {}) };
 }
 
 export async function deleteTransactionAction(
