@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentCycle } from "@/lib/cycle";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { listBudgetPeriods } from "@/lib/budget-periods";
-import { listAllocationsWithActuals } from "@/lib/budget-allocations";
+import { computeAvailableAllocationOptions, listAllocationsWithActuals } from "@/lib/budget-allocations";
 import { listCategories } from "@/lib/categories";
 import { formatCycleRange } from "@/lib/cycle";
 import { AllocationList } from "@/components/budget/allocation-list";
@@ -36,10 +36,14 @@ export default async function BudgetPage({
     listCategories(prisma, user.id),
   ]);
 
-  const allocatedCategoryIds = new Set(allocations.map((a) => a.categoryId));
-  const availableCategories = categories
-    .filter((c) => !allocatedCategoryIds.has(c.id))
-    .map((c) => ({ id: c.id, name: c.name }));
+  const availableCategories = computeAvailableAllocationOptions(
+    categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      subcategories: c.subcategories.map((s) => ({ id: s.id, name: s.name })),
+    })),
+    allocations.map((a) => ({ categoryId: a.categoryId, subcategoryId: a.subcategoryId })),
+  );
 
   return (
     <div className="flex flex-col gap-6">
