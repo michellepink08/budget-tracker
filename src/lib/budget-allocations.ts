@@ -90,6 +90,20 @@ export async function updateAllocation(
   return { ok: true };
 }
 
+export async function deleteAllocation(
+  prisma: Pick<PrismaClient, "budgetAllocation">,
+  userId: string,
+  allocationId: string,
+): Promise<AllocationMutationResult> {
+  const result = await prisma.budgetAllocation.deleteMany({
+    where: { id: allocationId, userId },
+  });
+  if (result.count === 0) {
+    return { ok: false, error: "Allocation not found" };
+  }
+  return { ok: true };
+}
+
 export type AllocationWithActual = {
   id: string;
   categoryId: string;

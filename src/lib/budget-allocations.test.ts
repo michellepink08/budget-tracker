@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   computeAvailableAllocationOptions,
   createAllocation,
+  deleteAllocation,
   listAllocationsWithActuals,
   updateAllocation,
 } from "@/lib/budget-allocations";
@@ -202,6 +203,29 @@ describe("updateAllocation", () => {
     const prisma = { budgetAllocation: { updateMany } } as any;
 
     const result = await updateAllocation(prisma, "user-1", "alloc-1", { plannedAmount: 9000 });
+
+    expect(result).toEqual({ ok: false, error: "Allocation not found" });
+  });
+});
+
+describe("deleteAllocation", () => {
+  it("deletes only when the allocation belongs to the user", async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
+    const prisma = { budgetAllocation: { deleteMany } } as any;
+
+    const result = await deleteAllocation(prisma, "user-1", "alloc-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: { id: "alloc-1", userId: "user-1" },
+    });
+  });
+
+  it("reports not found when no row matched", async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 0 });
+    const prisma = { budgetAllocation: { deleteMany } } as any;
+
+    const result = await deleteAllocation(prisma, "user-1", "alloc-1");
 
     expect(result).toEqual({ ok: false, error: "Allocation not found" });
   });

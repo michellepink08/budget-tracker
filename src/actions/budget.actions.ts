@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { ROLLOVER_MODES } from "@/lib/constants/financial";
-import { createAllocation, updateAllocation } from "@/lib/budget-allocations";
+import { createAllocation, deleteAllocation, updateAllocation } from "@/lib/budget-allocations";
 import { createBudgetPeriod } from "@/lib/budget-periods";
 import { acknowledgeRollover } from "@/lib/cutoff-rollover";
 import { computeDisposableTotal } from "@/lib/purpose-totals";
@@ -85,6 +85,19 @@ export async function updateAllocationAction(
     ...parsed.data,
     plannedAmount: toMinorUnits(parsed.data.plannedAmount, user.currency),
   });
+
+  if (result.ok) {
+    revalidatePath("/budget");
+    revalidatePath("/dashboard");
+  }
+  return result;
+}
+
+export async function deleteAllocationAction(allocationId: string): Promise<BudgetActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const result = await deleteAllocation(prisma, session.user.id, allocationId);
 
   if (result.ok) {
     revalidatePath("/budget");

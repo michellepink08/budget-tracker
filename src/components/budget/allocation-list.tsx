@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { AllocationFormDialog } from "@/components/budget/allocation-form-dialog";
+import { RemoveAllocationButton } from "@/components/budget/remove-allocation-button";
 import type { AllocationWithActual, AvailableAllocationOption } from "@/lib/budget-allocations";
 import { Card } from "@/components/ui/card";
 
@@ -46,13 +47,16 @@ export function AllocationList({
                     ` (includes ${formatMoney(allocation.rolloverAmount, currency)} rollover)`}
                 </p>
               </div>
-              <AllocationFormDialog
-                budgetPeriodId={budgetPeriodId}
-                currency={currency}
-                availableCategories={availableCategories}
-                existing={allocation}
-                existingLabel={label}
-              />
+              <div className="flex gap-2">
+                <AllocationFormDialog
+                  budgetPeriodId={budgetPeriodId}
+                  currency={currency}
+                  availableCategories={availableCategories}
+                  existing={allocation}
+                  existingLabel={label}
+                />
+                <RemoveAllocationButton allocationId={allocation.id} />
+              </div>
             </div>
             <div className="mt-2 h-2 rounded-full bg-accent-tint">
               <div
