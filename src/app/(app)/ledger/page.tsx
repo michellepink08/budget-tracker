@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveBudgetPeriodForDate } from "@/lib/budget-period";
 import { listLedgerRows } from "@/lib/ledger";
-import { listLoans } from "@/lib/loans";
+import { computeLoanRemainingBalance, listLoans } from "@/lib/loans";
 import { listAccounts } from "@/lib/accounts";
 import { computeAccountBalance } from "@/lib/account-balance";
 import { listCreditCards } from "@/lib/credit-cards";
@@ -45,7 +45,13 @@ export default async function LedgerPage({
   const rangeQuery = `from=${start.toISOString().slice(0, 10)}&to=${end.toISOString().slice(0, 10)}`;
 
   const isLoansTab = activeTab === "LOANS";
-  const loans = isLoansTab ? await listLoans(prisma, user.id) : [];
+  const rawLoans = isLoansTab ? await listLoans(prisma, user.id) : [];
+  const loans = await Promise.all(
+    rawLoans.map(async (loan) => ({
+      ...loan,
+      remainingBalance: await computeLoanRemainingBalance(prisma, loan),
+    })),
+  );
 
   let accountsSummary: { id: string; name: string; accountType: string; balance: number; creditLimit?: number }[] =
     [];

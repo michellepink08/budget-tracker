@@ -14,6 +14,7 @@ type LoanRow = {
   interestRate: number;
   monthlyPayment: number;
   remainingBalance: number;
+  loanCategoryName: string | null;
   startDate: Date;
   endDate: Date | null;
   dueDay: number | null;
@@ -50,7 +51,20 @@ export function LoanList({
               defaultAmount={loan.monthlyPayment}
               accounts={payingAccounts}
             />
-            <LoanFormDialog existing={loan} />
+            <LoanFormDialog
+              existing={{
+                id: loan.id,
+                name: loan.name,
+                principal: loan.principal,
+                interestRate: loan.interestRate,
+                monthlyPayment: loan.monthlyPayment,
+                openingBalance: loan.remainingBalance,
+                startDate: loan.startDate,
+                endDate: loan.endDate,
+                dueDay: loan.dueDay,
+                loanCategoryName: loan.loanCategoryName,
+              }}
+            />
             <ArchiveLoanButton loanId={loan.id} />
           </div>
         </Card>

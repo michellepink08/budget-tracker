@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
-import { listLoans } from "@/lib/loans";
+import { computeLoanRemainingBalance, listLoans } from "@/lib/loans";
 import { listCreditCards } from "@/lib/credit-cards";
 import { computeAccountBalance } from "@/lib/account-balance";
 import {
@@ -24,7 +24,7 @@ export default async function LoansCardsPage() {
   const userId = session!.user.id;
   const now = new Date();
 
-  const [accounts, categories, loans, creditCards, installmentPurchases, dueInstallmentPayments] =
+  const [accounts, categories, rawLoans, creditCards, installmentPurchases, dueInstallmentPayments] =
     await Promise.all([
       listAccounts(prisma, userId),
       listCategories(prisma, userId),
@@ -33,6 +33,14 @@ export default async function LoansCardsPage() {
       listInstallmentPurchases(prisma, userId),
       listDueInstallmentPayments(prisma, userId, now),
     ]);
+
+  const loans = await Promise.all(
+    rawLoans.map(async (loan) => ({
+      ...loan,
+      remainingBalance: await computeLoanRemainingBalance(prisma, loan),
+      loanCategoryName: loan.subcategory?.name ?? null,
+    })),
+  );
 
   const payingAccounts = accounts.filter((a) => !DEBT_ACCOUNT_TYPES.includes(a.accountType));
 
