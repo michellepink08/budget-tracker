@@ -10,6 +10,7 @@ import { listCreditCards } from "@/lib/credit-cards";
 import { LedgerWideTable } from "@/components/ledger/ledger-wide-table";
 import { LoanSummaryTable } from "@/components/ledger/loan-summary-table";
 import { LedgerRangePicker } from "@/components/ledger/ledger-range-picker";
+import { RolloverNote } from "@/components/budget/rollover-note";
 import type { AccountPurpose } from "@/lib/constants/financial";
 
 // "LOANS" isn't an AccountPurpose — it's its own tab backed by the Loan
@@ -73,6 +74,14 @@ export default async function LedgerPage({
     rows = await listLedgerRows(prisma, user.id, purpose, { start, end });
   }
 
+  let disposableRolloverAmount: number | null = null;
+  if (activeTab === "DISPOSABLE") {
+    const periodForRange = await prisma.budgetPeriod.findUnique({
+      where: { userId_startDate: { userId: user.id, startDate: start } },
+    });
+    disposableRolloverAmount = periodForRange?.rolloverAmount ?? null;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Ledger</h1>
@@ -96,12 +105,21 @@ export default async function LedgerPage({
       {isLoansTab ? (
         <LoanSummaryTable loans={loans} />
       ) : (
-        <LedgerWideTable
-          title={LEDGER_TABS.find((t) => t.value === activeTab)!.label}
-          rows={rows}
-          accounts={accountsSummary}
-          currency={user.currency}
-        />
+        <>
+          {disposableRolloverAmount !== null && (
+            <RolloverNote
+              amount={disposableRolloverAmount}
+              currency={user.currency}
+              description="Carried over from the previous cutoff — not counted as Income."
+            />
+          )}
+          <LedgerWideTable
+            title={LEDGER_TABS.find((t) => t.value === activeTab)!.label}
+            rows={rows}
+            accounts={accountsSummary}
+            currency={user.currency}
+          />
+        </>
       )}
     </div>
   );
