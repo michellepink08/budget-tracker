@@ -13,6 +13,8 @@ export type ExpenseLikeInput = {
   accountId: string;
   categoryId?: string;
   subcategoryId?: string;
+  loanId?: string;
+  creditCardId?: string;
   description?: string;
   notes?: string;
   budgetPeriodId?: string; // manual override — skips auto-resolution
@@ -66,6 +68,8 @@ export async function createExpenseLikeTransaction(
       accountId: input.accountId,
       categoryId: input.categoryId,
       subcategoryId: input.subcategoryId,
+      loanId: input.loanId,
+      creditCardId: input.creditCardId,
       budgetPeriodId,
       description,
       notes: input.notes,

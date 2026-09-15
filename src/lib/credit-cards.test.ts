@@ -111,6 +111,7 @@ describe("makeCreditCardPayment", () => {
     expect(outgoingArgs.type).toBe("CREDIT_CARD_PAYMENT");
     expect(outgoingArgs.amount).toBe(-300000);
     expect(outgoingArgs.accountId).toBe("acc-checking");
+    expect(outgoingArgs.creditCardId).toBe("card-1");
 
     const incomingArgs = prisma.transaction.create.mock.calls[1][0].data;
     expect(incomingArgs.type).toBe("CREDIT_CARD_PAYMENT");

@@ -78,6 +78,7 @@ export async function makeCreditCardPayment(
       amount: input.amount,
       date: input.date,
       accountId: input.accountId,
+      creditCardId: card.id,
       description: "Credit card payment",
     });
 

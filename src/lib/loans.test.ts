@@ -149,6 +149,7 @@ describe("makeLoanPayment", () => {
     expect(txnArgs.accountId).toBe("acc-1");
     expect(txnArgs.categoryId).toBe("cat-loan");
     expect(txnArgs.subcategoryId).toBe("sub-1");
+    expect(txnArgs.loanId).toBe("loan-1");
     expect(prisma.loan.updateMany).not.toHaveBeenCalled();
   });
 

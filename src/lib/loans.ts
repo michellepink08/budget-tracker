@@ -98,6 +98,7 @@ export async function makeLoanPayment(
     accountId: input.accountId,
     categoryId: loan.categoryId ?? undefined,
     subcategoryId: loan.subcategoryId ?? undefined,
+    loanId: loan.id,
     description: `Loan payment: ${loan.name}`,
   });
 
