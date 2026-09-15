@@ -334,10 +334,11 @@ model Subcategory {
   sortOrder  Int       @default(0)
   archivedAt DateTime?
 
-  user           User            @relation(fields: [userId], references: [id])
-  category       Category        @relation(fields: [categoryId], references: [id])
-  transactions   Transaction[]
-  recurringRules RecurringRule[]
+  user              User               @relation(fields: [userId], references: [id])
+  category           Category           @relation(fields: [categoryId], references: [id])
+  transactions       Transaction[]
+  recurringRules     RecurringRule[]
+  budgetAllocations  BudgetAllocation[]
 }
 
 model BudgetPeriod {
@@ -364,17 +365,20 @@ model BudgetAllocation {
   userId         String
   budgetPeriodId String
   categoryId     String
+  subcategoryId  String?
   plannedAmount  Int
   rolloverMode   String
   rolloverAmount Int      @default(0)
+  showDailyAllowance Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   user         User         @relation(fields: [userId], references: [id])
   budgetPeriod BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
   category     Category     @relation(fields: [categoryId], references: [id])
+  subcategory  Subcategory? @relation(fields: [subcategoryId], references: [id])
 
-  @@unique([budgetPeriodId, categoryId])
+  @@unique([budgetPeriodId, categoryId, subcategoryId])
 }
 
 model Transaction {
