@@ -12,10 +12,12 @@ import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
 import { shouldPromptRollover } from "@/lib/cutoff-rollover";
+import { computeDailyAllowances } from "@/lib/daily-allowance";
 import { Wallet, PiggyBank, Lock } from "lucide-react";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { RolloverBanner } from "@/components/dashboard/rollover-banner";
 import { RolloverNote } from "@/components/budget/rollover-note";
+import { DailyAllowanceCard } from "@/components/dashboard/daily-allowance-card";
 import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
@@ -64,6 +66,7 @@ export default async function DashboardPage() {
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
   const totalActual = allocations.reduce((sum, a) => sum + a.actual, 0);
   const totalRemaining = totalPlanned - totalActual;
+  const dailyAllowances = computeDailyAllowances(allocations, activePeriod.endDate, now);
 
   const restrictedAccountIds = new Set(restrictedFunds.map((f) => f.accountId));
   const restrictedTotal = restrictedFunds.reduce((sum, f) => sum + f.balance, 0);
@@ -178,6 +181,8 @@ export default async function DashboardPage() {
       )}
 
       <FundingRecommendationBanner recommendation={recommendationView} />
+
+      <DailyAllowanceCard rows={dailyAllowances} currency={user.currency} />
 
       {yearPlanSummary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
