@@ -8,9 +8,10 @@ import { MonthView } from "@/components/calendar/month-view";
 import { CutoffView } from "@/components/calendar/cutoff-view";
 import { AgendaView } from "@/components/calendar/agenda-view";
 import { ReminderFormDialog } from "@/components/calendar/reminder-form-dialog";
+import { resolveCalendarView, type CalendarView } from "@/lib/calendar/view";
 
 const VIEWS = ["agenda", "cutoff", "month"] as const;
-type View = (typeof VIEWS)[number];
+type View = CalendarView;
 
 const VIEW_LABELS: Record<View, string> = {
   agenda: "Agenda",
@@ -27,7 +28,7 @@ export default async function CalendarPage({
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session!.user.id } });
 
   const params = await searchParams;
-  const view: View = VIEWS.includes(params.view as View) ? (params.view as View) : "agenda";
+  const view = resolveCalendarView(params.view);
 
   // Start-of-day, not the exact instant — otherwise a same-day entry
   // (dated at midnight) would fall outside a range starting "now" later in
