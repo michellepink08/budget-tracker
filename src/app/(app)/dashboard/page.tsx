@@ -11,8 +11,11 @@ import { getRecommendedFundingTransfer } from "@/lib/transfer-recommendations";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
 import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
+import { shouldPromptRollover } from "@/lib/cutoff-rollover";
 import { Wallet, PiggyBank, Lock } from "lucide-react";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
+import { RolloverBanner } from "@/components/dashboard/rollover-banner";
+import { RolloverNote } from "@/components/budget/rollover-note";
 import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
@@ -28,6 +31,7 @@ export default async function DashboardPage() {
   const horizon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + UPCOMING_WINDOW_DAYS);
 
   const activePeriod = await resolveBudgetPeriodForDate(prisma, user.id, now, user.cycleStartDay);
+  const promptRollover = await shouldPromptRollover(prisma, user.id, activePeriod);
 
   const [
     disposableTotal,
@@ -154,6 +158,24 @@ export default async function DashboardPage() {
           <p className="text-2xl font-semibold">{formatMoney(totalRemaining, user.currency)}</p>
         </Card>
       </div>
+
+      {promptRollover && (
+        <RolloverBanner
+          periodId={activePeriod.id}
+          disposableTotal={disposableTotal}
+          currency={user.currency}
+          sourceAccounts={accounts
+            .filter((a) => a.purpose === "DISPOSABLE")
+            .map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
+          destinationAccounts={accounts
+            .filter((a) => a.purpose === "SAVINGS" || a.purpose === "RESTRICTED")
+            .map((a) => ({ id: a.id, name: a.name, currency: a.currency }))}
+        />
+      )}
+
+      {!promptRollover && activePeriod.rolloverAmount !== null && (
+        <RolloverNote amount={activePeriod.rolloverAmount} currency={user.currency} />
+      )}
 
       <FundingRecommendationBanner recommendation={recommendationView} />
 
