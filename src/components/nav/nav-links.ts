@@ -12,6 +12,7 @@ import {
   CalendarDays,
   History,
   Table,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ export const planLinks: NavLink[] = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/year-plan", label: "Year Plan", icon: CalendarRange },
   { href: "/loans-cards", label: "Loans & Cards", icon: CreditCard },
+  { href: "/lending", label: "Lending", icon: HandCoins },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/ledger", label: "Ledger", icon: Table },
   { href: "/audit-log", label: "Audit History", icon: History },
