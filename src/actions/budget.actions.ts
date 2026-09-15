@@ -7,6 +7,8 @@ import { z } from "zod";
 import { ROLLOVER_MODES } from "@/lib/constants/financial";
 import { createAllocation, updateAllocation } from "@/lib/budget-allocations";
 import { createBudgetPeriod } from "@/lib/budget-periods";
+import { acknowledgeRollover } from "@/lib/cutoff-rollover";
+import { computeDisposableTotal } from "@/lib/purpose-totals";
 import { toMinorUnits } from "@/lib/money";
 import { assertUnderDemoCap } from "@/lib/demo-guard";
 
@@ -113,5 +115,21 @@ export async function createBudgetPeriodAction(formData: FormData): Promise<Budg
   if (!result.ok) return result;
 
   revalidatePath("/budget");
+  return { ok: true };
+}
+
+export async function acknowledgeRolloverAction(periodId: string): Promise<BudgetActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "You must be logged in" };
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
+
+  const amount = await computeDisposableTotal(prisma, user.id);
+  const result = await acknowledgeRollover(prisma, user.id, periodId, amount);
+  if (!result.ok) return result;
+
+  revalidatePath("/dashboard");
+  revalidatePath("/budget");
+  revalidatePath("/ledger");
   return { ok: true };
 }
