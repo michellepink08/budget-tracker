@@ -10,6 +10,7 @@ import { AllocationList } from "@/components/budget/allocation-list";
 import { AllocationFormDialog } from "@/components/budget/allocation-form-dialog";
 import { PeriodPicker } from "@/components/budget/period-picker";
 import { PeriodFormDialog } from "@/components/budget/period-form-dialog";
+import { RolloverNote } from "@/components/budget/rollover-note";
 
 export default async function BudgetPage({
   searchParams,
@@ -59,6 +60,10 @@ export default async function BudgetPage({
           />
         </div>
       </div>
+
+      {activePeriod.rolloverAmount !== null && (
+        <RolloverNote amount={activePeriod.rolloverAmount} currency={user.currency} />
+      )}
 
       <AllocationList
         allocations={allocations}
