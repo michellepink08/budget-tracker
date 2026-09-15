@@ -25,10 +25,11 @@ type FormValues = {
   principal: number;
   interestRate: number;
   monthlyPayment: number;
-  remainingBalance: number;
+  openingBalance: number;
   startDate: string;
   endDate: string;
   dueDay: string;
+  loanCategory: string;
 };
 
 type ExistingLoan = {
@@ -37,10 +38,11 @@ type ExistingLoan = {
   principal: number;
   interestRate: number;
   monthlyPayment: number;
-  remainingBalance: number;
+  openingBalance: number;
   startDate: Date;
   endDate: Date | null;
   dueDay: number | null;
+  loanCategoryName: string | null;
 };
 
 const LOAN_CURRENCY = "PHP";
@@ -61,20 +63,22 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
           principal: toMajorUnits(existing.principal, LOAN_CURRENCY),
           interestRate: existing.interestRate,
           monthlyPayment: toMajorUnits(existing.monthlyPayment, LOAN_CURRENCY),
-          remainingBalance: toMajorUnits(existing.remainingBalance, LOAN_CURRENCY),
+          openingBalance: toMajorUnits(existing.openingBalance, LOAN_CURRENCY),
           startDate: existing.startDate.toISOString().slice(0, 10),
           endDate: existing.endDate ? existing.endDate.toISOString().slice(0, 10) : "",
           dueDay: existing.dueDay ? String(existing.dueDay) : "",
+          loanCategory: existing.loanCategoryName ?? "",
         }
       : {
           name: "",
           principal: 0,
           interestRate: 0,
           monthlyPayment: 0,
-          remainingBalance: 0,
+          openingBalance: 0,
           startDate: new Date().toISOString().slice(0, 10),
           endDate: "",
           dueDay: "",
+          loanCategory: "",
         },
   });
 
@@ -90,10 +94,11 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
     formData.set("principal", String(values.principal));
     formData.set("interestRate", String(toAnnualInterestRate(values.interestRate, interestRatePeriod)));
     formData.set("monthlyPayment", String(values.monthlyPayment));
-    formData.set("remainingBalance", String(values.remainingBalance));
+    formData.set("openingBalance", String(values.openingBalance));
     formData.set("startDate", values.startDate);
     formData.set("endDate", values.endDate);
     formData.set("dueDay", values.dueDay);
+    formData.set("loanCategory", values.loanCategory);
 
     const result = existing
       ? await updateLoanAction(existing.id, formData)
@@ -134,13 +139,34 @@ export function LoanFormDialog({ existing }: { existing?: ExistingLoan }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="remainingBalance">Remaining balance</Label>
+            <Label htmlFor="openingBalance">
+              {existing ? "Current remaining balance" : "Remaining balance"}
+            </Label>
             <Input
-              id="remainingBalance"
+              id="openingBalance"
               type="number"
               step="0.01"
-              {...register("remainingBalance", { valueAsNumber: true })}
+              {...register("openingBalance", { valueAsNumber: true })}
             />
+            {existing && (
+              <p className="text-xs text-muted-foreground">
+                Only used as a starting point — once this loan has a category, its balance updates itself
+                from payments categorized to it, same as an account.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="loanCategory">Category</Label>
+            <Input
+              id="loanCategory"
+              placeholder="e.g. Shopee Pay Later"
+              {...register("loanCategory")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Matches or creates a subcategory under a shared &quot;Loan&quot; category — this is what lets
+              a payment automatically update this loan&apos;s balance and show up on the Budget page.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
