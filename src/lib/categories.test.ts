@@ -7,6 +7,7 @@ import {
   createCategory,
   createSubcategory,
   listCategories,
+  resolveOrCreateCategory,
   updateCategory,
 } from "@/lib/categories";
 
@@ -113,6 +114,106 @@ describe("assertOwnedCategory", () => {
   it("returns false when the category belongs to another user", async () => {
     const prisma = { category: { findFirst: vi.fn().mockResolvedValue(null) } } as any;
     expect(await assertOwnedCategory(prisma, "user-1", "cat-owned-by-someone-else")).toBe(false);
+  });
+});
+
+describe("resolveOrCreateCategory", () => {
+  it("resolves to an existing category by exact name match, without creating anything", async () => {
+    const create = vi.fn();
+    const prisma = {
+      category: {
+        findMany: vi.fn().mockResolvedValue([{ id: "cat-groceries", name: "Groceries" }]),
+        create,
+      },
+      alias: { findUnique: vi.fn().mockResolvedValue(null) },
+    } as any;
+
+    const result = await resolveOrCreateCategory(prisma, "user-1", "groceries", "EXPENSE");
+
+    expect(result).toEqual({ ok: true, id: "cat-groceries" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("resolves via a previously-taught alias even when the name doesn't match", async () => {
+    const create = vi.fn();
+    const prisma = {
+      category: {
+        findMany: vi.fn().mockResolvedValue([{ id: "cat-dining", name: "Dining Out" }]),
+        create,
+      },
+      alias: {
+        findUnique: vi.fn().mockResolvedValue({ targetId: "cat-dining" }),
+      },
+    } as any;
+
+    const result = await resolveOrCreateCategory(prisma, "user-1", "jollibee", "EXPENSE");
+
+    expect(result).toEqual({ ok: true, id: "cat-dining" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("creates a new category, typed to match the transaction type, when nothing resolves", async () => {
+    const prisma = {
+      category: {
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({ id: "cat-new" }),
+      },
+      alias: { findUnique: vi.fn().mockResolvedValue(null) },
+    } as any;
+
+    const result = await resolveOrCreateCategory(prisma, "user-1", "Jollibee", "LOAN_PAYMENT");
+
+    expect(result).toEqual({ ok: true, id: "cat-new" });
+    expect(prisma.category.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", name: "Jollibee", type: "DEBT_PAYMENT", color: "coral", icon: "tag" },
+    });
+  });
+
+  it("maps every non-transfer transaction type to a sensible category type", async () => {
+    const makePrisma = () =>
+      ({
+        category: { findMany: vi.fn().mockResolvedValue([]), create: vi.fn().mockResolvedValue({ id: "cat-new" }) },
+        alias: { findUnique: vi.fn().mockResolvedValue(null) },
+      }) as any;
+
+    const cases: Record<string, string> = {
+      EXPENSE: "EXPENSE",
+      INCOME: "INCOME",
+      REFUND: "EXPENSE",
+      SAVINGS: "SAVINGS",
+      LOAN_PAYMENT: "DEBT_PAYMENT",
+      CREDIT_CARD_PAYMENT: "DEBT_PAYMENT",
+      TRANSFER_FEE: "EXPENSE",
+    };
+
+    for (const [transactionType, expectedCategoryType] of Object.entries(cases)) {
+      const prisma = makePrisma();
+      await resolveOrCreateCategory(prisma, "user-1", "New One", transactionType);
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: { userId: "user-1", name: "New One", type: expectedCategoryType, color: "coral", icon: "tag" },
+      });
+    }
+  });
+
+  it("reports an error instead of guessing when the word matches more than one category", async () => {
+    const create = vi.fn();
+    const prisma = {
+      category: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "cat-1", name: "Transport" },
+          { id: "cat-2", name: "Transfer Fee" },
+        ]),
+        create,
+      },
+      alias: { findUnique: vi.fn().mockResolvedValue(null) },
+    } as any;
+
+    // Neither category's name equals "trans" exactly, but both contain it —
+    // triggering resolveAlias's partial-match ambiguity, not an exact hit.
+    const result = await resolveOrCreateCategory(prisma, "user-1", "trans", "EXPENSE");
+
+    expect(result.ok).toBe(false);
+    expect(create).not.toHaveBeenCalled();
   });
 });
 

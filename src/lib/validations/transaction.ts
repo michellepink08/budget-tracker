@@ -17,8 +17,10 @@ export const transactionSchema = z.object({
   amount: z.number().positive("Amount must be greater than zero"), // major units
   date: z.date(),
   accountId: z.string().min(1),
-  categoryId: z.string().optional(),
-  subcategoryId: z.string().optional(),
+  // A raw word, not an id — resolved (or created) against the user's own
+  // categories by resolveOrCreateCategory, so adding a transaction never
+  // requires categories to already exist. See src/lib/categories.ts.
+  categoryName: z.string().optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
 });

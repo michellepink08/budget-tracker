@@ -13,7 +13,7 @@ import {
 import { recordAudit } from "@/lib/audit-log";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
-import { assertOwnedCategory, assertOwnedSubcategory } from "@/lib/categories";
+import { assertOwnedCategory, assertOwnedSubcategory, resolveOrCreateCategory } from "@/lib/categories";
 import { assertNotDemo, assertUnderDemoCap } from "@/lib/demo-guard";
 import { humanizeEnum } from "@/lib/enum-labels";
 
@@ -36,8 +36,7 @@ export async function createTransactionAction(
     amount: Number(formData.get("amount")),
     date: new Date(String(formData.get("date"))),
     accountId: formData.get("accountId"),
-    categoryId: formData.get("categoryId") || undefined,
-    subcategoryId: formData.get("subcategoryId") || undefined,
+    categoryName: formData.get("categoryName") || undefined,
     description: formData.get("description") || undefined,
     notes: formData.get("notes") || undefined,
   });
@@ -53,13 +52,28 @@ export async function createTransactionAction(
 
   const account = await assertOwnedAccount(prisma, user.id, parsed.data.accountId);
   if (!account) return { ok: false, error: "Account not found" };
-  if (parsed.data.categoryId && !(await assertOwnedCategory(prisma, user.id, parsed.data.categoryId))) {
-    return { ok: false, error: "Category not found" };
+
+  let categoryId: string | undefined;
+  if (parsed.data.categoryName?.trim()) {
+    const categoryResult = await resolveOrCreateCategory(
+      prisma,
+      user.id,
+      parsed.data.categoryName,
+      parsed.data.type,
+    );
+    if (!categoryResult.ok) return categoryResult;
+    categoryId = categoryResult.id;
   }
-  if (parsed.data.subcategoryId && !(await assertOwnedSubcategory(prisma, user.id, parsed.data.subcategoryId))) {
-    return { ok: false, error: "Subcategory not found" };
-  }
-  const input = { ...parsed.data, amount: toMinorUnits(parsed.data.amount, account.currency) };
+
+  const input = {
+    type: parsed.data.type,
+    amount: toMinorUnits(parsed.data.amount, account.currency),
+    date: parsed.data.date,
+    accountId: parsed.data.accountId,
+    description: parsed.data.description,
+    notes: parsed.data.notes,
+    categoryId,
+  };
 
   await prisma.$transaction(async (tx) => {
     const transaction = await createExpenseLikeTransaction(tx, user.id, user.cycleStartDay, input);

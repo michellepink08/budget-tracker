@@ -34,6 +34,26 @@ describe("transactionSchema", () => {
     ).toBe(false);
   });
 
+  it("accepts a raw categoryName instead of a categoryId, or none at all", () => {
+    expect(
+      transactionSchema.safeParse({
+        type: "EXPENSE",
+        amount: 500,
+        date: new Date(),
+        accountId: "acc-1",
+        categoryName: "Jollibee",
+      }).success,
+    ).toBe(true);
+    expect(
+      transactionSchema.safeParse({
+        type: "EXPENSE",
+        amount: 500,
+        date: new Date(),
+        accountId: "acc-1",
+      }).success,
+    ).toBe(true);
+  });
+
   it("accepts a missing or empty description — the system fills one in from the type", () => {
     expect(
       transactionSchema.safeParse({

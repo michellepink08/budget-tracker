@@ -35,10 +35,7 @@ export function TransactionForm({
   const router = useRouter();
   const [isTransfer, setIsTransfer] = useState(false);
   const [type, setType] = useState<(typeof REGULAR_TYPES)[number]>("EXPENSE");
-  const [categoryId, setCategoryId] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const selectedCategory = categories.find((c) => c.id === categoryId);
 
   async function handleSubmit(formData: FormData) {
     setSubmitting(true);
@@ -156,40 +153,24 @@ export function TransactionForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="categoryId">Category</Label>
-            <select
-              id="categoryId"
-              name="categoryId"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
-            >
-              <option value="">None</option>
+            <Label htmlFor="categoryName">Category (optional)</Label>
+            <Input
+              id="categoryName"
+              name="categoryName"
+              list="category-suggestions"
+              placeholder="Type any word — new ones are created automatically"
+              autoComplete="off"
+            />
+            <datalist id="category-suggestions">
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+                <option key={c.id} value={c.name} />
               ))}
-            </select>
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              Matches an existing category by name, or creates a new one — typing the same word again always lands
+              on the same category.
+            </p>
           </div>
-
-          {selectedCategory && selectedCategory.subcategories.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="subcategoryId">Subcategory</Label>
-              <select
-                id="subcategoryId"
-                name="subcategoryId"
-                className="h-9 rounded-lg border border-input bg-input px-3 text-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] hover:border-ring/50 dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]"
-              >
-                <option value="">None</option>
-                {selectedCategory.subcategories.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </>
       )}
 
