@@ -8,7 +8,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(),
     });
     expect(result.success).toBe(true);
@@ -20,7 +20,7 @@ describe("loanSchema", () => {
       principal: 0,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(),
     });
     expect(result.success).toBe(false);
@@ -32,7 +32,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: -1,
+      openingBalance: -1,
       startDate: new Date(),
     });
     expect(result.success).toBe(false);
@@ -44,7 +44,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: -1,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(),
     });
     expect(result.success).toBe(false);
@@ -56,7 +56,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(2026, 0, 1),
       endDate: new Date(2027, 0, 1),
     });
@@ -69,7 +69,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(2026, 0, 1),
       endDate: new Date(2026, 0, 1),
     });
@@ -82,7 +82,7 @@ describe("loanSchema", () => {
       principal: 500000,
       interestRate: 5.5,
       monthlyPayment: 15000,
-      remainingBalance: 300000,
+      openingBalance: 300000,
       startDate: new Date(),
       dueDay: 15,
     });
@@ -96,7 +96,7 @@ describe("loanSchema", () => {
         principal: 500000,
         interestRate: 5.5,
         monthlyPayment: 15000,
-        remainingBalance: 300000,
+        openingBalance: 300000,
         startDate: new Date(),
         dueDay: 32,
       }).success,
@@ -107,10 +107,23 @@ describe("loanSchema", () => {
         principal: 500000,
         interestRate: 5.5,
         monthlyPayment: 15000,
-        remainingBalance: 300000,
+        openingBalance: 300000,
         startDate: new Date(),
         dueDay: 0,
       }).success,
     ).toBe(false);
+  });
+
+  it("accepts an optional loanCategory string", () => {
+    const result = loanSchema.safeParse({
+      name: "Car loan",
+      principal: 500000,
+      interestRate: 5.5,
+      monthlyPayment: 15000,
+      openingBalance: 300000,
+      startDate: new Date(),
+      loanCategory: "Car Loan",
+    });
+    expect(result.success).toBe(true);
   });
 });
