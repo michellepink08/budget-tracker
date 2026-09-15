@@ -6,7 +6,7 @@ import { listLedgerRows } from "@/lib/ledger";
 import { listLoans } from "@/lib/loans";
 import { listAccounts } from "@/lib/accounts";
 import { computeAccountBalance } from "@/lib/account-balance";
-import { LedgerTable } from "@/components/ledger/ledger-table";
+import { LedgerWideTable } from "@/components/ledger/ledger-wide-table";
 import { LoanSummaryTable } from "@/components/ledger/loan-summary-table";
 import { LedgerRangePicker } from "@/components/ledger/ledger-range-picker";
 import { LedgerAccountsSummary } from "@/components/ledger/ledger-accounts-summary";
@@ -88,9 +88,10 @@ export default async function LedgerPage({
       ) : (
         <>
           <LedgerAccountsSummary accounts={accountsSummary} currency={user.currency} />
-          <LedgerTable
+          <LedgerWideTable
             title={LEDGER_TABS.find((t) => t.value === activeTab)!.label}
             rows={rows}
+            accounts={accountsSummary}
             currency={user.currency}
           />
         </>
