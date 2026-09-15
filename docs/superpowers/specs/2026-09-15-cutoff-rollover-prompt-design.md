@@ -74,8 +74,10 @@ visually and semantically separate from Income everywhere:
 
 - **Budget page** — a new card next to "Budgeted this cycle" / "Remaining this cycle": "Rollover: ₱X".
 - **Dashboard** — a small note near the top summary cards, replacing the (now-dismissed) banner.
-- **Ledger (Income tab)** — a note above the Income wide-table for cutoffs with a recorded rollover, e.g.
-  "Rollover carried into this cutoff: ₱X" — not a row in the table, since it's not a transaction.
+- **Ledger (Disposable tab)** — the Ledger page has no separate "Income" tab; Income transactions already
+  land inside the Disposable tab's wide table (income accounts are disposable accounts). A note appears
+  above that table for cutoffs with a recorded rollover, e.g. "Rollover carried into this cutoff: ₱X" — not
+  a row in the table, since it's not a transaction.
 
 None of these feed into Income totals, Reports charts, or category actuals — "Rollover" stays a label, not
 a number that gets added into any existing income calculation.
