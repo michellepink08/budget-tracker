@@ -48,6 +48,7 @@ await prisma.recurringPayable.deleteMany({ where: { userId: user.id } });
 await prisma.recurringRule.deleteMany({ where: { userId: user.id } });
 await prisma.creditCard.deleteMany({ where: { userId: user.id } });
 await prisma.loan.deleteMany({ where: { userId: user.id } });
+await prisma.lending.deleteMany({ where: { userId: user.id } });
 await prisma.budgetAllocation.deleteMany({ where: { userId: user.id } });
 await prisma.yearPlan.deleteMany({ where: { userId: user.id } });
 await prisma.savingsGoal.deleteMany({ where: { userId: user.id } });
