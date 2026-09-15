@@ -1,7 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import type { LedgerRow } from "@/lib/ledger";
 
-type AccountColumn = { id: string; name: string; balance: number };
+type AccountColumn = { id: string; name: string; balance: number; creditLimit?: number };
 
 // One column per account in the group (matching the original spreadsheet
 // the user tracked this in by hand) instead of one shared "Account"
@@ -25,8 +25,8 @@ export function LedgerWideTable({
   return (
     <div>
       <h2 className="mb-3 text-sm font-medium text-muted-foreground">{title}</h2>
-      {rows.length === 0 ? (
-        <p className="text-muted-foreground">No transactions in this range.</p>
+      {accounts.length === 0 ? (
+        <p className="text-muted-foreground">No accounts in this group yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -37,6 +37,11 @@ export function LedgerWideTable({
                 <th className="p-2">Category</th>
                 {accounts.map((account) => (
                   <th key={account.id} className="p-2 text-right whitespace-nowrap">
+                    {account.creditLimit !== undefined && (
+                      <div className="text-xs font-normal text-muted-foreground">
+                        Limit {formatMoney(account.creditLimit, currency)}
+                      </div>
+                    )}
                     <div className={account.balance < 0 ? "text-destructive" : "text-foreground"}>
                       {formatMoney(account.balance, currency)}
                     </div>
@@ -47,26 +52,34 @@ export function LedgerWideTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="p-2 whitespace-nowrap">{row.date.toLocaleDateString()}</td>
-                  <td className="p-2">{row.description}</td>
-                  <td className="p-2">{row.categoryName ?? "—"}</td>
-                  {accounts.map((account) => (
-                    <td
-                      key={account.id}
-                      className={`p-2 text-right ${
-                        row.accountId === account.id && row.amount < 0 ? "text-destructive" : ""
-                      }`}
-                    >
-                      {row.accountId === account.id ? formatMoney(row.amount, currency) : "—"}
-                    </td>
-                  ))}
-                  <td className={`p-2 text-right font-medium ${row.amount < 0 ? "text-destructive" : ""}`}>
-                    {formatMoney(row.amount, currency)}
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={accounts.length + 4} className="p-2 text-muted-foreground">
+                    No transactions in this range.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.id} className="border-t border-border">
+                    <td className="p-2 whitespace-nowrap">{row.date.toLocaleDateString()}</td>
+                    <td className="p-2">{row.description}</td>
+                    <td className="p-2">{row.categoryName ?? "—"}</td>
+                    {accounts.map((account) => (
+                      <td
+                        key={account.id}
+                        className={`p-2 text-right ${
+                          row.accountId === account.id && row.amount < 0 ? "text-destructive" : ""
+                        }`}
+                      >
+                        {row.accountId === account.id ? formatMoney(row.amount, currency) : "—"}
+                      </td>
+                    ))}
+                    <td className={`p-2 text-right font-medium ${row.amount < 0 ? "text-destructive" : ""}`}>
+                      {formatMoney(row.amount, currency)}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

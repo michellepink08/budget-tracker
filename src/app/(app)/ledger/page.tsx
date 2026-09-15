@@ -6,6 +6,7 @@ import { listLedgerRows } from "@/lib/ledger";
 import { listLoans } from "@/lib/loans";
 import { listAccounts } from "@/lib/accounts";
 import { computeAccountBalance } from "@/lib/account-balance";
+import { listCreditCards } from "@/lib/credit-cards";
 import { LedgerWideTable } from "@/components/ledger/ledger-wide-table";
 import { LoanSummaryTable } from "@/components/ledger/loan-summary-table";
 import { LedgerRangePicker } from "@/components/ledger/ledger-range-picker";
@@ -45,18 +46,28 @@ export default async function LedgerPage({
   const isLoansTab = activeTab === "LOANS";
   const loans = isLoansTab ? await listLoans(prisma, user.id) : [];
 
-  let accountsSummary: { id: string; name: string; accountType: string; balance: number }[] = [];
+  let accountsSummary: { id: string; name: string; accountType: string; balance: number; creditLimit?: number }[] =
+    [];
   let rows: Awaited<ReturnType<typeof listLedgerRows>> = [];
   if (!isLoansTab) {
     const purpose = activeTab as Exclude<LedgerTab, "LOANS"> as AccountPurpose;
     const allAccounts = await listAccounts(prisma, user.id);
     const purposeAccounts = allAccounts.filter((a) => a.purpose === purpose);
+
+    // Only the Credit tab needs credit limits — CreditCard is a separate
+    // model keyed by accountId, not a field on Account itself.
+    const creditLimitByAccountId =
+      purpose === "CREDIT"
+        ? new Map((await listCreditCards(prisma, user.id)).map((c) => [c.accountId, c.creditLimit]))
+        : new Map<string, number>();
+
     accountsSummary = await Promise.all(
       purposeAccounts.map(async (a) => ({
         id: a.id,
         name: a.name,
         accountType: a.accountType,
         balance: await computeAccountBalance(prisma, a.id),
+        creditLimit: creditLimitByAccountId.get(a.id),
       })),
     );
     rows = await listLedgerRows(prisma, user.id, purpose, { start, end });
