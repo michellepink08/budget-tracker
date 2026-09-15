@@ -1,7 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import type { LedgerRow } from "@/lib/ledger";
 
-type AccountColumn = { id: string; name: string };
+type AccountColumn = { id: string; name: string; balance: number };
 
 // One column per account in the group (matching the original spreadsheet
 // the user tracked this in by hand) instead of one shared "Account"
@@ -37,7 +37,10 @@ export function LedgerWideTable({
                 <th className="p-2">Category</th>
                 {accounts.map((account) => (
                   <th key={account.id} className="p-2 text-right whitespace-nowrap">
-                    {account.name}
+                    <div className={account.balance < 0 ? "text-destructive" : "text-foreground"}>
+                      {formatMoney(account.balance, currency)}
+                    </div>
+                    <div className="text-xs font-normal text-muted-foreground">{account.name}</div>
                   </th>
                 ))}
                 <th className="p-2 text-right">Total</th>

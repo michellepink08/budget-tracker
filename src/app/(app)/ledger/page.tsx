@@ -9,7 +9,6 @@ import { computeAccountBalance } from "@/lib/account-balance";
 import { LedgerWideTable } from "@/components/ledger/ledger-wide-table";
 import { LoanSummaryTable } from "@/components/ledger/loan-summary-table";
 import { LedgerRangePicker } from "@/components/ledger/ledger-range-picker";
-import { LedgerAccountsSummary } from "@/components/ledger/ledger-accounts-summary";
 import type { AccountPurpose } from "@/lib/constants/financial";
 
 // "LOANS" isn't an AccountPurpose — it's its own tab backed by the Loan
@@ -86,15 +85,12 @@ export default async function LedgerPage({
       {isLoansTab ? (
         <LoanSummaryTable loans={loans} />
       ) : (
-        <>
-          <LedgerAccountsSummary accounts={accountsSummary} currency={user.currency} />
-          <LedgerWideTable
-            title={LEDGER_TABS.find((t) => t.value === activeTab)!.label}
-            rows={rows}
-            accounts={accountsSummary}
-            currency={user.currency}
-          />
-        </>
+        <LedgerWideTable
+          title={LEDGER_TABS.find((t) => t.value === activeTab)!.label}
+          rows={rows}
+          accounts={accountsSummary}
+          currency={user.currency}
+        />
       )}
     </div>
   );
