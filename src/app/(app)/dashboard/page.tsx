@@ -18,6 +18,7 @@ import { FundingRecommendationBanner } from "@/components/bills/funding-recommen
 import { RolloverBanner } from "@/components/dashboard/rollover-banner";
 import { RolloverNote } from "@/components/budget/rollover-note";
 import { DailyAllowanceCard } from "@/components/dashboard/daily-allowance-card";
+import { AffordabilityCheckCard } from "@/components/dashboard/affordability-check-card";
 import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
@@ -183,6 +184,8 @@ export default async function DashboardPage() {
       <FundingRecommendationBanner recommendation={recommendationView} />
 
       <DailyAllowanceCard rows={dailyAllowances} currency={user.currency} />
+
+      <AffordabilityCheckCard safeToSpend={safeToSpend} currency={user.currency} />
 
       {yearPlanSummary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
