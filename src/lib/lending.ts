@@ -21,7 +21,10 @@ export type LendingMutationResult = { ok: true } | { ok: false; error: string };
 // mutation. Unlike a Loan (which just records a pre-existing debt),
 // there's no "just tell the app about it" case for cash.
 export async function createLending(
-  prisma: Pick<PrismaClient, "lending" | "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "lending" | "transaction" | "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   input: LendingInput,
@@ -111,7 +114,10 @@ export type LendingRepaymentInput = { accountId: string; amount: number; date: D
 // positive transactions exist for that subcategory. This function is a
 // convenience, not the only path, mirroring makeLoanPayment.
 export async function recordLendingRepayment(
-  prisma: Pick<PrismaClient, "lending" | "transaction" | "budgetPeriod">,
+  prisma: Pick<
+    PrismaClient,
+    "lending" | "transaction" | "budgetPeriod" | "loan" | "recurringPayable" | "budgetAllocation" | "category" | "subcategory"
+  >,
   userId: string,
   cycleStartDay: number,
   lendingId: string,
