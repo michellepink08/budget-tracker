@@ -324,6 +324,7 @@ model Category {
   shoppingLists        ShoppingList[]
   shoppingListItems    ShoppingListItem[]
   receiptLines         ReceiptLine[]
+  loans                Loan[]
 }
 
 model Subcategory {
@@ -339,6 +340,7 @@ model Subcategory {
   transactions       Transaction[]
   recurringRules     RecurringRule[]
   budgetAllocations  BudgetAllocation[]
+  loans              Loan[]
 }
 
 model BudgetPeriod {
@@ -481,7 +483,9 @@ model Loan {
   principal        Int
   interestRate     Float
   monthlyPayment   Int
-  remainingBalance Int
+  openingBalance   Int // what was owed when this loan started being tracked here — remaining balance is derived from it plus every transaction linked to its subcategoryId, not mutated (see computeLoanRemainingBalance)
+  categoryId       String?
+  subcategoryId    String?
   startDate        DateTime
   endDate          DateTime? // when set, the loan's term (in months) is derived from startDate/endDate rather than stored
   dueDay           Int? // day of month (1-31) payments are due — when set, projects a monthly due entry onto the calendar from startDate through endDate
@@ -489,7 +493,9 @@ model Loan {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
 }
 
 model CreditCard {
