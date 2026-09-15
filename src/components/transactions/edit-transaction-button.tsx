@@ -75,6 +75,7 @@ export function EditTransactionButton({
       return;
     }
     toast.success("Transaction updated");
+    if (result.warning) toast.warning(result.warning);
     setOpen(false);
     router.refresh();
   }

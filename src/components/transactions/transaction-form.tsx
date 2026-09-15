@@ -49,6 +49,7 @@ export function TransactionForm({
       return;
     }
     toast.success(isTransfer ? "Transfer recorded" : "Transaction added");
+    if (!isTransfer && result.warning) toast.warning(result.warning);
     router.refresh();
     onSaved?.();
   }
