@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { computeCategoryActual } from "@/lib/category-actual";
+import { computeCategoryActual, computeSubcategoryActual } from "@/lib/category-actual";
 import { computeRolloverAmount } from "@/lib/rollover";
 import type { RolloverMode } from "@/lib/constants/financial";
 
@@ -7,6 +7,7 @@ export async function resolveRolloverCarryIn(
   prisma: Pick<PrismaClient, "budgetPeriod" | "budgetAllocation" | "transaction">,
   userId: string,
   categoryId: string,
+  subcategoryId: string | null,
   currentPeriodStartDate: Date,
 ): Promise<number> {
   const previousPeriod = await prisma.budgetPeriod.findFirst({
@@ -17,14 +18,16 @@ export async function resolveRolloverCarryIn(
     return 0;
   }
 
-  const previousAllocation = await prisma.budgetAllocation.findUnique({
-    where: { budgetPeriodId_categoryId: { budgetPeriodId: previousPeriod.id, categoryId } },
+  const previousAllocation = await prisma.budgetAllocation.findFirst({
+    where: { budgetPeriodId: previousPeriod.id, categoryId, subcategoryId },
   });
   if (!previousAllocation) {
     return 0;
   }
 
-  const actual = await computeCategoryActual(prisma, previousPeriod.id, categoryId);
+  const actual = subcategoryId
+    ? await computeSubcategoryActual(prisma, previousPeriod.id, subcategoryId)
+    : await computeCategoryActual(prisma, previousPeriod.id, categoryId);
   const effectivePlanned = previousAllocation.plannedAmount + previousAllocation.rolloverAmount;
 
   return computeRolloverAmount(previousAllocation.rolloverMode as RolloverMode, effectivePlanned, actual);
