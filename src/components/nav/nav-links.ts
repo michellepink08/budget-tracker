@@ -2,7 +2,6 @@ import {
   Home,
   ArrowLeftRight,
   PiggyBank,
-  Receipt,
   Wallet,
   CreditCard,
   BarChart3,
@@ -30,8 +29,7 @@ export type NavLink = { href: string; label: string; icon: LucideIcon };
 export const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/budget", label: "Budget", icon: PiggyBank },
-  { href: "/bills", label: "Bills", icon: Receipt },
+  { href: "/budget", label: "Monthly Plan", icon: PiggyBank },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/shopping", label: "Shopping", icon: ShoppingCart },
 ];

@@ -57,7 +57,7 @@ export async function createRecurringPayableAction(
     amount: toMinorUnits(parsed.data.amount, account.currency),
   });
 
-  revalidatePath("/bills");
+  revalidatePath("/budget");
   return { ok: true };
 }
 
@@ -84,7 +84,7 @@ export async function updateRecurringPayableAction(
     amount: toMinorUnits(parsed.data.amount, currency),
   });
 
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }
 
@@ -96,7 +96,7 @@ export async function toggleRecurringPayableActiveAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await updateRecurringPayable(prisma, session.user.id, ruleId, { active });
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }
 
@@ -126,7 +126,7 @@ export async function confirmRecurringPayableOccurrenceAction(
     dueDate: overrideDateRaw ? new Date(String(overrideDateRaw)) : undefined,
   });
 
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }
 
@@ -137,6 +137,6 @@ export async function skipRecurringPayableOccurrenceAction(
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const result = await skipRecurringPayableOccurrence(prisma, session.user.id, ruleId);
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }

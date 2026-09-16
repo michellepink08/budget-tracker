@@ -16,7 +16,7 @@ export async function saveCyclePaymentPlanAction(formData: FormData) {
   if (!parsed.success) return { ok: false as const, error: "Please check the payment plan" };
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
   const result = await upsertCyclePaymentPlan(prisma, user.id, { ...parsed.data, expectedAmount: toMinorUnits(parsed.data.expectedAmount, user.currency) });
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }
 

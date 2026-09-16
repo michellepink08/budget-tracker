@@ -24,7 +24,7 @@ export async function undoAuditLogEntryAction(auditLogId: string): Promise<Audit
     revalidatePath("/audit-log");
     revalidatePath("/transactions");
     revalidatePath("/accounts");
-    revalidatePath("/bills");
+    revalidatePath("/budget");
     revalidatePath("/loans-cards");
     revalidatePath("/calendar");
   }

@@ -48,7 +48,7 @@ export async function createPayableAction(formData: FormData): Promise<PayableAc
     amount: toMinorUnits(parsed.data.amount, account.currency),
   });
 
-  revalidatePath("/bills");
+  revalidatePath("/budget");
   return { ok: true };
 }
 
@@ -75,7 +75,7 @@ export async function updatePayableAction(
     amount: toMinorUnits(parsed.data.amount, currency),
   });
 
-  if (result.ok) revalidatePath("/bills");
+  if (result.ok) revalidatePath("/budget");
   return result;
 }
 
@@ -106,7 +106,7 @@ export async function markPayablePaidAction(
   });
 
   if (result.ok) {
-    revalidatePath("/bills");
+    revalidatePath("/budget");
     revalidatePath("/transactions");
     revalidatePath("/accounts");
   }
