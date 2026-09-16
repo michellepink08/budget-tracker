@@ -13,6 +13,7 @@ import { getYearPlanDashboardSummary } from "@/lib/year-plan-summary";
 import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
 import { shouldPromptRollover } from "@/lib/cutoff-rollover";
 import { computeDailyAllowances } from "@/lib/daily-allowance";
+import { buildOverdueObligations, startOfDayInTimeZone } from "@/lib/dashboard-overdue";
 import { Wallet, PiggyBank, Lock } from "lucide-react";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { RolloverBanner } from "@/components/dashboard/rollover-banner";
@@ -49,6 +50,9 @@ export default async function DashboardPage() {
     recommendation,
     yearPlanSummary,
     shoppingSummary,
+    loans,
+    cards,
+    paymentTransactions,
   ] = await Promise.all([
     computeDisposableTotal(prisma, user.id),
     computeSavingsTotal(prisma, user.id),
@@ -62,12 +66,21 @@ export default async function DashboardPage() {
     getRecommendedFundingTransfer(prisma, user.id, now),
     getYearPlanDashboardSummary(prisma, user.id, now),
     getShoppingDashboardSummary(prisma, user.id, user.cycleStartDay, now),
+    prisma.loan.findMany({ where: { userId: user.id, archivedAt: null } }),
+    prisma.creditCard.findMany({ where: { userId: user.id }, include: { account: true } }),
+    prisma.transaction.findMany({ where: { userId: user.id, date: { gte: new Date(now.getFullYear(), now.getMonth(), 1), lte: now }, OR: [{ loanId: { not: null } }, { creditCardId: { not: null } }] }, select: { loanId: true, creditCardId: true, date: true } }),
   ]);
 
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
   const totalActual = allocations.reduce((sum, a) => sum + a.actual, 0);
   const totalRemaining = totalPlanned - totalActual;
   const dailyAllowances = computeDailyAllowances(allocations, activePeriod.endDate, now);
+  const startOfToday = startOfDayInTimeZone(now, "Asia/Manila");
+  const overdue = [
+    ...duePayables.filter((item) => item.dueDate < startOfToday).map((item) => ({ id: item.id, sourceType: "PAYABLE", name: item.name, amount: item.amount, dueDate: item.dueDate })),
+    ...dueInstallments.filter((item) => item.dueDate < startOfToday).map((item) => ({ id: item.id, sourceType: "INSTALLMENT", name: "Installment payment", amount: item.amount, dueDate: item.dueDate })),
+    ...buildOverdueObligations({ today: startOfToday, loans, cards: cards.map((item) => ({ id: item.id, name: item.account.name, dueDay: item.paymentDueDay })), transactions: paymentTransactions }),
+  ].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
 
   const restrictedAccountIds = new Set(restrictedFunds.map((f) => f.accountId));
   const restrictedTotal = restrictedFunds.reduce((sum, f) => sum + f.balance, 0);
@@ -119,7 +132,7 @@ export default async function DashboardPage() {
         dueDate: p.dueDate,
       };
     }),
-  ].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+  ].filter((item) => item.dueDate >= startOfToday).sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
 
   return (
     <div className="flex flex-col gap-6">
@@ -186,6 +199,20 @@ export default async function DashboardPage() {
       <DailyAllowanceCard rows={dailyAllowances} currency={user.currency} />
 
       <AffordabilityCheckCard safeToSpend={safeToSpend} currency={user.currency} />
+
+      {overdue.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-danger">Overdue payments</h2>
+          <div className="flex flex-col gap-2">
+            {overdue.map((item) => (
+              <Card key={`${item.sourceType}-${item.id}`} variant="danger" className="flex items-center justify-between p-3">
+                <div><p className="font-medium">{item.name}</p><p className="text-sm text-muted-foreground">Due {item.dueDate.toLocaleDateString()}</p></div>
+                {item.amount !== null && <p className="font-medium">{formatMoney(item.amount, user.currency)}</p>}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {yearPlanSummary && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
