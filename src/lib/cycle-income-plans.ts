@@ -12,9 +12,15 @@ export async function createCycleIncomePlan(prisma: IncomePlanPrisma, userId: st
   return { ok: true, id: row.id };
 }
 
-export async function listCycleIncomePlans(prisma: Pick<PrismaClient, "cycleIncomePlan">, userId: string, budgetPeriodId: string) {
+export async function listCycleIncomePlans(prisma: Pick<PrismaClient, "cycleIncomePlan" | "transaction">, userId: string, budgetPeriodId: string) {
   const rows = await prisma.cycleIncomePlan.findMany({ where: { userId, budgetPeriodId }, include: { actualTransaction: true }, orderBy: { expectedDate: "asc" } });
-  return rows.map((row) => { const actual = Math.abs(row.actualTransaction?.amount ?? 0); return { ...row, actual, difference: actual - row.expectedAmount }; });
+  const transactions = await prisma.transaction.findMany({ where: { userId, budgetPeriodId, type: "INCOME" }, select: { description: true, amount: true } });
+  const normalize = (name: string) => name.trim().replace(/\s+/g, " ").toLowerCase();
+  return rows.map((row) => {
+    const matching = transactions.filter((transaction) => normalize(transaction.description) === normalize(row.source));
+    const actual = matching.length ? matching.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0) : Math.abs(row.actualTransaction?.amount ?? 0);
+    return { ...row, actual, difference: actual - row.expectedAmount };
+  });
 }
 
 export async function updateCycleIncomePlan(prisma: Pick<PrismaClient, "cycleIncomePlan">, userId: string, id: string, input: Partial<Omit<CycleIncomePlanInput, "budgetPeriodId">>) {

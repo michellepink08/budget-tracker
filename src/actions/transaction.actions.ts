@@ -103,6 +103,7 @@ export async function createTransactionAction(
     : null;
 
   revalidatePath("/transactions");
+  revalidatePath("/budget");
   revalidatePath("/dashboard");
   return { ok: true, ...(warning ? { warning } : {}) };
 }
@@ -156,6 +157,7 @@ export async function createTransferAction(formData: FormData): Promise<Transact
   });
 
   revalidatePath("/transactions");
+  revalidatePath("/budget");
   return { ok: true };
 }
 
@@ -220,6 +222,7 @@ export async function updateTransactionAction(
     : null;
 
   revalidatePath("/transactions");
+  revalidatePath("/budget");
   revalidatePath("/dashboard");
   return { ok: true, ...(warning ? { warning } : {}) };
 }
@@ -248,6 +251,6 @@ export async function deleteTransactionAction(
     return deleteResult;
   });
 
-  if (result.ok) revalidatePath("/transactions");
+  if (result.ok) { revalidatePath("/transactions"); revalidatePath("/budget"); }
   return { ok: result.ok, ...(result.ok ? {} : { error: result.error }) } as TransactionActionResult;
 }
