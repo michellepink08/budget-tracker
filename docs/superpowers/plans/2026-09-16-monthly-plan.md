@@ -140,7 +140,7 @@ Expected: FAIL with the current permissive service.
 
 - [ ] **Step 3: Implement server actions and client feedback**
 
-Create Zod-validated server actions for create, update, delete, and link-actual-income. Create a client table that uses `useActionState`/toast feedback and shows Source, Expected, Actual received, Difference, Expected date, and Edit/Delete controls. Update payment-plan save UI to show `Saved` or the returned error instead of silently posting.
+Create Zod-validated server actions for create, update, delete, and link-actual-income. Create a client table that uses `useActionState`/toast feedback and shows Source, Expected, Actual received, Difference, Expected date, and Edit/Delete controls. Each row has a picker containing only unlinked `INCOME` transactions owned by the user and inside the selected cycle; selecting one creates the exact match, and a linked transaction cannot be reused by another income row. Update payment-plan save UI to show `Saved` or the returned error instead of silently posting.
 
 ```ts
 export async function saveCycleIncomePlanAction(formData: FormData) {

@@ -46,6 +46,9 @@ export function AllocationList({
                   {allocation.rolloverAmount !== 0 &&
                     ` (includes ${formatMoney(allocation.rolloverAmount, currency)} rollover)`}
                 </p>
+                <p className={`text-xs ${allocation.actual - allocation.effectivePlanned > 0 ? "text-danger" : "text-muted-foreground"}`}>
+                  Difference: {formatMoney(allocation.actual - allocation.effectivePlanned, currency)}
+                </p>
               </div>
               <div className="flex gap-2">
                 <AllocationFormDialog

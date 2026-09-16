@@ -19,7 +19,7 @@ The page has a cycle picker and a **Copy last cycle** action. It contains three 
 Columns: Source, Expected, Actual received, Difference, Expected date, Actions.
 
 - The user creates expected income directly for the selected cycle.
-- Actual received comes from the income transaction linked to that income expectation.
+- Actual received comes from the income transaction explicitly linked to that income expectation. The Monthly Plan provides a transaction picker containing unlinked income transactions from the selected cycle, so the user chooses the exact match.
 - Difference is actual minus expected: positive means more received; negative means less received.
 
 ### Spending budget
@@ -52,6 +52,7 @@ It never copies actual transactions, payments, or received amounts. Existing pla
 ## Data and integrity
 
 - Expected income needs cycle-specific records, linked to an optional actual income transaction.
+- A single income transaction can be linked to at most one cycle income plan. Only the signed-in user's `INCOME` transactions from the selected cycle are offered for matching.
 - Existing budget allocation and cycle payment plan data remain the sources of planned category and debt amounts.
 - Transactions remain the source of actual values. Plans never create transactions or move money.
 - All changes are scoped to the signed-in user and selected cycle.

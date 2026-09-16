@@ -50,6 +50,7 @@ model User {
   receiptImages        ReceiptImage[]
   customReminders      CustomReminder[]
   cyclePaymentPlans    CyclePaymentPlan[]
+  cycleIncomePlans     CycleIncomePlan[]
 }
 
 model Account {
@@ -364,6 +365,7 @@ model BudgetPeriod {
   allocations  BudgetAllocation[]
   transactions Transaction[]
   cyclePaymentPlans CyclePaymentPlan[]
+  cycleIncomePlans  CycleIncomePlan[]
 
   @@unique([userId, startDate])
 }
@@ -420,6 +422,26 @@ model Transaction {
   customReminders    CustomReminder[]
   loan               Loan?         @relation("LoanPaymentTransaction", fields: [loanId], references: [id])
   creditCard         CreditCard?   @relation("CreditCardPaymentTransaction", fields: [creditCardId], references: [id])
+  cycleIncomePlan    CycleIncomePlan? @relation("CycleIncomeActual")
+}
+
+model CycleIncomePlan {
+  id                  String   @id @default(cuid())
+  userId              String
+  budgetPeriodId      String
+  source              String
+  expectedAmount      Int
+  expectedDate        DateTime
+  actualTransactionId String?  @unique
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User         @relation(fields: [userId], references: [id])
+  budgetPeriod      BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
+  actualTransaction Transaction? @relation("CycleIncomeActual", fields: [actualTransactionId], references: [id])
+
+  @@index([userId, budgetPeriodId])
 }
 
 model RecurringRule {
