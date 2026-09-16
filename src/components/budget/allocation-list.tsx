@@ -1,84 +1,10 @@
 import { formatMoney } from "@/lib/money";
 import { AllocationFormDialog } from "@/components/budget/allocation-form-dialog";
 import { RemoveAllocationButton } from "@/components/budget/remove-allocation-button";
+import { PlanBalance } from "@/components/budget/plan-balance";
 import type { AllocationWithActual, AvailableAllocationOption } from "@/lib/budget-allocations";
-import { Card } from "@/components/ui/card";
 
-export function AllocationList({
-  allocations,
-  budgetPeriodId,
-  currency,
-  availableCategories,
-}: {
-  allocations: AllocationWithActual[];
-  budgetPeriodId: string;
-  currency: string;
-  availableCategories: AvailableAllocationOption[];
-}) {
-  if (allocations.length === 0) {
-    return (
-      <p className="text-muted-foreground">
-        No budget allocations for this period yet.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {allocations.map((allocation) => {
-        const pct = Math.max(0, Math.min(100, allocation.percentUsed));
-        const label = allocation.subcategoryName
-          ? `${allocation.category.name} — ${allocation.subcategoryName}`
-          : allocation.category.name;
-        return (
-          <Card key={allocation.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">
-                  {label}
-                  {allocation.showDailyAllowance && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">Daily allowance on</span>
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {formatMoney(allocation.actual, currency)} of{" "}
-                  {formatMoney(allocation.effectivePlanned, currency)}
-                  {allocation.rolloverAmount !== 0 &&
-                    ` (includes ${formatMoney(allocation.rolloverAmount, currency)} rollover)`}
-                </p>
-                <p className={`text-xs ${allocation.actual - allocation.effectivePlanned > 0 ? "text-danger" : "text-muted-foreground"}`}>
-                  Difference: {formatMoney(allocation.actual - allocation.effectivePlanned, currency)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <AllocationFormDialog
-                  budgetPeriodId={budgetPeriodId}
-                  currency={currency}
-                  availableCategories={availableCategories}
-                  existing={allocation}
-                  existingLabel={label}
-                />
-                <RemoveAllocationButton allocationId={allocation.id} />
-              </div>
-            </div>
-            <div className="mt-2 h-2 rounded-full bg-accent-tint">
-              <div
-                className={
-                  allocation.remaining < 0
-                    ? "h-2 rounded-full bg-destructive"
-                    : "h-2 rounded-full bg-primary"
-                }
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {allocation.remaining >= 0
-                ? `${formatMoney(allocation.remaining, currency)} remaining`
-                : `${formatMoney(-allocation.remaining, currency)} over budget`}
-            </p>
-          </Card>
-        );
-      })}
-    </div>
-  );
+export function AllocationList({ allocations, budgetPeriodId, currency, availableCategories }: { allocations: AllocationWithActual[]; budgetPeriodId: string; currency: string; availableCategories: AvailableAllocationOption[] }) {
+  if (!allocations.length) return <p className="text-muted-foreground">No budget allocations for this cycle yet.</p>;
+  return <div className="overflow-x-auto rounded-lg border border-border"><table className="w-full min-w-[680px] text-sm"><thead className="bg-accent-tint text-muted-foreground"><tr><th scope="col" className="p-3 text-left font-medium">Category</th><th scope="col" className="p-3 text-right font-medium">Planned budget</th><th scope="col" className="p-3 text-right font-medium">Actual spent</th><th scope="col" className="p-3 text-right font-medium">Difference / Remaining</th><th scope="col" className="p-3 text-right font-medium">Actions</th></tr></thead><tbody>{allocations.map((a) => { const label = a.subcategoryName ? `${a.category.name} — ${a.subcategoryName}` : a.category.name; return <tr key={a.id} className="border-t border-border bg-card"><th scope="row" className="p-3 text-left font-medium">{label}{a.rolloverAmount !== 0 && <p className="text-xs font-normal text-muted-foreground">Includes {formatMoney(a.rolloverAmount,currency)} rollover</p>}</th><td className="p-3 text-right tabular-nums">{formatMoney(a.effectivePlanned,currency)}</td><td className="p-3 text-right tabular-nums">{formatMoney(a.actual,currency)}</td><td className="p-3"><PlanBalance planned={a.effectivePlanned} actual={a.actual} currency={currency} kind="spending" /></td><td className="p-3"><div className="flex justify-end gap-2"><AllocationFormDialog budgetPeriodId={budgetPeriodId} currency={currency} availableCategories={availableCategories} existing={a} existingLabel={label} /><RemoveAllocationButton allocationId={a.id} /></div></td></tr>; })}</tbody></table></div>;
 }
