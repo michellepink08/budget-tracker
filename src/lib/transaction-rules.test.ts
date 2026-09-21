@@ -5,6 +5,7 @@ describe("signedAmountForType", () => {
   it("keeps inflow types positive", () => {
     expect(signedAmountForType("INCOME", 5000)).toBe(5000);
     expect(signedAmountForType("REFUND", 1200)).toBe(1200);
+    expect(signedAmountForType("RECEIVABLE_REPAYMENT", 50000)).toBe(50000);
   });
 
   it("negates outflow types", () => {

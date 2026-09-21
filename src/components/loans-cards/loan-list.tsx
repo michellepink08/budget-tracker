@@ -65,7 +65,7 @@ export function LoanList({
                 loanCategoryName: loan.loanCategoryName,
               }}
             />
-            <ArchiveLoanButton loanId={loan.id} />
+            <ArchiveLoanButton loanId={loan.id} name={loan.name} />
           </div>
         </Card>
       ))}

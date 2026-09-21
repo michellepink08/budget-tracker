@@ -129,7 +129,7 @@ export async function recordLendingRepayment(
   }
 
   await createExpenseLikeTransaction(prisma, userId, cycleStartDay, {
-    type: "INCOME",
+    type: "RECEIVABLE_REPAYMENT",
     amount: input.amount,
     date: input.date,
     accountId: input.accountId,

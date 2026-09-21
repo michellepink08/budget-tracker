@@ -7,6 +7,7 @@ export type CreditCardInput = {
   statementDay: number; // 1-31
   paymentDueDay: number; // 1-31
   interestRate: number; // annual %, display-only
+  monthlyInterestEstimate?:number; // planning-only monthly %, never automatically posted
 };
 
 export type CreditCardMutationResult = { ok: true } | { ok: false; error: string };

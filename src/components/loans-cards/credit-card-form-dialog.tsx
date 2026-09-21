@@ -26,6 +26,7 @@ type FormValues = {
   statementDay: number;
   paymentDueDay: number;
   interestRate: number;
+  monthlyInterestEstimate:number;
 };
 
 type ExistingCard = {
@@ -35,6 +36,7 @@ type ExistingCard = {
   statementDay: number;
   paymentDueDay: number;
   interestRate: number;
+  monthlyInterestEstimate?:number;
 };
 
 export function CreditCardFormDialog({
@@ -61,6 +63,7 @@ export function CreditCardFormDialog({
           statementDay: existing.statementDay,
           paymentDueDay: existing.paymentDueDay,
           interestRate: existing.interestRate,
+          monthlyInterestEstimate:existing.monthlyInterestEstimate??3,
         }
       : {
           accountId: linkableAccounts[0]?.id ?? "",
@@ -68,6 +71,7 @@ export function CreditCardFormDialog({
           statementDay: 1,
           paymentDueDay: 1,
           interestRate: 0,
+          monthlyInterestEstimate:3,
         },
   });
 
@@ -78,6 +82,7 @@ export function CreditCardFormDialog({
     formData.set("statementDay", String(values.statementDay));
     formData.set("paymentDueDay", String(values.paymentDueDay));
     formData.set("interestRate", String(values.interestRate));
+    formData.set("monthlyInterestEstimate",String(values.monthlyInterestEstimate));
 
     const result = existing
       ? await updateCreditCardAction(existing.id, formData)
@@ -162,6 +167,7 @@ export function CreditCardFormDialog({
             />
           </div>
 
+          <div className="flex flex-col gap-1.5"><Label htmlFor="monthlyInterestEstimate">Monthly interest estimate (%)</Label><Input id="monthlyInterestEstimate" type="number" min="0" max="100" step="0.01" {...register("monthlyInterestEstimate",{valueAsNumber:true})}/><p className="text-xs text-muted-foreground">Planning only. Actual interest must be recorded after the bank confirms it.</p></div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save"}

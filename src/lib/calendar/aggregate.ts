@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { daysInMonth } from "@/lib/recurring-schedule";
+import {classifyObligation,linkedPlanActual} from "@/lib/financial-obligations";
+import {projectCardStatement,statementBeforeDue} from "@/lib/card-statements";
 
 export type CalendarEntry = {
   id: string;
@@ -53,6 +55,8 @@ type CalendarPrisma = Pick<
   | "shoppingList"
   | "yearPlanPhase"
   | "customReminder"
+  | "cyclePaymentPlan"
+  | "transaction"
 >;
 
 export async function listCalendarEntries(
@@ -272,8 +276,8 @@ export async function listCalendarEntries(
           date: statementDate,
           label: `${cc.account.name} statement`,
           amount: null,
-          confidence: "CONFIRMED",
-          state: deriveOverdue(statementDate, now, "UPCOMING"),
+          confidence: "ESTIMATED",
+          state: "UPCOMING",
         });
       }
       const dueDate = clampedMonthDate(year, monthIndex0, cc.paymentDueDay);
@@ -285,8 +289,8 @@ export async function listCalendarEntries(
           date: dueDate,
           label: `${cc.account.name} payment due`,
           amount: null,
-          confidence: "CONFIRMED",
-          state: deriveOverdue(dueDate, now, "UPCOMING"),
+          confidence: "ESTIMATED",
+          state: "UPCOMING",
         });
       }
     }
@@ -324,12 +328,36 @@ export async function listCalendarEntries(
           date: dueDate,
           label: `${loan.name} payment due`,
           amount: loan.monthlyPayment,
-          confidence: "CONFIRMED",
-          state: deriveOverdue(dueDate, now, "UPCOMING"),
+          confidence: "ESTIMATED",
+          state: "UPCOMING",
         });
       }
     }
   }
 
-  return entries.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const plans=await prisma.cyclePaymentPlan.findMany({where:{userId},include:{budgetPeriod:true,payments:{include:{transaction:true}}},orderBy:{budgetPeriod:{startDate:"asc"}}});
+  const dateKey=(date:Date)=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Manila",year:"numeric",month:"2-digit",day:"2-digit"}).format(date);
+  const filtered=entries.filter(entry=>!plans.some(plan=>((entry.sourceType==="CREDIT_CARD_DUE"&&plan.sourceType==="CREDIT_CARD")||(entry.sourceType==="LOAN_DUE"&&plan.sourceType==="LOAN"))&&entry.sourceId===plan.sourceId&&dateKey(entry.date)>=dateKey(plan.budgetPeriod.startDate)&&dateKey(entry.date)<=dateKey(plan.budgetPeriod.endDate)));
+  for(const plan of plans){
+    if(!plan.dueDate||plan.dueDateStatus==="UNSET"||dateKey(plan.dueDate)<dateKey(range.start)||dateKey(plan.dueDate)>dateKey(range.end))continue;
+    const paid=linkedPlanActual(plan);
+    const remaining=plan.expectedAmount-paid;
+    const routing=classifyObligation({dueDate:plan.dueDate,dueDateStatus:plan.dueDateStatus,remaining},now);
+    const card=creditCards.find(c=>c.id===plan.sourceId),loan=loans.find(l=>l.id===plan.sourceId);
+    filtered.push({id:`payment-plan-${plan.id}`,sourceType:plan.sourceType==="LOAN"?"LOAN_DUE":"CREDIT_CARD_DUE",sourceId:plan.sourceId,date:plan.dueDate,label:`${card?.account.name??loan?.name??"Planned payment"} payment due`,amount:Math.max(0,remaining),confidence:plan.dueDateStatus,state:routing==="PAID"?"PAID":routing==="OVERDUE"?"OVERDUE":"UPCOMING"});
+  }
+  const history=await prisma.transaction.findMany({where:{userId},orderBy:{date:"asc"}});
+  const projected=filtered.flatMap(entry=>{
+    if(entry.sourceType!=="CREDIT_CARD_STATEMENT"&&entry.sourceType!=="CREDIT_CARD_DUE")return [entry];
+    const card=creditCards.find(c=>c.id===entry.sourceId);
+    if(!card||!Number.isSafeInteger(card.creditLimit)||!Number.isSafeInteger(card.account.openingBalance))return [entry];
+    const stored=plans.find(p=>`payment-plan-${p.id}`===entry.id);
+    const dateOnly=new Date(`${dateKey(entry.date)}T00:00:00Z`);
+    const cutoff=entry.sourceType==="CREDIT_CARD_STATEMENT"?dateOnly:stored?.statementDate??statementBeforeDue(dateOnly,card.statementDay);
+    const forecast=projectCardStatement(card,cutoff,history,plans.filter(p=>p.sourceType==="CREDIT_CARD"),now);
+    if(entry.sourceType==="CREDIT_CARD_DUE"&&forecast.dueDateStatus==="UNSET"&&!stored)return [];
+    if(stored&&(!stored.statementDate||(stored.statementDate<=now&&stored.dueDateStatus==="CONFIRMED")||stored.expectedAmount!==stored.statementAmount))return [entry];
+    return [{...entry,amount:entry.sourceType==="CREDIT_CARD_STATEMENT"?forecast.expected:forecast.remaining,label:entry.label+(forecast.estimatedInterest>0?" (includes estimated interest)":""),state:entry.sourceType==="CREDIT_CARD_DUE"&&forecast.remaining===0?"PAID" as const:entry.state}];
+  });
+  return projected.sort((a, b) => a.date.getTime() - b.date.getTime());
 }

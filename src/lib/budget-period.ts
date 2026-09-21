@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import {randomUUID} from "node:crypto";
 import { formatCycleRange, getCycleForDate } from "@/lib/cycle";
 import { materializeRecurringAllocations } from "@/lib/recurring-allocations";
 
@@ -25,8 +26,13 @@ export async function resolveBudgetPeriodForDate(
     return existing;
   }
 
-  const period = await prisma.budgetPeriod.create({
-    data: {
+  const candidateId = randomUUID();
+  const period = await prisma.budgetPeriod.upsert({
+    where: {userId_startDate:{userId,startDate:start}},
+    // A same-value scalar update permits database-native ON CONFLICT.
+    update: {startDate:start},
+    create: {
+      id: candidateId,
       userId,
       name: formatCycleRange({ start, end }),
       startDate: start,
@@ -35,7 +41,7 @@ export async function resolveBudgetPeriodForDate(
     },
   });
 
-  await materializeRecurringAllocations(prisma, userId, period.id);
+  if (period.id === candidateId) await materializeRecurringAllocations(prisma, userId, period.id);
 
   return period;
 }

@@ -1,0 +1,16 @@
+import {describe,it,expect,vi} from "vitest";
+import {clearReservedPayment} from "./clear-reserved-payment";
+function database(){
+ const payable={id:"p",userId:"u",name:"Tierra Alta",accountId:"bank",amount:100000,categoryId:"housing",status:"PENDING",paidTransactionId:null as string|null};
+ const receipt={id:"t",userId:"u",accountId:"bank",amount:-100000,type:"EXPENSE",status:"CLEARED"};
+ const db={$queryRaw:vi.fn().mockResolvedValue([]),payable:{findFirst:vi.fn(async(args:any)=>args.where.paidTransactionId?null:payable),update:vi.fn(async(args:any)=>Object.assign(payable,args.data))},transaction:{findFirst:vi.fn(async()=>receipt),findMany:vi.fn().mockResolvedValue([]),create:vi.fn()},auditLog:{create:vi.fn().mockResolvedValue({id:"audit"})},$transaction:async(fn:any)=>fn(db)};
+ return {db:db as any,payable,receipt};
+}
+describe("clearing a reserved payment",()=>{
+ it("links an existing owned cleared expense without another deduction",async()=>{const {db,payable}=database();expect(await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20"),transactionId:"t"})).toEqual({ok:true});expect(payable.paidTransactionId).toBe("t");expect(db.transaction.create).not.toHaveBeenCalled();});
+ it("a second clearing is an idempotent no-op",async()=>{const {db}=database();await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20"),transactionId:"t"});expect(await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20"),transactionId:"t"})).toEqual({ok:true});expect(db.payable.update).toHaveBeenCalledTimes(1);expect(db.transaction.create).not.toHaveBeenCalled();});
+ it("rejects a different source account",async()=>{const {db,receipt}=database();receipt.accountId="other";expect((await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20"),transactionId:"t"})).ok).toBe(false);expect(db.payable.update).not.toHaveBeenCalled();});
+ it("stops before creating a payment when an existing match needs review",async()=>{const {db,receipt}=database();db.transaction.findMany.mockResolvedValue([receipt]);expect((await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20")})).ok).toBe(false);expect(db.transaction.create).not.toHaveBeenCalled();});
+ it("records a new clearance once using the signed expense helper",async()=>{const {db,payable}=database();db.budgetPeriod={findUnique:vi.fn().mockResolvedValue({id:"period"})};db.transaction.create.mockResolvedValue({id:"new"});expect(await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20")})).toEqual({ok:true});expect(db.transaction.create).toHaveBeenCalledWith({data:expect.objectContaining({userId:"u",accountId:"bank",amount:-100000,type:"EXPENSE",budgetPeriodId:"period"})});expect(payable.paidTransactionId).toBe("new");await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20")});expect(db.transaction.create).toHaveBeenCalledTimes(1);});
+ it("rejects a payment already assigned to a different obligation",async()=>{const {db}=database();db.payable.findFirst.mockImplementation(async(args:any)=>args.where.paidTransactionId?{id:"other"}:{id:"p",userId:"u",accountId:"bank",amount:100000,status:"PENDING"});expect((await clearReservedPayment(db,"u",11,"p",{date:new Date("2026-09-20"),transactionId:"t"})).ok).toBe(false);expect(db.payable.update).not.toHaveBeenCalled();});
+});

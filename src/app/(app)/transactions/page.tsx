@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
 import { TransactionFilters } from "@/components/transactions/transaction-filters";
-import { TransactionList } from "@/components/transactions/transaction-list";
+import { AccountActivityTable } from "@/components/transactions/account-activity-table";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { Card } from "@/components/ui/card";
 
@@ -21,15 +21,16 @@ export default async function TransactionsPage({
     listCategories(prisma, userId),
   ]);
 
-  const transactions = await prisma.transaction.findMany({
+  const allTransactions = await prisma.transaction.findMany({
     where: {
       userId,
-      ...(params.accountId ? { accountId: params.accountId } : {}),
-      ...(params.search ? { description: { contains: params.search } } : {}),
     },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: { account: true, category: true },
   });
+  const matches=allTransactions.filter(t=>(!params.accountId||t.accountId===params.accountId)&&(!params.search||t.description.toLowerCase().includes(params.search.toLowerCase())));
+  const visibleIds=new Set(matches.flatMap(t=>[t.id,...(t.linkedTransactionId?[t.linkedTransactionId]:[])]));
+  const transactions=allTransactions.filter(t=>visibleIds.has(t.id));
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,13 +38,13 @@ export default async function TransactionsPage({
         <h1 className="text-xl font-semibold">Transactions</h1>
       </div>
 
-      <Card className="p-4">
+      <details className="rounded-lg border bg-card p-4"><summary className="cursor-pointer text-sm font-medium">Add transaction manually</summary><Card className="mt-4 border-0 p-0">
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Add transaction</h2>
         <TransactionForm accounts={accounts} categories={categories} />
-      </Card>
+      </Card></details>
 
       <TransactionFilters accounts={accounts} />
-      <TransactionList transactions={transactions} categories={categories} />
+      <AccountActivityTable transactions={transactions} accounts={accounts} categories={categories} />
     </div>
   );
 }

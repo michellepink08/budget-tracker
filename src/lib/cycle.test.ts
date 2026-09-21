@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import { formatCycleRange, getCurrentCycle, getCycleForDate } from "@/lib/cycle";
 
 function d(year: number, month1based: number, day: number): Date {
-  return new Date(year, month1based - 1, day);
+  return new Date(Date.UTC(year, month1based - 1, day));
 }
 
 describe("getCycleForDate — worked examples from the spec (cycleStartDay = 11)", () => {
+  it("uses canonical UTC date stamps so Manila and Vercel reuse the same saved cycle",()=>{
+    expect(getCycleForDate(11,new Date("2026-09-17"))).toEqual({start:new Date("2026-09-11"),end:new Date("2026-10-10")});
+    expect(getCycleForDate(11,new Date("2026-09-10T16:00:00Z"))).toEqual({start:new Date("2026-09-11"),end:new Date("2026-10-10")});
+  });
   it("Sep 10 belongs to Aug 11 - Sep 10", () => {
     const { start, end } = getCycleForDate(11, d(2026, 9, 10));
     expect(start).toEqual(d(2026, 8, 11));

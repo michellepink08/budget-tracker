@@ -105,6 +105,8 @@ export async function createTransactionAction(
   revalidatePath("/transactions");
   revalidatePath("/budget");
   revalidatePath("/dashboard");
+  revalidatePath("/loans-cards");
+  revalidatePath("/calendar");
   return { ok: true, ...(warning ? { warning } : {}) };
 }
 
@@ -251,6 +253,6 @@ export async function deleteTransactionAction(
     return deleteResult;
   });
 
-  if (result.ok) { revalidatePath("/transactions"); revalidatePath("/budget"); }
+  if (result.ok) for(const path of ["/transactions","/budget","/dashboard","/loans-cards","/calendar"]) revalidatePath(path);
   return { ok: result.ok, ...(result.ok ? {} : { error: result.error }) } as TransactionActionResult;
 }

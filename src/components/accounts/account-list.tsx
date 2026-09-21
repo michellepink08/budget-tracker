@@ -177,7 +177,7 @@ export function AccountList({
       {restricted.length > 0 && (
         <section>
           <SectionHeading icon={Lock} tone="restricted">
-            Restricted
+            Dedicated reserves
           </SectionHeading>
           <div className="flex flex-col gap-3">
             {restricted.map((account) => {
@@ -189,7 +189,7 @@ export function AccountList({
                     <p className="font-medium">{formatMoney(account.balance, account.currency)}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {humanizeEnum(account.accountType)} · Excluded from liquid funds and Safe to spend
+                    {humanizeEnum(account.accountType)} · Reserved mainly for dedicated payments · Transfers and emergency withdrawals allowed
                   </p>
                   {group && (
                     <p className="text-sm text-muted-foreground">

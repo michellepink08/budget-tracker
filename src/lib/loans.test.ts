@@ -168,6 +168,10 @@ describe("makeLoanPayment", () => {
 });
 
 describe("computeLoanRemainingBalance", () => {
+  it("uses the explicit loan identity instead of another loan sharing its category", async () => {
+    const prisma:any={transaction:{findMany:vi.fn().mockResolvedValue([{loanId:"a",userId:"u",type:"LOAN_PAYMENT",amount:-1000},{loanId:"b",userId:"u",type:"LOAN_PAYMENT",amount:-500}])}};
+    expect(await computeLoanRemainingBalance(prisma,{id:"a",userId:"u",openingBalance:5000,subcategoryId:"shared"})).toBe(4000);
+  });
   it("returns the opening balance as-is when the loan has no subcategory linked yet", async () => {
     const prisma = { transaction: { findMany: vi.fn() } } as any;
 

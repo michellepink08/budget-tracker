@@ -6,7 +6,7 @@
 export type CycleRange = { start: Date; end: Date };
 
 function daysInMonth(year: number, monthIndex0: number): number {
-  return new Date(year, monthIndex0 + 1, 0).getDate();
+  return new Date(Date.UTC(year, monthIndex0 + 1, 0)).getUTCDate();
 }
 
 function effectiveStartDay(year: number, monthIndex0: number, cycleStartDay: number): number {
@@ -14,7 +14,7 @@ function effectiveStartDay(year: number, monthIndex0: number, cycleStartDay: num
 }
 
 function monthCandidateStart(year: number, monthIndex0: number, cycleStartDay: number): Date {
-  return new Date(year, monthIndex0, effectiveStartDay(year, monthIndex0, cycleStartDay));
+  return new Date(Date.UTC(year, monthIndex0, effectiveStartDay(year, monthIndex0, cycleStartDay)));
 }
 
 function shiftMonth(
@@ -30,7 +30,7 @@ function shiftMonth(
 }
 
 function subtractOneDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - 1));
 }
 
 export function getCycleForDate(cycleStartDay: number, date: Date): CycleRange {
@@ -38,9 +38,15 @@ export function getCycleForDate(cycleStartDay: number, date: Date): CycleRange {
     throw new Error(`cycleStartDay must be an integer between 1 and 31, got ${cycleStartDay}`);
   }
 
-  const year = date.getFullYear();
-  const monthIndex0 = date.getMonth();
-  const normalized = new Date(year, monthIndex0, date.getDate());
+  // Calendar days follow Manila; stored boundaries are UTC date stamps,
+  // independent of the machine running the app.
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila", year: "numeric", month: "numeric", day: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) => Number(parts.find((entry) => entry.type === type)?.value);
+  const year = part("year");
+  const monthIndex0 = part("month") - 1;
+  const normalized = new Date(Date.UTC(year, monthIndex0, part("day")));
 
   const thisMonthStart = monthCandidateStart(year, monthIndex0, cycleStartDay);
 
@@ -66,11 +72,11 @@ const MONTH_ABBR = [
 
 export function formatCycleRange(range: CycleRange): string {
   const { start, end } = range;
-  const startLabel = `${MONTH_ABBR[start.getMonth()]} ${start.getDate()}`;
-  const endLabel = `${MONTH_ABBR[end.getMonth()]} ${end.getDate()}`;
+  const startLabel = `${MONTH_ABBR[start.getUTCMonth()]} ${start.getUTCDate()}`;
+  const endLabel = `${MONTH_ABBR[end.getUTCMonth()]} ${end.getUTCDate()}`;
 
-  if (start.getFullYear() === end.getFullYear()) {
-    return `${startLabel} – ${endLabel}, ${end.getFullYear()}`;
+  if (start.getUTCFullYear() === end.getUTCFullYear()) {
+    return `${startLabel} – ${endLabel}, ${end.getUTCFullYear()}`;
   }
-  return `${startLabel}, ${start.getFullYear()} – ${endLabel}, ${end.getFullYear()}`;
+  return `${startLabel}, ${start.getUTCFullYear()} – ${endLabel}, ${end.getUTCFullYear()}`;
 }

@@ -76,30 +76,30 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --text-2xs: 0.75rem;   /* 12px */
-  --text-2xs--line-height: 1rem;
-  --text-xs: 0.8125rem;  /* 13px */
-  --text-xs--line-height: 1.125rem;
-  --text-sm: 0.875rem;   /* 14px */
-  --text-sm--line-height: 1.25rem;
-  --text-base: 1rem;     /* 16px — mobile input floor */
-  --text-base--line-height: 1.5rem;
-  --text-md: 0.9375rem;  /* 15px — card titles, between sm and lg */
-  --text-md--line-height: 1.375rem;
-  --text-lg: 1.125rem;   /* 18px — section headers */
-  --text-lg--line-height: 1.625rem;
-  --text-xl: 1.5rem;     /* 24px — page titles */
-  --text-xl--line-height: 1.875rem;
-  --text-2xl: 1.75rem;   /* 28px — major financial totals */
-  --text-2xl--line-height: 2.125rem;
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 0.9375rem;
+  --text-xs: 0.75rem;    /* 12px */
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;  /* 13px */
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.9375rem;/* 15px */
+  --text-base--line-height: 1.375rem;
+  --text-md: 0.875rem;   /* 14px — card titles */
+  --text-md--line-height: 1.25rem;
+  --text-lg: 1.0625rem;  /* 17px — section headers */
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.375rem;   /* 22px — page titles */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.625rem;  /* 26px — major financial totals */
+  --text-2xl--line-height: 2rem;
 }
 
 :root {
   /* Plan-38 §4 approved light-mode palette. */
-  --background: #F8F1F3;
-  --foreground: #291D25;
-  --card: #FFFAFB;
-  --card-foreground: #291D25;
+  --background: #FAF5F0;
+  --foreground: #422335;
+  --card: #FFFDFB;
+  --card-foreground: #422335;
   --card-secondary: #FFFEFE;
   --panel-soft: #F4DBE4;
   --popover: #FFFAFB;
@@ -253,3 +253,49 @@
     color-scheme: dark;
   }
 }
+
+/* Worksheet surfaces explicitly inherit the app theme, including native controls. */
+.workspace-main{font-size:13px;line-height:1.25rem}
+.workspace-main table{color:var(--foreground);font-size:13px}
+.workspace-main table th,.workspace-main table td{padding:10px}
+.workspace-main th,.workspace-main td{background:var(--card);color:inherit}
+.workspace-main thead th{background:var(--accent-tint);color:var(--foreground);font-weight:500}
+.workspace-main input,.workspace-main select,.workspace-main textarea{background-color:var(--input);color:var(--foreground)}
+.workspace-main input::placeholder,.workspace-main textarea::placeholder{color:var(--muted-foreground)}
+.workspace-account-table th,.workspace-account-table td{padding:10px;border-bottom:1px solid var(--border)}
+.workspace-account-table tbody tr:last-child th,.workspace-account-table tbody tr:last-child td{border-bottom:0}
+.workspace-account-table td.text-danger{color:var(--danger)}
+.workspace-account-table td.text-success{color:var(--success)}
+.workspace-main td.text-danger{color:var(--danger)}
+@media(max-width:767px){
+  :root{
+    --text-xs:0.6875rem;
+    --text-xs--line-height:0.9375rem;
+    --text-sm:0.75rem;
+    --text-sm--line-height:1rem;
+    --text-base:0.8125rem;
+    --text-base--line-height:1.125rem;
+    --text-md:0.8125rem;
+    --text-md--line-height:1.125rem;
+    --text-lg:0.9375rem;
+    --text-lg--line-height:1.25rem;
+    --text-xl:1.125rem;
+    --text-xl--line-height:1.5rem;
+    --text-2xl:1.3125rem;
+    --text-2xl--line-height:1.625rem;
+  }
+  .text-xs{font-size:0.6875rem;line-height:0.9375rem}
+  .text-sm{font-size:0.75rem;line-height:1rem}
+  .text-base,.text-md{font-size:0.8125rem;line-height:1.125rem}
+  .text-lg{font-size:0.9375rem;line-height:1.25rem}
+  .text-xl{font-size:1.125rem;line-height:1.5rem}
+  .text-2xl{font-size:1.3125rem;line-height:1.625rem}
+  .workspace-main{font-size:12px;line-height:1.125rem}
+  .workspace-main table{font-size:12px}
+  .workspace-main table th,.workspace-main table td{padding:8px}
+  .workspace-main input,.workspace-main select,.workspace-main textarea{font-size:16px}
+}
+.dashboard-account-breakdown .when-open{display:none}
+.dashboard-account-breakdown[open] .when-closed{display:none}
+.dashboard-account-breakdown[open] .when-open{display:inline}
+.dashboard-money-hidden .dashboard-balance{filter:blur(7px);user-select:none}

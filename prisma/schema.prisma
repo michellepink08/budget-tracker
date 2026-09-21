@@ -51,6 +51,7 @@ model User {
   customReminders      CustomReminder[]
   cyclePaymentPlans    CyclePaymentPlan[]
   cycleIncomePlans     CycleIncomePlan[]
+  planPayments         PlanPayment[]
 }
 
 model Account {
@@ -79,6 +80,7 @@ model Account {
   installmentPurchases InstallmentPurchase[]
   savingsGoal          SavingsGoal?
   lendings             Lending[]
+  fundedPaymentPlans   CyclePaymentPlan[] @relation("PlanFundingAccount")
 }
 
 model SavingsGoal {
@@ -330,6 +332,7 @@ model Category {
   receiptLines         ReceiptLine[]
   loans                Loan[]
   lendings             Lending[]
+  incomePlans          CycleIncomePlan[] @relation("IncomePlanCategory")
 }
 
 model Subcategory {
@@ -347,6 +350,7 @@ model Subcategory {
   budgetAllocations  BudgetAllocation[]
   loans              Loan[]
   lendings           Lending[]
+  incomePlans        CycleIncomePlan[] @relation("IncomePlanSubcategory")
 }
 
 model BudgetPeriod {
@@ -408,6 +412,7 @@ model Transaction {
   linkedTransactionId  String?
   loanId               String?
   creditCardId         String?
+  cardInterestStatementDate DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -423,6 +428,7 @@ model Transaction {
   loan               Loan?         @relation("LoanPaymentTransaction", fields: [loanId], references: [id])
   creditCard         CreditCard?   @relation("CreditCardPaymentTransaction", fields: [creditCardId], references: [id])
   cycleIncomePlan    CycleIncomePlan? @relation("CycleIncomeActual")
+  planPayment        PlanPayment?
 }
 
 model CycleIncomePlan {
@@ -434,12 +440,16 @@ model CycleIncomePlan {
   expectedDate        DateTime
   actualTransactionId String?  @unique
   notes               String?
+  categoryId          String?
+  subcategoryId       String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   user              User         @relation(fields: [userId], references: [id])
   budgetPeriod      BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
   actualTransaction Transaction? @relation("CycleIncomeActual", fields: [actualTransactionId], references: [id])
+  category          Category? @relation("IncomePlanCategory", fields: [categoryId], references: [id])
+  subcategory       Subcategory? @relation("IncomePlanSubcategory", fields: [subcategoryId], references: [id])
 
   @@index([userId, budgetPeriodId])
 }
@@ -562,6 +572,7 @@ model CreditCard {
   statementDay  Int
   paymentDueDay Int
   interestRate  Float
+  monthlyInterestEstimate Float @default(3)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -577,15 +588,41 @@ model CyclePaymentPlan {
   sourceType     String
   sourceId       String
   expectedAmount Int
-  dueDate        DateTime
+  dueDate        DateTime?
+  dueDateStatus  DueDateStatus @default(ESTIMATED)
+  fundingAccountId String?
+  statementAmount Int?
+  statementDate  DateTime?
+  verifiedUnbilledAmount Int?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   user         User         @relation(fields: [userId], references: [id])
   budgetPeriod BudgetPeriod @relation(fields: [budgetPeriodId], references: [id])
+  fundingAccount Account? @relation("PlanFundingAccount", fields: [fundingAccountId], references: [id])
+  payments PlanPayment[]
 
   @@unique([budgetPeriodId, sourceType, sourceId])
   @@index([userId, budgetPeriodId])
+}
+
+enum DueDateStatus {
+  CONFIRMED
+  ESTIMATED
+  UNSET
+}
+
+model PlanPayment {
+  id String @id @default(cuid())
+  userId String
+  planId String
+  transactionId String @unique
+  amount Int
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id])
+  plan CyclePaymentPlan @relation(fields: [planId], references: [id])
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  @@index([userId, planId])
 }
 
 model InstallmentPurchase {

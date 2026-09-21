@@ -47,7 +47,7 @@ type ExistingAccount = {
 const PURPOSE_LABELS: Record<string, string> = {
   DISPOSABLE: "Disposable (everyday spending)",
   SAVINGS: "Savings / Reserve",
-  RESTRICTED: "Restricted (dedicated obligation)",
+  RESTRICTED: "Reserved mainly for a dedicated obligation (withdrawals allowed)",
   CREDIT: "Credit card",
   DEBT: "Loan / Debt",
 };

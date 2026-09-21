@@ -6,9 +6,10 @@ import { listRestrictedFundGroups } from "@/lib/restricted-funds";
 import { AccountFormDialog } from "@/components/accounts/account-form-dialog";
 import { AccountList } from "@/components/accounts/account-list";
 
-export default async function AccountsPage() {
+export default async function AccountsPage({searchParams}:{searchParams:Promise<{section?:string}>}) {
   const session = await auth();
   const userId = session!.user.id;
+  const params=await searchParams;const savingsOnly=params.section==="savings";
 
   const [accounts, restrictedFunds, savingsGoals] = await Promise.all([
     listAccounts(prisma, userId),
@@ -33,10 +34,10 @@ export default async function AccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Accounts</h1>
+        <h1 className="text-xl font-semibold">{savingsOnly?"Savings & Reserves":"Accounts"}</h1>
         <AccountFormDialog />
       </div>
-      <AccountList accounts={withBalances} restrictedFunds={restrictedFunds} savingsGoals={savingsGoals} />
+      <AccountList accounts={savingsOnly?withBalances.filter(a=>a.purpose==="SAVINGS"):withBalances} restrictedFunds={restrictedFunds} savingsGoals={savingsGoals} />
     </div>
   );
 }

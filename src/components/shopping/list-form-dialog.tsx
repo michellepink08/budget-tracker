@@ -50,7 +50,7 @@ export function ListFormDialog({ categories }: { categories: CategoryOption[] })
       <DialogTrigger render={<Button />}>New list</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New shopping list</DialogTitle>
+          <DialogTitle>New grocery list</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">

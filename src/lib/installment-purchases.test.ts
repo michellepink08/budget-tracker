@@ -165,14 +165,19 @@ describe("listInstallmentPurchases", () => {
 });
 
 describe("listDueInstallmentPayments", () => {
-  it("scopes to the user, pending payments whose dueDate has arrived", async () => {
+  it("excludes payments for archived purchases", async () => {
     const prisma = makeFakePrisma();
     const asOf = new Date(2026, 8, 25);
 
     await listDueInstallmentPayments(prisma, "user-1", asOf);
 
     expect(prisma.installmentPayment.findMany).toHaveBeenCalledWith({
-      where: { userId: "user-1", status: "PENDING", dueDate: { lte: asOf } },
+      where: {
+        userId: "user-1",
+        status: "PENDING",
+        dueDate: { lte: asOf },
+        installmentPurchase: { archivedAt: null },
+      },
       orderBy: { dueDate: "asc" },
     });
   });

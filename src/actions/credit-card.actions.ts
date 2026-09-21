@@ -19,6 +19,7 @@ function parseCreditCardForm(formData: FormData) {
     statementDay: Number(formData.get("statementDay")),
     paymentDueDay: Number(formData.get("paymentDueDay")),
     interestRate: Number(formData.get("interestRate")),
+    monthlyInterestEstimate: formData.has("monthlyInterestEstimate")?Number(formData.get("monthlyInterestEstimate")):3,
   });
 }
 
@@ -67,7 +68,7 @@ export async function updateCreditCardAction(
     creditLimit: toMinorUnits(parsed.data.creditLimit, account.currency),
   });
 
-  if (result.ok) revalidatePath("/loans-cards");
+  if (result.ok) for(const path of ["/loans-cards","/budget","/dashboard","/calendar"]) revalidatePath(path);
   return result;
 }
 
@@ -108,6 +109,9 @@ export async function makeCreditCardPaymentAction(
     revalidatePath("/loans-cards");
     revalidatePath("/transactions");
     revalidatePath("/accounts");
+    revalidatePath("/budget");
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
   }
   return result;
 }

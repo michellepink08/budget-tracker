@@ -14,6 +14,8 @@ import { getShoppingDashboardSummary } from "@/lib/shopping-summary";
 import { shouldPromptRollover } from "@/lib/cutoff-rollover";
 import { computeDailyAllowances } from "@/lib/daily-allowance";
 import { buildOverdueObligations, startOfDayInTimeZone } from "@/lib/dashboard-overdue";
+import {listCycleObligations} from "@/lib/financial-obligation-view";
+import {classifyObligation} from "@/lib/financial-obligations";
 import { Wallet, PiggyBank, Lock } from "lucide-react";
 import { FundingRecommendationBanner } from "@/components/bills/funding-recommendation-banner";
 import { RolloverBanner } from "@/components/dashboard/rollover-banner";
@@ -24,6 +26,9 @@ import { Card } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/icon-badge";
 import { formatMoney } from "@/lib/money";
 import { humanizeEnum } from "@/lib/enum-labels";
+import {formatCycleRange} from "@/lib/cycle";
+import {DashboardAccountDetails,DashboardBalanceVisibility} from "@/components/accounts/dashboard-account-details";
+import {listCycleIncomePlans} from "@/lib/cycle-income-plans";
 
 const UPCOMING_WINDOW_DAYS = 7;
 
@@ -74,12 +79,15 @@ export default async function DashboardPage() {
   const totalPlanned = allocations.reduce((sum, a) => sum + a.effectivePlanned, 0);
   const totalActual = allocations.reduce((sum, a) => sum + a.actual, 0);
   const totalRemaining = totalPlanned - totalActual;
+  const [ledger,incomePlans]=await Promise.all([prisma.transaction.findMany({where:{userId:user.id},orderBy:[{date:"desc"},{createdAt:"desc"}]}),listCycleIncomePlans(prisma,user.id,activePeriod.id)]);
+  const accountDetails=accounts.map(a=>({...a,balance:a.openingBalance+ledger.filter(t=>t.accountId===a.id).reduce((s,t)=>s+t.amount,0),history:ledger.filter(t=>t.accountId===a.id).slice(0,6).map(t=>({id:t.id,description:t.description,date:t.date,amount:t.amount}))}));
   const dailyAllowances = computeDailyAllowances(allocations, activePeriod.endDate, now);
   const startOfToday = startOfDayInTimeZone(now, "Asia/Manila");
+  const cycleObligations=await listCycleObligations(prisma,user.id,activePeriod.id,user.currency);
   const overdue = [
-    ...duePayables.filter((item) => item.dueDate < startOfToday).map((item) => ({ id: item.id, sourceType: "PAYABLE", name: item.name, amount: item.amount, dueDate: item.dueDate })),
+    ...duePayables.filter((item) => item.dueDateConfirmed&&item.dueDate < startOfToday).map((item) => ({ id: item.id, sourceType: "PAYABLE", name: item.name, amount: item.amount, dueDate: item.dueDate })),
     ...dueInstallments.filter((item) => item.dueDate < startOfToday).map((item) => ({ id: item.id, sourceType: "INSTALLMENT", name: "Installment payment", amount: item.amount, dueDate: item.dueDate })),
-    ...buildOverdueObligations({ today: startOfToday, loans, cards: cards.map((item) => ({ id: item.id, name: item.account.name, dueDay: item.paymentDueDay })), transactions: paymentTransactions }),
+    ...buildOverdueObligations({ today: now, loans, cards: cards.map((item) => ({ id: item.id, name: item.account.name, dueDay: item.paymentDueDay })), transactions: paymentTransactions,obligations:cycleObligations }),
   ].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
 
   const restrictedAccountIds = new Set(restrictedFunds.map((f) => f.accountId));
@@ -92,6 +100,7 @@ export default async function DashboardPage() {
     cutoffEnd: activePeriod.endDate,
     requiredTransfers: recommendation?.amount ?? 0,
     confirmedReserves,
+    unpaidPlannedObligations:cycleObligations.filter(row=>!row.fundingAccountId||!restrictedAccountIds.has(row.fundingAccountId)).reduce((sum,row)=>sum+Math.max(0,row.remaining),0),
   });
 
   let recommendationView = null;
@@ -117,6 +126,7 @@ export default async function DashboardPage() {
     : [];
 
   const upcoming = [
+    ...cycleObligations.filter(item=>classifyObligation({...item,dueDateStatus:item.dueDateStatus??"ESTIMATED"},now)==="UPCOMING").map(item=>({id:item.id,description:item.name+(item.dueDateStatus==="ESTIMATED"?" (estimated)":""),amount:item.remaining,dueDate:item.dueDate!})),
     ...duePayables.map((p) => ({
       id: p.id,
       description: p.name,
@@ -136,7 +146,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <div><h1 className="text-xl font-semibold">Your money, at a glance</h1><p className="mt-1 text-sm text-muted-foreground">{formatCycleRange({start:activePeriod.startDate,end:activePeriod.endDate})}</p></div>
+      <DashboardBalanceVisibility>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card variant="disposable" className="p-4">
@@ -144,25 +155,31 @@ export default async function DashboardPage() {
             <IconBadge icon={Wallet} tone="disposable" size="sm" />
             <p className="text-sm text-muted-foreground">Disposable Accounts</p>
           </div>
-          <p className="mt-2 text-2xl font-semibold">{formatMoney(disposableTotal, user.currency)}</p>
+          <p className="dashboard-balance mt-2 text-2xl font-semibold">{formatMoney(disposableTotal, user.currency)}</p>
           <p className="mt-2 text-sm text-muted-foreground">Safe to spend</p>
           <p className="text-lg font-medium">{formatMoney(safeToSpend, user.currency)}</p>
+          <DashboardAccountDetails accounts={accountDetails.filter(a=>a.purpose==="DISPOSABLE")}/>
         </Card>
         <Card variant="savings" className="p-4">
           <div className="flex items-center gap-2">
             <IconBadge icon={PiggyBank} tone="savings" size="sm" />
             <p className="text-sm text-muted-foreground">Savings &amp; Reserves</p>
           </div>
-          <p className="mt-2 text-2xl font-semibold">{formatMoney(savingsTotal, user.currency)}</p>
+          <p className="dashboard-balance mt-2 text-2xl font-semibold">{formatMoney(savingsTotal, user.currency)}</p>
+          <DashboardAccountDetails accounts={accountDetails.filter(a=>a.purpose==="SAVINGS")}/>
         </Card>
         <Card variant="restricted" className="p-4">
           <div className="flex items-center gap-2">
             <IconBadge icon={Lock} tone="restricted" size="sm" />
-            <p className="text-sm text-muted-foreground">Restricted Checking</p>
+            <p className="text-sm text-muted-foreground">Reserved mainly for Tierra Alta</p>
           </div>
-          <p className="mt-2 text-2xl font-semibold">{formatMoney(restrictedTotal, user.currency)}</p>
+          <p className="dashboard-balance mt-2 text-2xl font-semibold">{formatMoney(restrictedTotal, user.currency)}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Separate from everyday funds. Transfers and emergency withdrawals remain available.</p>
+          <DashboardAccountDetails accounts={accountDetails.filter(a=>a.purpose==="RESTRICTED")}/>
         </Card>
       </div>
+
+      <section className="grid grid-cols-2 gap-4 border-y py-4"><div><p className="text-xs text-muted-foreground">Expected income this cycle</p><p className="mt-1 text-lg font-medium tabular-nums">{formatMoney(incomePlans.reduce((s,r)=>s+r.expectedAmount,0),user.currency)}</p></div><div><p className="text-xs text-muted-foreground">Actual income received</p><p className="mt-1 text-lg font-medium tabular-nums">{formatMoney(incomePlans.reduce((s,r)=>s+r.actual,0),user.currency)}</p></div></section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card className="p-4">
@@ -199,6 +216,8 @@ export default async function DashboardPage() {
       <DailyAllowanceCard rows={dailyAllowances} currency={user.currency} />
 
       <AffordabilityCheckCard safeToSpend={safeToSpend} currency={user.currency} />
+      {cycleObligations.some(item=>item.dueDateStatus==="UNSET"&&item.remaining>0)&&<section><h2 className="mb-3 text-sm font-medium text-muted-foreground">Needs a due date</h2><div className="flex flex-col gap-2">{cycleObligations.filter(item=>item.dueDateStatus==="UNSET"&&item.remaining>0).map(item=><Card key={item.id} className="flex items-center justify-between p-3"><p className="font-medium">{item.name} · Unconfirmed</p><p>{formatMoney(item.remaining,user.currency)}</p></Card>)}</div></section>}
+      {cycleObligations.some(item=>classifyObligation({...item,dueDateStatus:item.dueDateStatus??"ESTIMATED"},now)==="LATER")&&<section><h2 className="mb-3 text-sm font-medium text-muted-foreground">Later this cycle</h2><div className="flex flex-col gap-2">{cycleObligations.filter(item=>classifyObligation({...item,dueDateStatus:item.dueDateStatus??"ESTIMATED"},now)==="LATER").map(item=><Card key={item.id} className="flex items-center justify-between p-3"><p className="font-medium">{item.name}</p><p>{formatMoney(item.remaining,user.currency)} · {item.dueDate?.toLocaleDateString("en-PH",{timeZone:"Asia/Manila"})}{item.dueDateStatus==="ESTIMATED"?" (estimated)":""}</p></Card>)}</div></section>}
 
       {overdue.length > 0 && (
         <div>
@@ -281,7 +300,7 @@ export default async function DashboardPage() {
 
       {restrictedFunds.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Restricted funds</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Dedicated reserves</h2>
           <div className="flex flex-col gap-2">
             {restrictedFunds.map((fund) => (
               <Card key={fund.accountId} variant="restricted" className="p-3">
@@ -306,6 +325,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+      </DashboardBalanceVisibility>
     </div>
   );
 }

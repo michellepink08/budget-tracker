@@ -6,4 +6,5 @@ export const creditCardSchema = z.object({
   statementDay: z.number().int().min(1).max(31),
   paymentDueDay: z.number().int().min(1).max(31),
   interestRate: z.number().min(0, "Interest rate can't be negative"),
+  monthlyInterestEstimate: z.number().min(0).max(100).default(3),
 });

@@ -85,7 +85,7 @@ describe("§13 invariant: transfers are excluded from income and expense totals"
       },
       transaction: {
         findMany: vi.fn().mockResolvedValue([
-          { type: "INCOME", amount: 5000000 },
+          { type: "INCOME", amount: 5000000,category:{type:"INCOME"} },
           { type: "EXPENSE", amount: -200000 },
           // A transfer dwarfing both — if it leaked into either total the
           // assertions below would fail loudly.

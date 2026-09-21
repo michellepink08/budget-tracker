@@ -9,6 +9,7 @@ export function computeSafeToSpend(params: {
   cutoffEnd: Date;
   requiredTransfers: number;
   confirmedReserves: number;
+  unpaidPlannedObligations?:number;
 }): number {
   const obligations = params.payables
     .filter((p) => !params.restrictedAccountIds.has(p.accountId) && p.dueDate <= params.cutoffEnd)
@@ -18,6 +19,7 @@ export function computeSafeToSpend(params: {
     obligations -
     params.totalRemaining -
     params.requiredTransfers -
-    params.confirmedReserves
+    params.confirmedReserves -
+    (params.unpaidPlannedObligations??0)
   );
 }

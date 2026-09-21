@@ -83,7 +83,12 @@ export async function listDueInstallmentPayments(
   asOf: Date,
 ) {
   return prisma.installmentPayment.findMany({
-    where: { userId, status: "PENDING", dueDate: { lte: asOf } },
+    where: {
+      userId,
+      status: "PENDING",
+      dueDate: { lte: asOf },
+      installmentPurchase: { archivedAt: null },
+    },
     orderBy: { dueDate: "asc" },
   });
 }

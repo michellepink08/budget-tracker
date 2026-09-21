@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Search, Wallet } from "lucide-react";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
 import { QuickCapturePanel } from "@/components/quick-capture/quick-capture-panel";
-import { mainLinks, planLinks, isNavLinkActive, type NavLink } from "@/components/nav/nav-links";
+import { mainLinks, planLinks, settingsLink, isNavLinkActive, type NavLink } from "@/components/nav/nav-links";
 import { APP_NAME } from "@/lib/config";
 
 type AccountOption = { id: string; name: string; currency: string };
@@ -121,7 +121,7 @@ export function SideNav({
     <aside
       className={
         (collapsed ? "w-[70px]" : "w-[216px]") +
-        " relative isolate hidden shrink-0 flex-col overflow-hidden bg-[linear-gradient(160deg,#741E45_0%,#52112F_50%,#2D0D20_100%)] text-[var(--nav-foreground)] shadow-[4px_0_24px_rgba(0,0,0,0.18)] transition-[width] md:flex"
+        " sticky top-0 isolate hidden h-dvh shrink-0 self-start flex-col overflow-hidden bg-[linear-gradient(160deg,#741E45_0%,#52112F_50%,#2D0D20_100%)] text-[var(--nav-foreground)] shadow-[4px_0_24px_rgba(0,0,0,0.18)] transition-[width] md:flex"
       }
     >
       {/* Purely decorative — a rose glow near the upper-left corner and a
@@ -136,7 +136,7 @@ export function SideNav({
         className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05)_0%,transparent_45%)]"
       />
 
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-4 font-semibold">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4 py-4 font-semibold">
         <div className="flex items-center gap-2 overflow-hidden">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#FFF7FA,#F4DBE4)] text-[#4D102D] shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_2px_6px_rgba(0,0,0,0.15)]">
             <Wallet className="h-4 w-4" />
@@ -159,7 +159,7 @@ export function SideNav({
         onClick={() => setQuickCaptureOpen(true)}
         className={
           (collapsed ? "justify-center" : "justify-between") +
-          " group relative mx-2 mt-2 flex items-center gap-2 rounded-lg border border-[#F4DBE4]/25 bg-white/[0.06] px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-150 hover:border-[#F4DBE4]/40 hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-[0.97] motion-reduce:active:scale-100"
+          " group relative mx-2 mt-2 flex shrink-0 items-center gap-2 rounded-lg border border-[#F4DBE4]/25 bg-white/[0.06] px-3 py-2 text-left text-sm text-[var(--nav-foreground)]/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-150 hover:border-[#F4DBE4]/40 hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nav-foreground)]/60 active:scale-[0.97] motion-reduce:active:scale-100"
         }
       >
         <span className="flex items-center gap-2">
@@ -179,25 +179,20 @@ export function SideNav({
 
       {/* An elegant divider between the quick actions above and the page
           links below, rather than everything running together. */}
-      <div className="mx-4 mt-3 border-t border-white/10" />
+      <div className="mx-4 mt-3 shrink-0 border-t border-white/10" />
 
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-2 text-2xs">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-2 text-2xs">
         {mainLinks.map(renderLink)}
-        {!collapsed && (
-          <p className="mt-3 mb-1 px-3 text-[11px] font-semibold tracking-wide text-[var(--nav-foreground)]/50">
-            PLAN &amp; REVIEW
-          </p>
-        )}
-        {collapsed && <div className="mx-3 my-2 border-t border-white/10" />}
-        {planLinks.map(renderLink)}
+        <details className="mt-5"><summary className="cursor-pointer px-3 py-2 text-xs text-[var(--nav-foreground)]/80">{collapsed?"Tools":"Tools & reports"}</summary><div className="mt-1 flex flex-col gap-1">{planLinks.map(renderLink)}</div></details>
       </nav>
 
       <div
         className={
           (collapsed ? "items-center" : "items-stretch") +
-          " flex flex-col gap-2 border-t border-white/10 p-3"
+          " flex shrink-0 flex-col gap-2 border-t border-white/10 p-3"
         }
       >
+        {renderLink(settingsLink)}
         <AddTransactionButton accounts={accounts} categories={categories} collapsed={collapsed} />
         <SignOutButton collapsed={collapsed} />
       </div>

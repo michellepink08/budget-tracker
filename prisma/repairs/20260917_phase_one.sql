@@ -1,0 +1,13 @@
+CREATE TYPE "DueDateStatus" AS ENUM ('CONFIRMED', 'ESTIMATED', 'UNSET');
+ALTER TABLE "CycleIncomePlan" ADD COLUMN "categoryId" TEXT, ADD COLUMN "subcategoryId" TEXT;
+ALTER TABLE "CyclePaymentPlan" ADD COLUMN "dueDateStatus" "DueDateStatus" NOT NULL DEFAULT 'ESTIMATED', ADD COLUMN "fundingAccountId" TEXT, ADD COLUMN "statementAmount" INTEGER, ADD COLUMN "statementDate" TIMESTAMP(3), ADD COLUMN "verifiedUnbilledAmount" INTEGER, ALTER COLUMN "dueDate" DROP NOT NULL;
+ALTER TABLE "CyclePaymentPlan" ADD CONSTRAINT "CyclePaymentPlan_due_date_state_check" CHECK (("dueDateStatus"='UNSET' AND "dueDate" IS NULL) OR ("dueDateStatus" IN ('CONFIRMED','ESTIMATED') AND "dueDate" IS NOT NULL));
+CREATE TABLE "PlanPayment" ("id" TEXT NOT NULL PRIMARY KEY, "userId" TEXT NOT NULL, "planId" TEXT NOT NULL, "transactionId" TEXT NOT NULL, "amount" INTEGER NOT NULL CHECK ("amount">0), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "PlanPayment_transactionId_key" ON "PlanPayment"("transactionId");
+CREATE INDEX "PlanPayment_userId_planId_idx" ON "PlanPayment"("userId","planId");
+ALTER TABLE "CycleIncomePlan" ADD CONSTRAINT "CycleIncomePlan_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CycleIncomePlan" ADD CONSTRAINT "CycleIncomePlan_subcategoryId_fkey" FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "CyclePaymentPlan" ADD CONSTRAINT "CyclePaymentPlan_fundingAccountId_fkey" FOREIGN KEY ("fundingAccountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PlanPayment" ADD CONSTRAINT "PlanPayment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PlanPayment" ADD CONSTRAINT "PlanPayment_planId_fkey" FOREIGN KEY ("planId") REFERENCES "CyclePaymentPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PlanPayment" ADD CONSTRAINT "PlanPayment_transactionId_fkey" FOREIGN KEY ("transactionId") REFERENCES "Transaction"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

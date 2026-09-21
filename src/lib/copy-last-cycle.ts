@@ -18,7 +18,7 @@ export async function copyLastCyclePlans(prisma: CopyPrisma, userId: string, des
     prisma.cyclePaymentPlan.findMany({ where: { userId, budgetPeriodId: destinationPeriodId } }),
   ]);
   const incomeToCopy = income.filter((row) => !destinationIncome.some((existing) => existing.source === row.source));
-  const incomeResult = incomeToCopy.length ? await prisma.cycleIncomePlan.createMany({ data: incomeToCopy.map((row) => ({ userId, budgetPeriodId: destinationPeriodId, source: row.source, expectedAmount: row.expectedAmount, expectedDate: shiftDate(row.expectedDate), notes: row.notes })) }) : { count: 0 };
+  const incomeResult = incomeToCopy.length ? await prisma.cycleIncomePlan.createMany({ data: incomeToCopy.map((row) => ({ userId, budgetPeriodId: destinationPeriodId, source: row.source, categoryId:row.categoryId,subcategoryId:row.subcategoryId,expectedAmount: row.expectedAmount, expectedDate: shiftDate(row.expectedDate), notes: row.notes })) }) : { count: 0 };
   let allocationsCopied = 0;
   for (const row of allocations) {
     const existing = await prisma.budgetAllocation.findFirst({ where: { budgetPeriodId: destinationPeriodId, categoryId: row.categoryId, subcategoryId: row.subcategoryId } });
@@ -27,7 +27,7 @@ export async function copyLastCyclePlans(prisma: CopyPrisma, userId: string, des
   let paymentPlansCopied = 0;
   for (const row of paymentPlans) {
     if (destinationPaymentPlans.some((existing) => existing.sourceType === row.sourceType && existing.sourceId === row.sourceId)) continue;
-    await prisma.cyclePaymentPlan.upsert({ where: { budgetPeriodId_sourceType_sourceId: { budgetPeriodId: destinationPeriodId, sourceType: row.sourceType, sourceId: row.sourceId } }, create: { userId, budgetPeriodId: destinationPeriodId, sourceType: row.sourceType, sourceId: row.sourceId, expectedAmount: row.expectedAmount, dueDate: shiftDate(row.dueDate) }, update: {} });
+    await prisma.cyclePaymentPlan.upsert({ where: { budgetPeriodId_sourceType_sourceId: { budgetPeriodId: destinationPeriodId, sourceType: row.sourceType, sourceId: row.sourceId } }, create: { userId, budgetPeriodId: destinationPeriodId, sourceType: row.sourceType, sourceId: row.sourceId, expectedAmount: row.expectedAmount, dueDate: row.dueDate ? shiftDate(row.dueDate) : null,dueDateStatus:row.dueDateStatus??(row.dueDate?"ESTIMATED":"UNSET"),fundingAccountId:row.fundingAccountId }, update: {} });
     paymentPlansCopied += 1;
   }
   return { ok: true as const, incomeCopied: incomeResult.count, allocationsCopied, paymentPlansCopied };

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { computeSafeToSpend } from "@/lib/safe-to-spend";
+it("reserves unpaid selected-cycle plans even when their due date is unset",()=>{
+  expect(computeSafeToSpend({disposableTotal:12129927,totalRemaining:0,payables:[],restrictedAccountIds:new Set(),cutoffEnd:new Date("2026-10-10"),requiredTransfers:0,confirmedReserves:0,unpaidPlannedObligations:7556739})).toBe(4573188);
+});
 
 const cutoffEnd = new Date(2026, 8, 30);
 

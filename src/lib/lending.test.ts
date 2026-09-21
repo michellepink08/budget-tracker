@@ -158,7 +158,7 @@ describe("markLendingReturned", () => {
 });
 
 describe("recordLendingRepayment", () => {
-  it("creates an INCOME transaction carrying the lending row's own category/subcategory", async () => {
+  it("creates a non-income repayment carrying the lending row's own category/subcategory", async () => {
     const prisma = makeFakePrisma();
 
     const result = await recordLendingRepayment(prisma, "user-1", 25, "lending-1", {
@@ -169,7 +169,7 @@ describe("recordLendingRepayment", () => {
 
     expect(result).toEqual({ ok: true });
     const txnArgs = prisma.transaction.create.mock.calls[0][0].data;
-    expect(txnArgs.type).toBe("INCOME");
+    expect(txnArgs.type).toBe("RECEIVABLE_REPAYMENT");
     expect(txnArgs.amount).toBe(20000);
     expect(txnArgs.categoryId).toBe("cat-lending");
     expect(txnArgs.subcategoryId).toBe("sub-bob");

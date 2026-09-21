@@ -1,26 +1,27 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { archiveInstallmentPurchaseAction } from "@/actions/installment-purchase.actions";
-import { Button } from "@/components/ui/button";
+import { ConfirmArchiveButton } from "@/components/ui/confirm-archive-button";
 
-export function ArchiveInstallmentPurchaseButton({ purchaseId }: { purchaseId: string }) {
-  const router = useRouter();
-
-  async function handleClick() {
-    const result = await archiveInstallmentPurchaseAction(purchaseId);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    toast.success("Installment purchase archived");
-    router.refresh();
-  }
-
+export function ArchiveInstallmentPurchaseButton({
+  purchaseId,
+  name,
+  unpaidTerms,
+}: {
+  purchaseId: string;
+  name: string;
+  unpaidTerms: number;
+}) {
+  const warning =
+    unpaidTerms > 0
+      ? `${unpaidTerms} unpaid ${unpaidTerms === 1 ? "term" : "terms"} will be hidden and stop showing as due. `
+      : "";
   return (
-    <Button type="button" variant="ghost" onClick={handleClick}>
-      Archive
-    </Button>
+    <ConfirmArchiveButton
+      title={`Archive "${name}"?`}
+      description={`${warning}Payments you already recorded stay in your transactions.`}
+      successMessage="Installment purchase archived"
+      onArchive={() => archiveInstallmentPurchaseAction(purchaseId)}
+    />
   );
 }

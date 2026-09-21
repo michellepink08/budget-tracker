@@ -18,12 +18,27 @@ function makeFakePrisma(overrides: Record<string, any> = {}) {
     shoppingList: { findMany: vi.fn().mockResolvedValue([]) },
     yearPlanPhase: { findMany: vi.fn().mockResolvedValue([]) },
     customReminder: { findMany: vi.fn().mockResolvedValue([]) },
+    cyclePaymentPlan:{findMany:vi.fn().mockResolvedValue([])},
+    transaction:{findMany:vi.fn().mockResolvedValue([])},
+    cycleIncomePlan:{findMany:vi.fn().mockResolvedValue([])},
     ...overrides,
   } as any;
 }
 
 const range = { start: d(2026, 9, 1), end: d(2026, 9, 30) };
 const now = d(2026, 9, 15);
+it("shows an automatic statement amount and matching payment forecast without saving a bill",async()=>{
+ const p=makeFakePrisma({creditCard:{findMany:async()=>[{id:"bpi",accountId:"card",creditLimit:3500000,statementDay:12,paymentDueDay:5,monthlyInterestEstimate:3,account:{name:"BPI",openingBalance:3500000}}]},transaction:{findMany:async()=>[{id:"purchase",accountId:"card",amount:-100000,type:"EXPENSE",status:"CLEARED",date:d(2026,9,18)}]}});
+ const rows=await listCalendarEntries(p,"u",{start:d(2026,10,1),end:d(2026,11,10)},now);
+ expect(rows.find(r=>r.sourceType==="CREDIT_CARD_STATEMENT"&&r.date.getTime()===d(2026,10,12).getTime())).toMatchObject({amount:100000});
+ expect(rows.find(r=>r.sourceType==="CREDIT_CARD_DUE"&&r.date.getTime()===d(2026,11,5).getTime())).toMatchObject({amount:100000,confidence:"ESTIMATED",state:"UPCOMING"});
+});
+it("overrides card schedules with unset and estimated plans",async()=>{
+ const prisma=makeFakePrisma({creditCard:{findMany:async()=>[{id:"ub",statementDay:20,paymentDueDay:10,account:{name:"UnionBank"}},{id:"ew",statementDay:5,paymentDueDay:25,account:{name:"EastWest"}}]},cyclePaymentPlan:{findMany:async()=>[{id:"ub-plan",sourceType:"CREDIT_CARD",sourceId:"ub",expectedAmount:3571173,dueDate:null,dueDateStatus:"UNSET",payments:[],budgetPeriod:{startDate:d(2026,9,11),endDate:d(2026,10,10)}},{id:"ew-plan",sourceType:"CREDIT_CARD",sourceId:"ew",expectedAmount:4551914,dueDate:d(2026,10,25),dueDateStatus:"ESTIMATED",payments:[],budgetPeriod:{startDate:d(2026,10,11),endDate:d(2026,11,10)}}]}});
+ const entries=await listCalendarEntries(prisma,"u",{start:d(2026,10,1),end:d(2026,10,31)},d(2026,10,27));
+ expect(entries.filter(e=>e.sourceType==="CREDIT_CARD_DUE"&&e.sourceId==="ub")).toEqual([]);
+ expect(entries.find(e=>e.sourceId==="ew"&&e.sourceType==="CREDIT_CARD_DUE")).toMatchObject({date:d(2026,10,25),confidence:"ESTIMATED",state:"UPCOMING",amount:4551914});
+});
 
 describe("listCalendarEntries — PAYABLE", () => {
   it("maps a pending, not-yet-due payable to an UPCOMING CONFIRMED entry", async () => {
@@ -199,6 +214,8 @@ describe("listCalendarEntries — CREDIT_CARD projection", () => {
     const due = entries.find((e) => e.sourceType === "CREDIT_CARD_DUE");
     expect(statement?.date).toEqual(d(2026, 9, 30));
     expect(due?.date).toEqual(d(2026, 9, 15));
+    expect(due?.confidence).toBe("ESTIMATED");
+    expect(due?.state).not.toBe("OVERDUE");
   });
 });
 
@@ -213,7 +230,7 @@ describe("listCalendarEntries — LOAN_DUE projection", () => {
     });
     const entries = await listCalendarEntries(prisma, "user-1", range, now);
     expect(entries).toContainEqual(
-      expect.objectContaining({ sourceType: "LOAN_DUE", sourceId: "loan-1", date: d(2026, 9, 15), amount: 1500000 }),
+      expect.objectContaining({ sourceType: "LOAN_DUE", sourceId: "loan-1", date: d(2026, 9, 15), amount: 1500000, confidence:"ESTIMATED",state:"UPCOMING" }),
     );
   });
 

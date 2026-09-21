@@ -1,26 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { archiveLoanAction } from "@/actions/loan.actions";
-import { Button } from "@/components/ui/button";
+import { ConfirmArchiveButton } from "@/components/ui/confirm-archive-button";
 
-export function ArchiveLoanButton({ loanId }: { loanId: string }) {
-  const router = useRouter();
-
-  async function handleClick() {
-    const result = await archiveLoanAction(loanId);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    toast.success("Loan archived");
-    router.refresh();
-  }
-
+export function ArchiveLoanButton({ loanId, name }: { loanId: string; name: string }) {
   return (
-    <Button type="button" variant="ghost" onClick={handleClick}>
-      Archive
-    </Button>
+    <ConfirmArchiveButton
+      title={`Archive "${name}"?`}
+      description="The loan is hidden from Trackers and stops appearing in your plan. Payments you already recorded stay in your transactions."
+      successMessage="Loan archived"
+      onArchive={() => archiveLoanAction(loanId)}
+    />
   );
 }

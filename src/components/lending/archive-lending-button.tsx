@@ -1,26 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { archiveLendingAction } from "@/actions/lending.actions";
-import { Button } from "@/components/ui/button";
+import { ConfirmArchiveButton } from "@/components/ui/confirm-archive-button";
 
-export function ArchiveLendingButton({ lendingId }: { lendingId: string }) {
-  const router = useRouter();
-
-  async function handleClick() {
-    const result = await archiveLendingAction(lendingId);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    toast.success("Lending archived");
-    router.refresh();
-  }
-
+export function ArchiveLendingButton({ lendingId, name }: { lendingId: string; name: string }) {
   return (
-    <Button type="button" variant="ghost" onClick={handleClick}>
-      Archive
-    </Button>
+    <ConfirmArchiveButton
+      title={`Archive lending to ${name}?`}
+      description="It is hidden from the Lending page. The original loan and any repayments stay in your transactions."
+      successMessage="Lending archived"
+      onArchive={() => archiveLendingAction(lendingId)}
+    />
   );
 }

@@ -1,0 +1,17 @@
+"use client";
+import {useState} from "react";
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
+import {createAllocationAction,updateAllocationAction} from "@/actions/budget.actions";
+import {formatMoney,toMinorUnits} from "@/lib/money";
+import {RemoveAllocationButton} from "@/components/budget/remove-allocation-button";
+import {planAmountInputValue,type WorksheetRow} from "@/lib/plan-funding";
+export function AllocationWorksheet({rows,periodId,currency}:{rows:WorksheetRow[];periodId:string;currency:string}){
+ return <section className="flex flex-col gap-3"><h2 className="text-lg font-medium">Category budgets & savings</h2><p className="text-xs text-muted-foreground">Your saved categories repeat every cycle. Set this cycle’s amounts here; unplanned rows do not create records until saved.</p><div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead><tr>{["Category / subcategory","Planned","Actual","Difference / Remaining","Save"].map(label=><th key={label} className="p-3 text-left font-medium">{label}</th>)}</tr></thead><tbody>{rows.map(row=><WorksheetItem key={`${row.key}:${row.planned}:${row.rollover}`} row={row} periodId={periodId} currency={currency}/>)}</tbody></table></div></section>;
+}
+function WorksheetItem({row,periodId,currency}:{row:WorksheetRow;periodId:string;currency:string}){
+ const router=useRouter();const [value,setValue]=useState(planAmountInputValue(row.planned,currency));const [pending,setPending]=useState(false);
+ const minor=toMinorUnits(Number(value)||0,currency);const remaining=minor+row.rollover-row.actual;
+ async function save(){if(pending)return;setPending(true);try{const fd=new FormData();fd.set("budgetPeriodId",periodId);fd.set("categoryId",row.categoryId);fd.set("subcategoryId",row.subcategoryId??"");fd.set("plannedAmount",value);fd.set("rolloverMode",row.rolloverMode);fd.set("showDailyAllowance",String(row.showDailyAllowance));const result=row.allocationId?await updateAllocationAction(row.allocationId,fd):await createAllocationAction(fd);if(!result.ok){toast.error(result.error);return}toast.success("Budget saved");router.refresh()}catch{toast.error("Could not save this budget. Please try again.")}finally{setPending(false)}}
+ return <tr className="border-t"><th scope="row" className="p-3 text-left font-medium">{row.label}{row.kind==="SAVINGS"&&<span className="block text-xs font-normal text-muted-foreground">Savings allocation</span>}{row.rollover!==0&&<span className="block text-xs font-normal text-muted-foreground">Plus {formatMoney(row.rollover,currency)} rollover</span>}</th><td className="p-3"><input aria-label={`Planned budget for ${row.label}`} data-plan-key={`budget:${row.key}`} data-plan-kind="allocation" data-plan-base={row.planned} type="number" min="0" step="0.01" value={value} placeholder="0" onChange={e=>setValue(e.target.value)} className="h-9 w-32 rounded border px-2 text-right tabular-nums"/></td><td className="p-3 text-right tabular-nums">{formatMoney(row.actual,currency)}</td><td className={`p-3 text-right tabular-nums ${remaining<0?"text-danger":""}`}>{formatMoney(remaining,currency)}</td><td className="flex items-center gap-2 p-3"><button type="button" onClick={save} disabled={pending||minor<=0} className="rounded border px-3 py-2 text-sm disabled:opacity-50">{pending?"Saving…":"Save"}</button>{row.allocationId&&<RemoveAllocationButton allocationId={row.allocationId}/>}</td></tr>;
+}

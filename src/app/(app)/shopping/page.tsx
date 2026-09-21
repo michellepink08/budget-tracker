@@ -41,7 +41,7 @@ export default async function ShoppingPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Shopping</h1>
+      <h1 className="text-xl font-semibold">Grocery</h1>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-2">
         {TABS.map((t) => (
@@ -86,7 +86,7 @@ async function CurrentListTab({
   if (!list) {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-muted-foreground">No current list yet. Create one to start shopping.</p>
+        <p className="text-muted-foreground">No current grocery list yet. Create one to plan your next trip.</p>
         <div>
           <ListFormDialog categories={categories} />
         </div>

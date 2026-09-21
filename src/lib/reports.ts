@@ -39,14 +39,14 @@ export async function incomeVsExpenseByPeriod(
   const results = await Promise.all(
     periods.map(async (period: { id: string; name: string }) => {
       const transactions = await prisma.transaction.findMany({
-        where: { budgetPeriodId: period.id },
+        where: { budgetPeriodId: period.id,userId },include:{category:true},
       });
       const income = transactions
-        .filter((t: { type: string }) => t.type === "INCOME")
+        .filter(t => t.type === "INCOME" && t.category?.type === "INCOME")
         .reduce((sum: number, t: { amount: number }) => sum + t.amount, 0);
       const expense = transactions
-        .filter((t: { type: string }) => t.type === "EXPENSE")
-        .reduce((sum: number, t: { amount: number }) => sum + Math.abs(t.amount), 0);
+        .filter((t: { type: string }) => t.type === "EXPENSE" || t.type === "REFUND")
+        .reduce((sum: number, t: { amount: number }) => sum - t.amount, 0);
       return { periodId: period.id, periodName: period.name, income, expense };
     }),
   );

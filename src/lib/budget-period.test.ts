@@ -12,11 +12,19 @@ function makeFakePrisma(existing: unknown = null) {
     budgetPeriod: {
       findUnique: vi.fn().mockResolvedValue(existing),
       create: vi.fn().mockResolvedValue({ id: "period-new" }),
+      upsert: vi.fn().mockImplementation(async ({create}) => ({...create,id:create.id})),
     },
   } as any;
 }
 
 describe("resolveBudgetPeriodForDate", () => {
+  it("reuses a cycle concurrently created by another request without reseeding it",async()=>{
+    vi.mocked(materializeRecurringAllocations).mockClear();
+    const prisma=makeFakePrisma();
+    prisma.budgetPeriod.upsert.mockResolvedValue({id:"concurrent-period"});
+    expect(await resolveBudgetPeriodForDate(prisma,"user-1",new Date("2026-09-17"),11)).toEqual({id:"concurrent-period"});
+    expect(materializeRecurringAllocations).not.toHaveBeenCalled();
+  });
   it("returns the existing period for that cycle if one already exists", async () => {
     const existing = { id: "period-1" };
     const prisma = makeFakePrisma(existing);
@@ -33,14 +41,15 @@ describe("resolveBudgetPeriodForDate", () => {
 
     const result = await resolveBudgetPeriodForDate(prisma, "user-1", new Date(2026, 8, 15), 11);
 
-    expect(result).toEqual({ id: "period-new" });
-    expect(prisma.budgetPeriod.create).toHaveBeenCalledTimes(1);
-    const args = prisma.budgetPeriod.create.mock.calls[0][0];
-    expect(args.data.userId).toBe("user-1");
-    expect(args.data.startDate).toEqual(new Date(2026, 8, 11));
-    expect(args.data.endDate).toEqual(new Date(2026, 9, 10));
-    expect(args.data.status).toBe("ACTIVE");
-    expect(materializeRecurringAllocations).toHaveBeenCalledWith(prisma, "user-1", "period-new");
+    expect(prisma.budgetPeriod.upsert).toHaveBeenCalledTimes(1);
+    const args = prisma.budgetPeriod.upsert.mock.calls[0][0];
+    expect(args.create.userId).toBe("user-1");
+    expect(args.create.startDate).toEqual(new Date("2026-09-11"));
+    expect(args.create.endDate).toEqual(new Date("2026-10-10"));
+    expect(args.create.status).toBe("ACTIVE");
+    expect(args.update).toEqual({startDate:new Date("2026-09-11")});
+    expect(result.id).toBe(args.create.id);
+    expect(materializeRecurringAllocations).toHaveBeenCalledWith(prisma, "user-1", result.id);
   });
 });
 

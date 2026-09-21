@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { AddTransactionButton } from "@/components/transactions/add-transaction-button";
-import { mainLinks, planLinks, isNavLinkActive, type NavLink } from "@/components/nav/nav-links";
+import { mainLinks, planLinks, settingsLink, isNavLinkActive, type NavLink } from "@/components/nav/nav-links";
 import { APP_NAME } from "@/lib/config";
 
 type AccountOption = { id: string; name: string; currency: string };
@@ -47,17 +47,15 @@ export function NavDrawer({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-label="Main navigation"
-        className="inset-y-0 left-0 top-0 h-full max-h-full w-72 max-w-[85vw] translate-x-0 translate-y-0 rounded-none data-open:slide-in-from-left data-closed:slide-out-to-left sm:max-w-[85vw]"
+        className="inset-y-0 left-0 top-0 flex! h-dvh! max-h-dvh! w-72 max-w-[85vw] flex-col overflow-y-hidden! translate-x-0 translate-y-0 rounded-none data-open:slide-in-from-left data-closed:slide-out-to-left sm:max-w-[85vw]"
       >
         <DialogTitle className="sr-only">{APP_NAME} navigation</DialogTitle>
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
           {mainLinks.map(renderLink)}
-          <p className="mt-3 mb-1 px-3 text-[11px] font-semibold tracking-wide text-muted-foreground">
-            PLAN &amp; REVIEW
-          </p>
-          {planLinks.map(renderLink)}
+          <details className="mt-4"><summary className="cursor-pointer px-3 py-2 text-sm">Tools & reports</summary>{planLinks.map(renderLink)}</details>
         </nav>
-        <div className="mt-2 flex flex-col gap-2 border-t pt-3">
+        <div className="mt-2 flex shrink-0 flex-col gap-2 border-t pt-3">
+          {renderLink(settingsLink)}
           <AddTransactionButton accounts={accounts} categories={categories} />
           <SignOutButton />
         </div>

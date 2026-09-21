@@ -111,8 +111,12 @@ export async function makeLoanPayment(
 // nothing to derive from.
 export async function computeLoanRemainingBalance(
   prisma: Pick<PrismaClient, "transaction">,
-  loan: { openingBalance: number; subcategoryId: string | null },
+  loan: { id?: string; userId?: string; openingBalance: number; subcategoryId: string | null },
 ): Promise<number> {
+  if (loan.id && loan.userId) {
+    const transactions = await prisma.transaction.findMany({where:{userId:loan.userId,loanId:loan.id,type:"LOAN_PAYMENT"}});
+    return Math.max(0,loan.openingBalance+transactions.filter(t=>t.loanId===loan.id&&t.userId===loan.userId&&t.type==="LOAN_PAYMENT").reduce((sum,t)=>sum+t.amount,0));
+  }
   if (!loan.subcategoryId) return loan.openingBalance;
 
   const transactions = await prisma.transaction.findMany({ where: { subcategoryId: loan.subcategoryId } });

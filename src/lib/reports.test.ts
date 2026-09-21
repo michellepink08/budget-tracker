@@ -45,6 +45,10 @@ describe("spendingByCategory", () => {
 });
 
 describe("incomeVsExpenseByPeriod", () => {
+  it("excludes wrongly categorized income and offsets expenses with refunds",async()=>{
+    const prisma:any={budgetPeriod:{findMany:async()=>[{id:"p",name:"Cycle"}]},transaction:{findMany:async()=>[{type:"INCOME",amount:1000,category:{type:"INCOME"}},{type:"INCOME",amount:2000,category:{type:"EXPENSE"}},{type:"EXPENSE",amount:-100},{type:"REFUND",amount:5},{type:"RECEIVABLE_REPAYMENT",amount:500},{type:"CREDIT_CARD_PAYMENT",amount:-1000}]}};
+    expect(await incomeVsExpenseByPeriod(prisma,"u")).toEqual([{periodId:"p",periodName:"Cycle",income:1000,expense:95}]);
+  });
   it("returns income and expense totals per period, oldest to newest", async () => {
     const prisma = {
       budgetPeriod: {
@@ -57,12 +61,12 @@ describe("incomeVsExpenseByPeriod", () => {
         findMany: vi.fn((args: { where: { budgetPeriodId: string } }) => {
           if (args.where.budgetPeriodId === "period-1") {
             return Promise.resolve([
-              { type: "INCOME", amount: 35000 },
+              { type: "INCOME", amount: 35000,category:{type:"INCOME"} },
               { type: "EXPENSE", amount: -15000 },
             ]);
           }
           return Promise.resolve([
-            { type: "INCOME", amount: 40000 },
+            { type: "INCOME", amount: 40000,category:{type:"INCOME"} },
             { type: "EXPENSE", amount: -20000 },
           ]);
         }),
