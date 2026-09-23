@@ -1,9 +1,8 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# budget-tracker
 
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+This is a standard Next.js 16 app (App Router, TypeScript) — nothing about
+the framework itself is customized or forked. See `README.md` for the tech
+stack and setup, and `docs/ARCHITECTURE.md` for the two machine-specific
+workarounds (`--webpack` instead of Turbopack, and the hand-written
+`prisma/schema.sql` mirror) — neither is a real Next.js or Prisma behavior
+change, just an accommodation for one developer's locked-down machine.
