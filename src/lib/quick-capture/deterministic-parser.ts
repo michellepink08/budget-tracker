@@ -20,7 +20,7 @@ function toDateField(result: DateParseResult): DateField {
   return { value: result.value, confirmed: result.confirmed };
 }
 
-async function resolveRefOrClarify(
+export async function resolveRefOrClarify(
   prisma: Pick<PrismaClient, "alias">,
   ctx: ParserContext,
   kind: "account" | "category",

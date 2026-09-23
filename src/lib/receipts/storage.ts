@@ -26,3 +26,20 @@ export async function getReceiptImageUrl(objectKey: string): Promise<string> {
   if (!result) throw new Error("Receipt image not found");
   return result.blob.url;
 }
+
+// Fetches an uploaded receipt image's actual bytes and content type — used
+// by AnthropicOcrAdapter, which needs to send real image data rather than
+// just a URL reference. The blob's own URL is authenticated via this
+// server's BLOB_READ_WRITE_TOKEN (same private-read mode as
+// getReceiptImageUrl above), so fetch() against it works server-side
+// without extra credentials.
+export async function downloadReceiptImage(objectKey: string): Promise<{ buffer: Buffer; contentType: string }> {
+  const result = await get(objectKey, { access: "private" });
+  if (!result) throw new Error("Receipt image not found");
+
+  const response = await fetch(result.blob.url);
+  if (!response.ok) throw new Error(`Failed to download receipt image (${response.status})`);
+
+  const arrayBuffer = await response.arrayBuffer();
+  return { buffer: Buffer.from(arrayBuffer), contentType: result.blob.contentType ?? "" };
+}

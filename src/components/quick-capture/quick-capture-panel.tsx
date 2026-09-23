@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
   parseQuickCaptureAction,
+  parseQuickCaptureWithAiAction,
   confirmQuickCaptureDraftAction,
   undoQuickCaptureAction,
 } from "@/actions/quick-capture.actions";
+import { isAiEnabledAction } from "@/actions/ai-status.actions";
 import { useVoiceCapture } from "@/lib/quick-capture/use-voice-capture";
 import { matchApprovalCommand } from "@/lib/quick-capture/match-approval-command";
 import type { CommandDraft } from "@/lib/quick-capture/types";
@@ -96,6 +98,12 @@ export function QuickCapturePanel({
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [voiceMode, setVoiceMode] = useState<"dictating" | "approving">("dictating");
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiParsing, setAiParsing] = useState(false);
+
+  useEffect(() => {
+    isAiEnabledAction().then(setAiEnabled);
+  }, []);
 
   // useVoiceCapture's onTranscript callback is captured once at mount
   // (see that hook's own comment) — so handleVoiceTranscript below, and
@@ -242,6 +250,23 @@ export function QuickCapturePanel({
     setDrafts(result.drafts.map((draft) => ({ draft, status: "pending" as const })));
   }
 
+  // A second opinion for text the deterministic parser above visibly got
+  // wrong (it never fails outright — see parseQuickCaptureWithAiAction's
+  // own comment) — kept as an explicit, separate button rather than an
+  // automatic retry, so it's obvious to the user which parser produced
+  // the draft they're about to confirm.
+  async function handleAiParse() {
+    setAiParsing(true);
+    setParseError(null);
+    const result = await parseQuickCaptureWithAiAction(text);
+    setAiParsing(false);
+    if (!result.ok) {
+      setParseError(result.error);
+      return;
+    }
+    setDrafts(result.drafts.map((draft) => ({ draft, status: "pending" as const })));
+  }
+
   async function handleConfirm(index: number) {
     if (!drafts) return;
     const entry = drafts[index];
@@ -301,10 +326,23 @@ export function QuickCapturePanel({
                 {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </Button>
             )}
-            <Button type="button" onClick={handleParse} disabled={parsing || !text.trim()}>
+            <Button type="button" onClick={handleParse} disabled={parsing || aiParsing || !text.trim()}>
               {parsing ? "..." : "Parse"}
             </Button>
           </div>
+
+          {aiEnabled && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={handleAiParse}
+              disabled={parsing || aiParsing || !text.trim()}
+            >
+              {aiParsing ? "Asking AI…" : "Try with AI"}
+            </Button>
+          )}
 
           {voice.error && (
             <p className="text-sm text-destructive">

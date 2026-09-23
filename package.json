@@ -18,6 +18,7 @@
     "db:backfill-account-purpose": "node scripts/backfill-account-purpose.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@base-ui/react": "^1.8.0",
     "@hookform/resolvers": "^5.9.1",
     "@prisma/adapter-neon": "^7.10.0",

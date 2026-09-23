@@ -13,6 +13,7 @@ import {
   Table,
   HandCoins,
   Landmark,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export const planLinks: NavLink[] = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/ledger", label: "Ledger", icon: Table },
   { href: "/audit-log", label: "Audit History", icon: History },
+  { href: "/assistant", label: "Assistant", icon: Sparkles },
 ];
 export const settingsLink:NavLink={href:"/settings",label:"Settings",icon:Settings};
 export const planningLinks:NavLink[]=[{href:"/budget",label:"Monthly Plan",icon:PiggyBank},{href:"/year-plan",label:"Yearly Plan",icon:CalendarRange},{href:"/calendar",label:"Calendar",icon:CalendarDays}];

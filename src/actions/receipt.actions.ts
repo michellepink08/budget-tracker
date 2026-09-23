@@ -21,8 +21,8 @@ import {
   setReceiptStore,
   updateLine,
 } from "@/lib/receipts";
-import { StubOcrAdapter } from "@/lib/receipts/ocr-adapter";
-import { deleteReceiptImage, uploadReceiptImage } from "@/lib/receipts/storage";
+import { getOcrAdapter } from "@/lib/receipts/ocr-adapter";
+import { deleteReceiptImage, downloadReceiptImage, uploadReceiptImage } from "@/lib/receipts/storage";
 import { getOrCreateStore } from "@/lib/shopping-store";
 import { toMinorUnits } from "@/lib/money";
 import { assertOwnedAccount } from "@/lib/accounts";
@@ -93,17 +93,28 @@ export async function removeReceiptImageAction(imageId: string): Promise<Receipt
   return result;
 }
 
-// The stub adapter never reads the image bytes, so this doesn't re-fetch
-// the uploaded images from Blob storage — it just runs extraction with a
-// placeholder buffer per attached image. Swapping in a real adapter later
-// will need this to actually fetch each image's bytes first.
 export async function runOcrExtractionAction(receiptId: string): Promise<ReceiptVoidActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "You must be logged in" };
 
   const images = await prisma.receiptImage.findMany({ where: { receiptId, userId: session.user.id } });
-  const placeholderBuffers = images.map(() => Buffer.from(""));
-  const result = await runOcrExtraction(prisma, session.user.id, receiptId, placeholderBuffers, new StubOcrAdapter());
+
+  let imageBuffers: Buffer[];
+  try {
+    imageBuffers = await Promise.all(
+      images.map(async (image) => (await downloadReceiptImage(image.objectKey)).buffer),
+    );
+  } catch {
+    return { ok: false, error: "Couldn't download the receipt image(s) for OCR" };
+  }
+
+  const adapter = await getOcrAdapter();
+  let result: ReceiptVoidActionResult;
+  try {
+    result = await runOcrExtraction(prisma, session.user.id, receiptId, imageBuffers, adapter);
+  } catch {
+    return { ok: false, error: "OCR extraction failed — try again" };
+  }
   if (result.ok) revalidatePath("/shopping");
   return result;
 }

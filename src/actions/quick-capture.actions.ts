@@ -7,8 +7,10 @@ import { listAccounts } from "@/lib/accounts";
 import { listCategories } from "@/lib/categories";
 import { listActiveCatalogItems } from "@/lib/shopping-catalog";
 import { parseCommand } from "@/lib/quick-capture/deterministic-parser";
+import { aiParseQuickCapture } from "@/lib/quick-capture/ai-parser";
 import { executeDraft, undoExecution } from "@/lib/quick-capture/execute";
 import { answerQuestion } from "@/lib/quick-capture/answer-question";
+import { isAiEnabled } from "@/lib/ai/client";
 import type { CommandDraft } from "@/lib/quick-capture/types";
 
 async function currentUser() {
@@ -52,6 +54,43 @@ export async function parseQuickCaptureAction(text: string): Promise<ParseQuickC
   );
 
   return { ok: true, drafts: withAnswers };
+}
+
+// A second-opinion parse using an LLM instead of the deterministic
+// regex parser — offered in the UI as an explicit "Try with AI" fallback
+// for text the deterministic parser visibly got wrong (it never fails
+// outright; its catch-all clause just guesses badly on unusual phrasing).
+export async function parseQuickCaptureWithAiAction(text: string): Promise<ParseQuickCaptureResult> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "You must be logged in" };
+  if (!text.trim()) return { ok: false, error: "Type a command first" };
+  if (!isAiEnabled()) return { ok: false, error: "AI parsing is not configured" };
+
+  const [accounts, categories, shoppingItems] = await Promise.all([
+    listAccounts(prisma, user.id),
+    listCategories(prisma, user.id),
+    listActiveCatalogItems(prisma, user.id),
+  ]);
+
+  try {
+    const draft = await aiParseQuickCapture(
+      prisma,
+      {
+        userId: user.id,
+        currency: user.currency,
+        accounts: accounts.map((a) => ({ id: a.id, name: a.name })),
+        categories: categories.map((c) => ({ id: c.id, name: c.name })),
+        shoppingItems,
+        now: new Date(),
+      },
+      text,
+    );
+
+    if (!draft) return { ok: false, error: "Couldn't understand that as a transaction" };
+    return { ok: true, drafts: [draft] };
+  } catch {
+    return { ok: false, error: "AI parsing failed — try again" };
+  }
 }
 
 export type ConfirmQuickCaptureResult = { ok: true; logId: string } | { ok: false; error: string };

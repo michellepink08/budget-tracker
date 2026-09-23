@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 import { createTransactionAction, createTransferAction } from "@/actions/transaction.actions";
 import { createLoanAction } from "@/actions/loan.actions";
 import { createLendingAction } from "@/actions/lending.actions";
+import { suggestCategoryForTransactionAction } from "@/actions/ai-suggestions.actions";
+import { isAiEnabledAction } from "@/actions/ai-status.actions";
 import { humanizeEnum } from "@/lib/enum-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +44,29 @@ export function TransactionForm({
   const [type, setType] = useState<(typeof REGULAR_TYPES)[number]>("EXPENSE");
   const [lendingKind, setLendingKind] = useState<"CASH" | "ITEM">("CASH");
   const [submitting, setSubmitting] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLInputElement>(null);
+  const categoryRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    isAiEnabledAction().then(setAiEnabled);
+  }, []);
+
+  async function handleSuggestCategory() {
+    const description = descriptionRef.current?.value.trim() || humanizeEnum(type);
+    const amount = Number(amountRef.current?.value);
+    setSuggesting(true);
+    const result = await suggestCategoryForTransactionAction(description, amount, type);
+    setSuggesting(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    if (categoryRef.current) categoryRef.current.value = result.categoryName;
+    toast.success(`Suggested category: ${result.categoryName}`);
+  }
 
   async function handleSubmit(formData: FormData) {
     setSubmitting(true);
@@ -257,7 +283,7 @@ export function TransactionForm({
         <>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="amount">Amount</Label>
-            <Input id="amount" name="amount" type="number" step="0.01" min="0.01" required />
+            <Input id="amount" name="amount" type="number" step="0.01" min="0.01" required ref={amountRef} />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -318,13 +344,29 @@ export function TransactionForm({
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="categoryName">Category (optional)</Label>
-                <Input
-                  id="categoryName"
-                  name="categoryName"
-                  list="category-suggestions"
-                  placeholder="Type any word — new ones are created automatically"
-                  autoComplete="off"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="categoryName"
+                    name="categoryName"
+                    list="category-suggestions"
+                    placeholder="Type any word — new ones are created automatically"
+                    autoComplete="off"
+                    ref={categoryRef}
+                  />
+                  {aiEnabled && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 gap-1"
+                      disabled={suggesting}
+                      onClick={handleSuggestCategory}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {suggesting ? "Thinking…" : "Suggest"}
+                    </Button>
+                  )}
+                </div>
                 <datalist id="category-suggestions">
                   {categories.map((c) => (
                     <option key={c.id} value={c.name} />
